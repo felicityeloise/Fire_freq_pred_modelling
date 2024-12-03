@@ -1,0 +1,405 @@
+
+
+
+
+  
+
+
+
+
+
+
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+
+	
+	
+	<html lang="en">
+<head>
+</head>
+<body>
+	<div id="gptMainWrap">
+		<div id="gptBody">
+			
+			<table id="cmPlPgdPageBody" class="pageBody" cellpadding="0" cellspacing="0" summary="This table is for design purposes only.">
+<tbody>
+<tr>
+<td><span id="cmPlPgpPageBody">
+					
+
+
+
+
+
+
+
+
+<script type="text/javascript">
+  var gptMapConfig = new GptMapConfig();
+  gptMapConfig.mapServiceURL = "https://server.arcgisonline.com/arcgis/rest/services/World_Street_Map/MapServer";
+  gptMapConfig.mapServiceType = "dynamic";
+  gptMapConfig.geometryServiceURL = "https://gisservices.information.qld.gov.au/arcgis/rest/services/Geometry/GeometryServer";
+  gptMapConfig.locatorURL = "https://gisservices.information.qld.gov.au/arcgis/rest/services/Location/QldAddressComposite/GeocodeServer";
+  gptMapConfig.locatorSingleFieldParameter = "SingleLine";
+  gptMapConfig.locatorGraphicURL = "/catalogue/catalog/images/pushpin_red.gif";
+  gptMapConfig.mapVisibleLayers = "[]";
+</script>
+
+
+<form id="mdDetails" name="mdDetails" method="post" action="/catalogue/custom/viewMetadataDetails.page;jsessionid=E87EC3C4B0A939D9D7E51495331CF7EF" class="mdDetails" enctype="application/x-www-form-urlencoded">
+<input type="hidden" name="mdDetails" value="mdDetails" />
+
+
+<script type="text/javascript">
+
+function MddMap() {
+  var _gptMap = null;
+  var _gptInpEnv = null;
+  
+  this.initialize = function initialize() {
+    var config = gptMapConfig;
+    config.mapElementId = "interactiveMap";
+    config.mapToolbarId = "mdDetails:mapToolbar";
+        
+    var elForm = mddFindForm();
+    if ((elForm != null) && (typeof(mdeEnvelopeIds) != 'undefined') && (mdeEnvelopeIds != null)) {
+      var sPfx = elForm.id+":";
+      config.inputEnvelopeXMinId = sPfx+mdeEnvelopeIds[0];
+      config.inputEnvelopeYMinId = sPfx+mdeEnvelopeIds[1];
+      config.inputEnvelopeXMaxId = sPfx+mdeEnvelopeIds[2];
+      config.inputEnvelopeYMaxId = sPfx+mdeEnvelopeIds[3];
+      var el = document.getElementById(config.inputEnvelopeXMinId);
+      if (el != null) el.value = el.innerHTML;
+      el = document.getElementById(config.inputEnvelopeYMinId);
+      if (el != null) el.value = el.innerHTML;
+      el = document.getElementById(config.inputEnvelopeXMaxId);
+      if (el != null) el.value = el.innerHTML;
+      el = document.getElementById(config.inputEnvelopeYMaxId);
+      if (el != null) el.value = el.innerHTML;
+    }
+      
+    _gptMap = new GptMap();
+    dojo.connect(_gptMap,"onMapLoaded",this,"onMapLoaded");
+
+    _gptInpEnv = new GptInputEnvelope();
+    _gptInpEnv.initialize(config,_gptMap);
+
+    _gptMap.initialize(config);
+  }
+
+  this.onMapLoaded = function() {
+      if (_gptInpEnv != null) {
+        _gptInpEnv.highlightInputEnvelope();
+        setTimeout(dojo.hitch(_gptInpEnv,"zoomToInputEnvelope"),1000);
+        _gptMap.getAgsMap().disableMapNavigation();
+        _gptMap.getAgsMap().disablePan();
+        _gptMap.getAgsMap().disableClickRecenter();
+        _gptMap.getAgsMap().disableDoubleClickZoom();
+        _gptMap.getAgsMap().disableRubberBandZoom();
+        _gptMap.getAgsMap().disableScrollWheelZoom();
+        _gptMap.getAgsMap().disableShiftDoubleClickZoom();
+        _gptMap.getAgsMap().hidePanArrows();
+        _gptMap.getAgsMap().hideZoomSlider();
+      }
+  }
+  
+  this.reposition = function reposition() {
+    if (_gptMap != null) _gptMap.reposition();
+  }
+};
+
+
+function mddFindForm(sBaseName) {
+  var elForm = null;
+  var aForms = document.getElementsByTagName("form");
+  if (aForms != null) {
+    if (sBaseName == null) sBaseName = "mdDetails";
+    for (var i=0;i<aForms.length;i++) {
+      var el = aForms[i];
+      if (el && el.id && (el.id.indexOf(sBaseName) != -1)) {
+        elForm = el;
+        break;
+      }
+    }
+  }
+  return elForm;
+};
+
+
+var mddMap = new MddMap();;
+if (typeof(dojo) != 'undefined') {
+  dojo.addOnLoad(mddMapInit);
+}
+
+function mddMapInit() {
+  var toolbar = dojo.byId("mdDetails:mapToolbar");
+  if (toolbar!=null) toolbar.style.display="none";
+  var elMap = document.getElementById("interactiveMap");
+  if (elMap != null) mddMap.initialize();
+  dojo.connect(window,"onresize",mddMap,"reposition");
+};
+
+
+function mddOnSectionClicked(sSectionId) {
+  var elForm = mddFindForm();
+  if (elForm != null) {
+    var bDisplay = true;
+    var sFolder = "/catalogue/catalog/images/";
+    var sSrc = sFolder+"section_open.gif";
+    var elImg = document.getElementById(elForm.id+":"+sSectionId+"-img");
+    if (elImg != null) {
+      if (elImg.src.indexOf("section_open.gif") != -1) {
+        sSrc = sFolder+"section_closed.gif";
+        bDisplay = false;
+      }
+      elImg.src = sSrc;
+      var elChk = document.getElementById(elForm.id+":"+sSectionId+"-chk");
+      if (elChk != null) elChk.checked = bDisplay;
+    }
+    var el = document.getElementById(elForm.id+":"+sSectionId+"-body");
+
+	if (el != null) {
+	  if (bDisplay) el.style.display = "block"; else el.style.display = "none";
+	  mddMap.reposition();
+	}      
+  }
+}
+
+</script>
+
+
+<span id="mdDetails:xsltBasedDetails"><html xmlns="http://www.w3.org/1999/xhtml"><head><title>Fire history - Queensland Parks and Wildlife Service</title><meta content="text/html; charset=UTF-8" http-equiv="Content-type"/><style type="text/css">
+                            h1{
+                                font-family:Arial, Verdana, Helvetica, sans-serif;
+                                font-weight:bold;
+                                color:#333333;
+                                font-size:140%;
+                                border-bottom:2px solid #CCCCCC;
+                            }
+                            h2{
+                                font-family:Arial, Verdana, Helvetica, sans-serif;
+                                font-weight:bold;
+                                color:#333333;
+                                font-size:120%;
+                            }
+                            h3{
+                                font-family:Arial, Verdana, Helvetica, sans-serif;
+                                font-weight:bold;
+                                color:#333333;
+                                font-size:110%;
+                            }
+                            
+                            body{
+                                font-family:Verdana, Arial, Helvetica, sans-serif;
+                                font-size:10pt;
+                                line-height:16pt;
+                                color:#333333;
+                                padding-right:10%;
+                            }
+                            
+                            em{
+                                font-family:Arial;
+                                font-style:normal;
+                                font-weight:bold;
+                            }
+                            em.rawContent{
+                                font-style:normal;
+                                font-weight:bold;
+                                font-style:italic;
+                            }
+                            
+                            div{
+                                padding-left:40px;
+                                margin-top:0;
+                                margin-bottom:0;
+                            }</style></head><body><h1>Fire history - Queensland Parks and Wildlife Service</h1><h2 class="headTitle">Identification</h2><div>
+                <em>Title: </em>Fire history - Queensland Parks and Wildlife Service<br/><em>Alternative title: </em>Fire history - QPWS<br/><em>Date: </em>
+                                2021-11-17
+                             (publication) <br/>
+                        <em>Presentation form code: </em>mapDigital<br/>
+                    
+            
+                                        <em>Online resource:</em><div><em>Website: </em><a href="http://www.npsr.qld.gov.au/managing/fire_management.html"><small>http://www.npsr.qld.gov.au/managing/fire_management.html</small></a><br/></div>
+                                    <em>Related resource:</em><div><em>Identifier: </em>QPWS_SIS.QLD_QPWS_FIRE_HISTORY<br/><em>Relationship to related resource: </em>source<br/></div></div><h2 class="headTitle">Description</h2><div><em>Abstract / Description: </em><div>History of planned burns and wildfires on and around the Protected Areas and Forests of Queensland.</div><em>Purpose: </em><div>Contains the extent of the burn scars for fires on the QPWS protected areas and forests as well as the ignition date and the date the fire was declared out.  While this dataset can be used to determine the frequency of fires at a location, the dataset is not complete as historical records were entered in an ad hoc fashion from paper-based records and the recollection of QPWS rangers.</div><em>Additional Information: </em><div>It should be noted that many of the burn scars have been captured from field observations and digitisation in a mapping application from reference datasets (e.g. topographic, cadastral data) and as such will not exactly match scars shown in imagery.  Most historical records were captured this way.<br/>Because different fires will have different intensity and not all vegetation will be burnt in a fire, a percentage of the area that burned has been estimated for some of the records.<br/>Not all records were captured with the date that the fire was extinguished.  For these records the year and month the fire was declared out are calculated by adding seven days to the ignition date.  Some fires burn over several months and as a result the out year and month should be treated as indicative only.<br/>For fires that are currently burning, or have not been declared out, the shape of the burn scar will in general only be indicative.  More effort is exerted to accurately capture the final area of the fire after is has been extinguished.<br/>Due to the way the planned burns are managed, some planned burns are conducted over multiple stages, to achieve an outcome that would not be possible if the burn was conducted in one stage.  The records in this dataset only represent the final overall burnt area with no indication of which areas were burnt at certain stages.  Such fires will generally have an out date that is several months after the ignition date.</div><em>Language: </em>eng<br/><em>Character set: </em>unknown<br/></div><h2 class="headTitle">Topic</h2><div><em>ISO topic category codes: </em>environment<br/></div><h2 class="headTitle">Spatial Data Information</h2><div>
+                <em>Spatial representation type: </em>vector<br/>
+            
+            <em>Coordinate Reference System EPSG code: </em>EPSG:4938<br/><div><em>Title: </em>EPSG Geodetic Parameter<br/>                                Dataset<br/><em>Date: </em>
+                                        2007-07-16
+                                     (revision) <br/><em>Edition: </em>Version 6.13<br/></div>
+        </div><h2 class="headTitle">Contacts</h2><div><em>Point of contact: </em><br/><div><em>Organisation: </em>Department of Environment and Science<br/>
+                        <em>Address:</em><br/><div>
+                                    <em>Delivery point: </em>400 George St<br/>
+                                    <em>City: </em>Brisbane<br/>
+                                    <em>State: </em>Queensland<br/>
+                                    <em>Postcode: </em>4001<br/>
+                                    <em>Country: </em>Australia<br/>
+                                    <em>Email: </em> <a href="mailto:Fire.Advice@npsr.qld.gov.au">Fire.Advice@npsr.qld.gov.au</a> 
+                                </div>
+                    </div><em>Owner: </em><br/><div><em>Organisation: </em>Department of Environment and Science<br/></div></div><h2 class="headTitle">Status</h2><div>
+                <em>Progress status: </em>onGoing<br/>
+            
+                        <em>Maintenance and update frequency: </em>daily<br/>
+                    </div><h2 class="headTitle">Data / Resource Constraints</h2><div><em>Resource Access Level:</em>
+                         --&gt;
+                        
+                    <div>
+                        <em>Security classification (ISO 19115): </em>unclassified<br/>
+                    </div><em>Copyright: </em> (as use constraint)<br/><div>&copy State of Queensland (Department of Environment and Science) 2023</div><em>Licence: </em> (as use constraint)<br/><div>This material is licensed under a <a rel="license" href="https://creativecommons.org/licenses/by/4.0/">Creative Commons - Attribution 4.0 International</a> licence.<br /> <a rel="license" href="https://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" title="Creative Commons - Attribution 4.0 International" style="border: 0;" src="https://licensebuttons.net/l/by/4.0/88x31.png" /></a><br /> The Department of Environment and Science requests attribution in the following manner:<br /> &copy; State of Queensland (Department of Environment and Science) 2023. Updated data available at http://qldspatial.information.qld.gov.au/catalogue//.</div></div><h2 class="headTitle">Temporal and Spatial extents:</h2><div>
+                
+                    
+                        <em>Bounding box: </em><div><em>West bounding longitude: </em>138<br/><em>East bounding longitude: </em>155<br/><em>South bounding latitude: </em>-29.5<br/><em>North bounding latitude: </em>-9<br/></div>
+                    
+                    
+                    
+                    <em>Temporal extent: </em><div>
+                            <em> Start: </em> 1930<em> End: </em> 2021<br/>
+                        </div>
+                
+            </div><h2 class="headTitle">Data Quality</h2><div>
+            
+                <em>Data quality scope:</em><div>
+                    
+                        <em>Level: </em>dataset<br/>
+                    
+                    
+                </div>
+            
+            
+                <em>Completeness (omission):</em><div>
+                    
+                        <br/>                                This dataset contains historical records captured from the recollection of QPWS rangers and officers prior to the implementation of the fire planning and management system. As such the data is incomplete and does not represent all fires that have occurred on protected areas and forests.<br/>                            
+                    
+                </div>
+            
+            
+                <em>Consistency (conceptual):</em><div>
+                    
+                        <br/>                                Attribute information is consistent with the source data as captured by QPWS rangers and officers.<br/>                            
+                    
+                </div>
+            
+            
+                <em>Positional accuracy (external, absolute):</em><div>
+                    
+                        <br/>                                Positional accuracy is dependent on the method of capture.<br/>                            
+                    
+                </div>
+            
+            
+                <em>Attribute accuracy (non quantitative):</em><div>
+                    
+                        <br/>                                Where the areas for the extent of the fire are calculated the accuracy of the area is dependent on the positional accuracy of the spatial data.<br/>                            
+                    
+                </div>
+            
+            
+            
+            
+            
+            
+                <h2 class="headTitle">History:</h2><div>
+                    <em>Lineage statement:</em><div>This dataset is derived from databases maintained by QPWS rangers and officers at park bases. Rangers use various techniques to capture the extent of fires including capturing on paper plans on site, digitising from aerial imagery, vegetation layers and other spatial information using Geographic Information System (GIS) software, capturing with devices that use the Global Position System (GPS) or capturing from fire scar analysis of satellite imagery. While for most records the information about the fire is captured at the time of the fire, records of historical fires have been placed into the dataset.</div>
+                    
+                    
+                </div>
+            
+        </div><h2 class="headTitle">Distribution</h2><div>
+        
+            
+                <em>Format(s):</em><div>
+                    <em>Name/identifier: </em>Queensland Spatial Catalogue<br/>
+                    
+                    <em>Specification: </em>Download Service<br/>
+                    
+                        
+                                
+                            
+                                
+                                    
+                                        <em>Online resource:</em><div><em>Website: </em><a href="http://qldspatial.information.qld.gov.au/catalogue/"><small>http://qldspatial.information.qld.gov.au/catalogue/</small></a><br/></div>
+                                    
+                                
+                            
+                                <em>Ordering information:</em><div><em>Instructions: </em>Open the Queensland Spatial Catalogue (QSpatial). Select the large SEARCH button and all available records are displayed. Select one of the four filter options provided and then the further options within the filter. The resultant search is then displayed. Select your record and complete the order.<br/></div>
+                            
+                    
+                </div><br/>
+            
+            
+            
+                <em>Format(s):</em><div>
+                    <em>Name/identifier: </em>Burnt Areas<br/>
+                    
+                    
+                        
+                                
+                            
+                                
+                                    
+                                        <em>Online resource:</em><div><em>Protocol: </em>WWW:LINK-1.0-http--link<br/><em>Application profile: </em>ArcGIS REST API<br/><em>Name/identifier: </em>Label<br/><em>Description: </em>This dataset shows the history of fires and other treatments (e.g. mechanical treatments such as mowing, slashing and vegetation clearing) and active fires and treatments. It includes both planned burns and wildfires. The fire history includes fires that date back to the 1930s, however fires that occured before 2000 were entered in an ad-hoc fashion from an incomplete list of historical fire records.<br/><em>Website: </em><a href="https://spatial-gis.information.qld.gov.au/arcgis/rest/services/Environment/ParksFireHistory/FeatureServer/0"><small>https://spatial-gis.information.qld.gov.au/arcgis/rest/services/Environment/ParksFireHistory/FeatureServer/0</small></a><br/></div>
+                                    
+                                
+                            
+                                <em>Ordering information:</em><div><em>Fees: </em>Nil<br/><em>Instructions: </em>For use in desktop and web applications capable of connecting to ArcGIS REST feature service endpoints.<br/></div>
+                            
+                    
+                </div><br/>
+            
+            
+                <em>Format(s):</em><div>
+                    <em>Name/identifier: </em>downloadableData<br/>
+                    <em>Version: </em>10.0<br/>
+                    <em>Specification: </em>ESRI ArcGIS Server Geoportal Extension Content Type<br/>
+                </div><br/>
+            
+            
+                <em>Distributor:</em><div>
+                        
+                    
+                        <em>Format(s):</em><div>
+                            <em>Name/identifier: </em>From the Queensland Spatial Catalogue available as ESRI Shape file SHP, MapInfo Tab file TAB, ESRI file geodatabase FGDB, Google file KMZ, and Geopackage version 1.0, 1.1, or 1.2 file GPKG<br/>
+                            
+                        </div><br/>
+                    
+                        
+                            <em>Transfer size (megabytes): </em>30<br/>
+                            
+                                <em>Online resource:</em><div><em>Website: </em><a href="http://qldspatial.information.qld.gov.au/catalogue/custom/search.page?q=%22Fire history - Queensland Parks and Wildlife Service%22"><small>http://qldspatial.information.qld.gov.au/catalogue/custom/search.page?q=%22Fire history - Queensland Parks and Wildlife Service%22</small></a><br/></div>
+                            
+                            
+                        
+                    </div>
+            
+            <em>Transfer options:</em><div>
+                
+                    
+                        <em>Online resource:</em><div><em>Website: </em>
+                                <em>Function: </em>download<br/>
+                            </div>
+                    
+                
+            </div>
+        
+    <br><em>Web Service Finder:</em></br><div><em>Website: </em><a href="http://qldspatial.information.qld.gov.au/catalogue/custom/search.page?q=keywords:&quot;Fire history - Queensland Parks and Wildlife Service&quot;&amp;contentTypes=liveData">QSpatial Web Service</a></div><div><em>Instructions: </em>Use the URL to search QSpatial for web services displaying or using this dataset.
+                </div></div><h2 class="headTitle">Metadata Reference Information</h2><div>
+        <em>Hierarchy level (scope of the metadata): </em>dataset<br/>
+    <em>Identifier: </em>{B1AF01E4-5121-490F-A9C6-51193F99EEF9}<br/><em>Parent identifier: </em>x<br/><em>Metadata date stamp: </em>
+        2013-12-17
+    <br/><em>Language: </em>eng<br/>
+        <em>Character set: </em>utf8<br/>
+    <em>Metadata standard name: </em>ISO 19115:2005, ANZLIC ISO 1.1<br/><em>Metadata version name: </em>QGIS<br/></div></body></html></span><input type="hidden" name="javax.faces.ViewState" id="javax.faces.ViewState" value="-1121915125860710228:9136082670119850262" autocomplete="off" />
+</form>
+  <!--iframe class="section" src="/catalogue/rest/document?f=html&id=%7BB1AF01E4-5121-490F-A9C6-51193F99EEF9%7D" width="100%" scrolling="no" frameborder="0"></iframe-->
+  <!--span class="note">/catalogue/rest/document?f=html&id=%7BB1AF01E4-5121-490F-A9C6-51193F99EEF9%7D</span-->
+</span></td>
+</tr>
+</tbody>
+</table>
+
+		</div>
+	</div>
+</body>
+	</html>
+
+
+

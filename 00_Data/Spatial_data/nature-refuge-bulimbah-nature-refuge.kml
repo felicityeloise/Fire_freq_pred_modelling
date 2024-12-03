@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2" xmlns:kml="http://www.opengis.net/kml/2.2" xmlns:atom="http://www.w3.org/2005/Atom">
+	<Document>
+		<name>Bulimbah Nature Refuge</name>
+		<description>&#60;p&#62;&#60;a href=&#34;https://wetlandinfo.des.qld.gov.au/wetlands/facts-maps/nature-refuge-bulimbah-nature-refuge/&#34; target=&#34;_blank&#34;&#62;View wetland summary information&#60;/a&#62;&#60;/p&#62;&#60;p&#62;&#60;a href=&#34;https://wetlandinfo.des.qld.gov.au/wetlands/facts-maps/get-mapping-help/metadata/nature-refuge/&#34;&#62;View spatial metadata&#60;/a&#62;&#60;/p&#62;&#60;p&#62;&#60;a href=&#34;https://wetlandinfo.des.qld.gov.au/resources/wetland-summary/area/nature-refuge/kml/nature-refuge-bulimbah-nature-refuge.kmz&#34;&#62;Download this feature as KML&#60;/a&#62;&#60;/p&#62;&#60;p&#62;&#60;a href=&#34;https://wetlandinfo.des.qld.gov.au/resources/wetland-summary/area/nature-refuge/kml/nature-refuge.kmz&#34;&#62;Download all features of this type as KML&#60;/a&#62;&#60;/p&#62;&#60;p&#62;Note all boundaries have been simplified to within a tolerance of 0.00001 degrees&#60;/p&#62;</description>
+		<atom:link href="https://wetlandinfo.des.qld.gov.au/resources/wetland-summary/area/nature-refuge/kml/nature-refuge-bulimbah-nature-refuge.kmz" />
+		<Style id="def">
+			<LineStyle><color>FF0000FF</color><width>3</width></LineStyle><PolyStyle><color>5F0000FF</color></PolyStyle><IconStyle><Icon><href>https://wetlandinfo.des.qld.gov.au/resources/wetland-summary/images/point-marker.png</href></Icon><scale>0.5</scale></IconStyle><LabelStyle><scale>0</scale></LabelStyle>
+		</Style>
+		<Placemark id="nature-refuge-bulimbah-nature-refuge">
+			<name>Bulimbah Nature Refuge</name>
+			<description>&#60;p&#62;&#60;a href=&#34;https://wetlandinfo.des.qld.gov.au/wetlands/facts-maps/nature-refuge-bulimbah-nature-refuge/&#34; target=&#34;_blank&#34;&#62;View wetland summary information&#60;/a&#62;&#60;/p&#62;</description>
+			<Snippet></Snippet>
+			<styleUrl>#def</styleUrl>
+			<MultiGeometry>
+				<Polygon>
+					<outerBoundaryIs>
+						<LinearRing>
+							<coordinates>152.64025,-28.2354 152.642,-28.2364 152.64329,-28.2359 152.64479,-28.23608 152.64758,-28.23528 152.64815,-28.23526 152.65054,-28.23577 152.6508,-28.23597 152.65049,-28.23757 152.64551,-28.23705 152.64466,-28.23632 152.6433,-28.23666 152.64206,-28.23682 152.64013,-28.23967 152.64176,-28.2401 152.64606,-28.24096 152.64665,-28.23948 152.64709,-28.23918 152.65006,-28.23989 152.64892,-28.2459 152.63746,-28.24421 152.6392,-28.23526 152.64025,-28.2354 </coordinates>
+						</LinearRing>
+					</outerBoundaryIs>
+				</Polygon>
+				<Polygon>
+					<outerBoundaryIs>
+						<LinearRing>
+							<coordinates>152.64742,-28.23514 152.64477,-28.23589 152.64326,-28.23572 152.64202,-28.23619 152.64033,-28.23523 152.63902,-28.23505 152.63921,-28.2339 152.64742,-28.23514 </coordinates>
+						</LinearRing>
+					</outerBoundaryIs>
+				</Polygon>
+			</MultiGeometry>
+		</Placemark>
+	</Document>
+</kml>

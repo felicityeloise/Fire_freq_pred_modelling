@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2" xmlns:kml="http://www.opengis.net/kml/2.2" xmlns:atom="http://www.w3.org/2005/Atom">
+	<Document>
+		<name>Bartopia Nature Refuge</name>
+		<description>&#60;p&#62;&#60;a href=&#34;https://wetlandinfo.des.qld.gov.au/wetlands/facts-maps/nature-refuge-bartopia-nature-refuge/&#34; target=&#34;_blank&#34;&#62;View wetland summary information&#60;/a&#62;&#60;/p&#62;&#60;p&#62;&#60;a href=&#34;https://wetlandinfo.des.qld.gov.au/wetlands/facts-maps/get-mapping-help/metadata/nature-refuge/&#34;&#62;View spatial metadata&#60;/a&#62;&#60;/p&#62;&#60;p&#62;&#60;a href=&#34;https://wetlandinfo.des.qld.gov.au/resources/wetland-summary/area/nature-refuge/kml/nature-refuge-bartopia-nature-refuge.kmz&#34;&#62;Download this feature as KML&#60;/a&#62;&#60;/p&#62;&#60;p&#62;&#60;a href=&#34;https://wetlandinfo.des.qld.gov.au/resources/wetland-summary/area/nature-refuge/kml/nature-refuge.kmz&#34;&#62;Download all features of this type as KML&#60;/a&#62;&#60;/p&#62;&#60;p&#62;Note all boundaries have been simplified to within a tolerance of 0.00001 degrees&#60;/p&#62;</description>
+		<atom:link href="https://wetlandinfo.des.qld.gov.au/resources/wetland-summary/area/nature-refuge/kml/nature-refuge-bartopia-nature-refuge.kmz" />
+		<Style id="def">
+			<LineStyle><color>FF0000FF</color><width>3</width></LineStyle><PolyStyle><color>5F0000FF</color></PolyStyle><IconStyle><Icon><href>https://wetlandinfo.des.qld.gov.au/resources/wetland-summary/images/point-marker.png</href></Icon><scale>0.5</scale></IconStyle><LabelStyle><scale>0</scale></LabelStyle>
+		</Style>
+		<Placemark id="nature-refuge-bartopia-nature-refuge">
+			<name>Bartopia Nature Refuge</name>
+			<description>&#60;p&#62;&#60;a href=&#34;https://wetlandinfo.des.qld.gov.au/wetlands/facts-maps/nature-refuge-bartopia-nature-refuge/&#34; target=&#34;_blank&#34;&#62;View wetland summary information&#60;/a&#62;&#60;/p&#62;</description>
+			<Snippet></Snippet>
+			<styleUrl>#def</styleUrl>
+			<Polygon>
+				<outerBoundaryIs>
+					<LinearRing>
+						<coordinates>152.63857,-28.23852 152.63746,-28.24421 152.64892,-28.2459 152.64859,-28.24763 152.62907,-28.24471 152.63117,-28.23346 152.63325,-28.23456 152.63496,-28.23592 152.63501,-28.23777 152.63602,-28.2376 152.63857,-28.23852 </coordinates>
+					</LinearRing>
+				</outerBoundaryIs>
+			</Polygon>
+		</Placemark>
+	</Document>
+</kml>

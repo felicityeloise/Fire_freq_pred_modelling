@@ -1,0 +1,731 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2" xmlns:kml="http://www.opengis.net/kml/2.2" xmlns:atom="http://www.w3.org/2005/Atom">
+<Document>
+	<name>Entire OHV perimeter.kmz</name>
+	<Style id="sh_ylw-pushpin01">
+		<IconStyle>
+			<scale>1.3</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ffffff00</color>
+			<width>3</width>
+		</LineStyle>
+	</Style>
+	<Style id="sh_ylw-pushpin11">
+		<IconStyle>
+			<scale>1.3</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ffffff00</color>
+			<width>3</width>
+		</LineStyle>
+	</Style>
+	<Style id="sn_ylw-pushpin010">
+		<IconStyle>
+			<scale>1.1</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ffffff00</color>
+			<width>3</width>
+		</LineStyle>
+	</Style>
+	<StyleMap id="msn_ylw-pushpin14">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#sn_ylw-pushpin102</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#sh_ylw-pushpin11</styleUrl>
+		</Pair>
+	</StyleMap>
+	<StyleMap id="msn_ylw-pushpin80">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#sn_ylw-pushpin010</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#sh_ylw-pushpin01</styleUrl>
+		</Pair>
+	</StyleMap>
+	<Style id="sn_ylw-pushpin102">
+		<IconStyle>
+			<scale>1.1</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<LineStyle>
+			<color>ffffff00</color>
+			<width>3</width>
+		</LineStyle>
+	</Style>
+	<Folder>
+		<name>Entire perimeter</name>
+		<Placemark>
+			<name>P Big Gum 02</name>
+			<styleUrl>#msn_ylw-pushpin80</styleUrl>
+			<LineString>
+				<tessellate>1</tessellate>
+				<coordinates>
+					152.4700325349311,-27.72417746063574,0 152.4703233577651,-27.72454088419395,0 152.4709737809467,-27.72462592659815,0 
+				</coordinates>
+			</LineString>
+		</Placemark>
+		<Placemark>
+			<name>Untitled Path</name>
+			<styleUrl>#msn_ylw-pushpin80</styleUrl>
+			<LineString>
+				<tessellate>1</tessellate>
+				<coordinates>
+					152.4693867454963,-27.72922997460211,0 152.4688226041054,-27.72969846886857,0 152.4691930536728,-27.7309738339604,0 
+				</coordinates>
+			</LineString>
+		</Placemark>
+		<Placemark>
+			<name>P A Frame</name>
+			<styleUrl>#msn_ylw-pushpin80</styleUrl>
+			<LineString>
+				<tessellate>1</tessellate>
+				<coordinates>
+					152.46301404587,-27.73822552294957,0 152.4659037090636,-27.73516452662808,0 152.4660636620585,-27.73520938668958,0 152.4668533616891,-27.73599107700819,0 
+				</coordinates>
+			</LineString>
+		</Placemark>
+		<Placemark>
+			<name>P Alans 01</name>
+			<styleUrl>#msn_ylw-pushpin80</styleUrl>
+			<LineString>
+				<tessellate>1</tessellate>
+				<coordinates>
+					152.4291217389281,-27.69921989114393,0 152.4294477680205,-27.69993635708578,0 152.4282872988041,-27.70624427144166,0 
+				</coordinates>
+			</LineString>
+		</Placemark>
+		<Placemark>
+			<name>P Archery 01</name>
+			<styleUrl>#msn_ylw-pushpin80</styleUrl>
+			<LineString>
+				<tessellate>1</tessellate>
+				<coordinates>
+					152.4671723305851,-27.70867473163602,0 152.4626187395507,-27.71151439608887,0 152.4622522503692,-27.71115116022402,0 
+				</coordinates>
+			</LineString>
+		</Placemark>
+		<Placemark>
+			<name>P Big Dam Paddock</name>
+			<styleUrl>#msn_ylw-pushpin80</styleUrl>
+			<LineString>
+				<tessellate>1</tessellate>
+				<coordinates>
+					152.4154130367517,-27.75191265252557,0 152.4105120817862,-27.75119770900187,0 
+				</coordinates>
+			</LineString>
+		</Placemark>
+		<Placemark>
+			<name>P Big Gums</name>
+			<styleUrl>#msn_ylw-pushpin80</styleUrl>
+			<LineString>
+				<tessellate>1</tessellate>
+				<coordinates>
+					152.4663785480172,-27.72873915511348,0 152.4669392054798,-27.72763531045228,0 152.467161634449,-27.7263392794917,0 152.4671467631152,-27.72567286377571,0 152.4671330062626,-27.72490073764408,0 152.4670937578506,-27.72409390192591,0 152.4678212158862,-27.72264894919017,0 152.4681107363186,-27.7222904621202,0 
+				</coordinates>
+			</LineString>
+		</Placemark>
+		<Placemark>
+			<name>P Big Paddies</name>
+			<styleUrl>#msn_ylw-pushpin80</styleUrl>
+			<LineString>
+				<tessellate>1</tessellate>
+				<coordinates>
+					152.4414848173359,-27.75565123378125,0 152.4153814942656,-27.75187587472712,0 
+				</coordinates>
+			</LineString>
+		</Placemark>
+		<Placemark>
+			<name>P Billabong 01</name>
+			<styleUrl>#msn_ylw-pushpin80</styleUrl>
+			<LineString>
+				<tessellate>1</tessellate>
+				<coordinates>
+					152.4682256340892,-27.71006628246313,0 152.4671685461175,-27.70865461651389,0 
+				</coordinates>
+			</LineString>
+		</Placemark>
+		<Placemark>
+			<name>P Billabong 02</name>
+			<styleUrl>#msn_ylw-pushpin80</styleUrl>
+			<LineString>
+				<tessellate>1</tessellate>
+				<coordinates>
+					152.4697625299623,-27.71189567842009,0 152.468264622303,-27.7100444305083,0 
+				</coordinates>
+			</LineString>
+		</Placemark>
+		<Placemark>
+			<name>P Bore Pump 01</name>
+			<styleUrl>#msn_ylw-pushpin80</styleUrl>
+			<LineString>
+				<tessellate>1</tessellate>
+				<coordinates>
+					152.4785204880089,-27.73474817329015,0 152.4789242946778,-27.73848355677788,0 
+				</coordinates>
+			</LineString>
+		</Placemark>
+		<Placemark>
+			<name>P Bore Pump 02</name>
+			<styleUrl>#msn_ylw-pushpin80</styleUrl>
+			<LineString>
+				<tessellate>1</tessellate>
+				<coordinates>
+					152.478890903512,-27.73849812652898,0 152.4758330996608,-27.7380106789461,0 152.4731265801797,-27.73755853748144,0 152.4711156260453,-27.73722537210004,0 152.470603463535,-27.73712132745374,0 152.4692142974942,-27.73715717329594,0 152.4685870746502,-27.73707425604446,0 152.4683205042259,-27.7369632397421,0 152.4675918390495,-27.73656783518877,0 152.4673336677624,-27.73628343021738,0 
+				</coordinates>
+			</LineString>
+		</Placemark>
+		<Placemark>
+			<name>P Bore Pump 03</name>
+			<styleUrl>#msn_ylw-pushpin80</styleUrl>
+			<LineString>
+				<tessellate>1</tessellate>
+				<coordinates>
+					152.4706788829888,-27.73309981563192,0 152.4721601933023,-27.73299327979286,0 152.4785277807712,-27.73471322016295,0 
+				</coordinates>
+			</LineString>
+		</Placemark>
+		<Placemark>
+			<name>P Boundary Creek 01</name>
+			<styleUrl>#msn_ylw-pushpin80</styleUrl>
+			<LineString>
+				<tessellate>1</tessellate>
+				<coordinates>
+					152.4515583494867,-27.74870844767516,0 152.4566930176207,-27.74947510838909,0 152.4569882924208,-27.74911721750572,0 152.4575803356987,-27.74892652197222,0 
+				</coordinates>
+			</LineString>
+		</Placemark>
+		<Placemark>
+			<name>P Boundary Creek 02</name>
+			<styleUrl>#msn_ylw-pushpin80</styleUrl>
+			<LineString>
+				<tessellate>1</tessellate>
+				<coordinates>
+					152.4575757117841,-27.74890683776029,0 152.4580053506396,-27.74665726315821,0 152.4581522802429,-27.746496435802,0 152.4585245154379,-27.74651161734415,0 152.4589826743105,-27.74626645548268,0 152.4595101743824,-27.74612839698598,0 152.4598476411342,-27.74622782225077,0 152.4599774031084,-27.74621248147713,0 152.4609206855978,-27.74578259319609,0 152.4609640435902,-27.74540666568433,0 152.4607907519543,-27.74508449712355,0 152.4599072556833,-27.74507781595986,0 152.4611639023841,-27.74239271631278,0 
+				</coordinates>
+			</LineString>
+		</Placemark>
+		<Placemark>
+			<name>P Boundary Creek 03</name>
+			<styleUrl>#msn_ylw-pushpin80</styleUrl>
+			<LineString>
+				<tessellate>1</tessellate>
+				<coordinates>
+					152.4515566913865,-27.74865130483636,0 152.4528989557798,-27.74745662284242,0 152.4534627740731,-27.74690282610388,0 152.4537235157956,-27.74658677572998,0 152.4542374470344,-27.74556748882479,0 152.4547089186426,-27.74470012725549,0 152.4548660516304,-27.74450752613888,0 152.4558228854557,-27.74375858659763,0 152.4561857508105,-27.74310667700538,0 152.4561627072526,-27.74107976541981,0 152.4565189248309,-27.7403989227279,0 152.4567481772812,-27.74021076423664,0 152.4567926280327,-27.7400472424027,0 152.4568703603442,-27.73999436486175,0 152.4579934120164,-27.73992201563577,0 152.4584262101871,-27.74006300764895,0 152.4588302832857,-27.74038672875167,0 152.4592606537706,-27.74047688457266,0 152.4605033438232,-27.74049766633532,0 152.4606786187558,-27.74045852616992,0 152.4613357894096,-27.73988622765266,0 152.4618665380094,-27.73933183758305,0 152.4624254074087,-27.73882154073879,0 152.462998964437,-27.73822805230939,0 
+				</coordinates>
+			</LineString>
+		</Placemark>
+		<Placemark>
+			<name>P Bush 01</name>
+			<styleUrl>#msn_ylw-pushpin80</styleUrl>
+			<LineString>
+				<tessellate>1</tessellate>
+				<coordinates>
+					152.390853173569,-27.69771826534696,0 152.3909658997826,-27.6967792939986,0 152.39158218068,-27.69524405877617,0 152.3918702134936,-27.6942330395572,0 152.3920360623454,-27.69248904920825,0 152.3916146657141,-27.6919534700895,0 152.3917648702318,-27.69091329934092,0 152.3925414239444,-27.68992313401832,0 152.394058086794,-27.68866988291305,0 152.3955659083445,-27.68708443072472,0 152.3965357599096,-27.68667593405456,0 152.3972863834565,-27.68664623937222,0 152.3979496039509,-27.68667983644258,0 152.398820662509,-27.68655063973901,0 152.3996089290791,-27.68641110683298,0 152.4011783252587,-27.68570380530108,0 152.4030269293363,-27.68538020388182,0 152.4051061020313,-27.68400522784052,0 152.4059060504123,-27.68400162180177,0 152.4071442064552,-27.68337693587758,0 152.4091429942298,-27.68269715151801,0 152.4098807601126,-27.6820596810634,0 152.4105137269882,-27.681951364376,0 152.4113840165782,-27.68143137727828,0 
+				</coordinates>
+			</LineString>
+		</Placemark>
+		<Placemark>
+			<name>P Busted Dam 01</name>
+			<styleUrl>#msn_ylw-pushpin80</styleUrl>
+			<LineString>
+				<tessellate>1</tessellate>
+				<coordinates>
+					152.4302100196396,-27.68372873643508,0 152.4285935053486,-27.68345955168873,0 152.4287168569817,-27.68283524945182,0 152.4248242480999,-27.68229187953644,0 
+				</coordinates>
+			</LineString>
+		</Placemark>
+		<Placemark>
+			<name>P Busted Dam 02</name>
+			<styleUrl>#msn_ylw-pushpin80</styleUrl>
+			<LineString>
+				<tessellate>1</tessellate>
+				<coordinates>
+					152.4256918703131,-27.67744221705243,0 152.4248421311085,-27.68223193485664,0 
+				</coordinates>
+			</LineString>
+		</Placemark>
+		<Placemark>
+			<name>P Busted Dam 02</name>
+			<styleUrl>#msn_ylw-pushpin80</styleUrl>
+			<LineString>
+				<tessellate>1</tessellate>
+				<coordinates>
+					152.4144631977424,-27.67581033364933,0 152.4256727805979,-27.67742383643553,0 
+				</coordinates>
+			</LineString>
+		</Placemark>
+		<Placemark>
+			<name>P Busted Dam 03</name>
+			<styleUrl>#msn_ylw-pushpin80</styleUrl>
+			<LineString>
+				<tessellate>1</tessellate>
+				<coordinates>
+					152.4113533889828,-27.6813046256865,0 152.4117523975027,-27.68031007314484,0 152.4117918892587,-27.68027538778052,0 152.4120759971094,-27.67915342084801,0 152.4121448200392,-27.67721681515499,0 152.4135158461928,-27.67618368978544,0 152.4144440083087,-27.67586434772985,0 
+				</coordinates>
+			</LineString>
+		</Placemark>
+		<Placemark>
+			<name>P Cabins 01</name>
+			<styleUrl>#msn_ylw-pushpin80</styleUrl>
+			<LineString>
+				<tessellate>1</tessellate>
+				<coordinates>
+					152.4049755891199,-27.75038583864448,0 152.4105561525142,-27.75119709984035,0 
+				</coordinates>
+			</LineString>
+		</Placemark>
+		<Placemark>
+			<name>P Cabins 02</name>
+			<styleUrl>#msn_ylw-pushpin80</styleUrl>
+			<LineString>
+				<tessellate>1</tessellate>
+				<coordinates>
+					152.4044857308281,-27.73562651115112,0 152.4048295450808,-27.74076115969444,0 152.4061711120029,-27.74261275713866,0 152.4050380591405,-27.75044045200788,0 
+				</coordinates>
+			</LineString>
+		</Placemark>
+		<Placemark>
+			<name>P Creek Paddock 01</name>
+			<styleUrl>#msn_ylw-pushpin80</styleUrl>
+			<LineString>
+				<tessellate>1</tessellate>
+				<coordinates>
+					152.4314034148073,-27.68839874229804,0 152.4309552885164,-27.69051395773388,0 152.4310603377548,-27.69180394103153,0 152.4307996402455,-27.69244136640315,0 152.4309430487915,-27.69247508196844,0 152.4308331182146,-27.6943162771281,0 152.4305146076612,-27.69480885472822,0 152.4300161535741,-27.69477903367859,0 152.4290998227882,-27.69927228003968,0 
+				</coordinates>
+			</LineString>
+		</Placemark>
+		<Placemark>
+			<name>P Dip Holding Paddock</name>
+			<styleUrl>#msn_ylw-pushpin80</styleUrl>
+			<LineString>
+				<tessellate>1</tessellate>
+				<coordinates>
+					152.4611961044863,-27.73962566022678,0 152.460616027906,-27.74004801117966,0 152.4596396688832,-27.74017004964883,0 152.4577317048194,-27.73967800100109,0 152.4570015212178,-27.7396726622465,0 152.4567942388212,-27.73978352759536,0 152.4567909512533,-27.73990520961569,0 152.4564875415148,-27.74000709712977,0 152.4561544924538,-27.74022534073392,0 152.45593636699,-27.74076033430141,0 
+				</coordinates>
+			</LineString>
+		</Placemark>
+		<Placemark>
+			<name>P Donkey Paddock 01</name>
+			<styleUrl>#msn_ylw-pushpin14</styleUrl>
+			<LineString>
+				<tessellate>1</tessellate>
+				<coordinates>
+					152.4697593987201,-27.71189171169144,0 152.4698251669599,-27.71196398672723,0 152.4701957901677,-27.71243215016901,0 152.4695455547187,-27.71533710583564,0 
+				</coordinates>
+			</LineString>
+		</Placemark>
+		<Placemark>
+			<name>P Donnas 01</name>
+			<styleUrl>#msn_ylw-pushpin80</styleUrl>
+			<LineString>
+				<tessellate>1</tessellate>
+				<coordinates>
+					152.4307228561929,-27.68381892410607,0 152.4327181138932,-27.6841305185369,0 152.4322179102512,-27.68718489259445,0 152.4317306917919,-27.68716611632224,0 152.4314469573035,-27.68817481925683,0 
+				</coordinates>
+			</LineString>
+		</Placemark>
+		<Placemark>
+			<name>P Front</name>
+			<styleUrl>#msn_ylw-pushpin80</styleUrl>
+			<LineString>
+				<tessellate>1</tessellate>
+				<coordinates>
+					152.4656620290739,-27.7299589804165,0 152.4657026681562,-27.73216705259078,0 
+				</coordinates>
+			</LineString>
+		</Placemark>
+		<Placemark>
+			<name>P Goat Paddock 01</name>
+			<styleUrl>#msn_ylw-pushpin80</styleUrl>
+			<LineString>
+				<tessellate>1</tessellate>
+				<coordinates>
+					152.4646304082444,-27.73615036150064,0 152.4612071836921,-27.73962162985501,0 
+				</coordinates>
+			</LineString>
+		</Placemark>
+		<Placemark>
+			<name>P Goat Paddock 02</name>
+			<styleUrl>#msn_ylw-pushpin80</styleUrl>
+			<LineString>
+				<tessellate>1</tessellate>
+				<coordinates>
+					152.464629827288,-27.73438490033147,0 152.4646350795903,-27.73613098718798,0 
+				</coordinates>
+			</LineString>
+		</Placemark>
+		<Placemark>
+			<name>P Gorge</name>
+			<styleUrl>#msn_ylw-pushpin80</styleUrl>
+			<LineString>
+				<tessellate>1</tessellate>
+				<coordinates>
+					152.3983256390893,-27.72747047642178,0 152.399446669294,-27.72760801611266,0 152.4005924369259,-27.72862896524781,0 152.4024864684902,-27.73154422996791,0 152.4029931560411,-27.73242582638522,0 152.4038756501759,-27.73286004635309,0 152.4040783794316,-27.73340228420529,0 
+				</coordinates>
+			</LineString>
+		</Placemark>
+		<Placemark>
+			<name>P Hayshed</name>
+			<styleUrl>#msn_ylw-pushpin80</styleUrl>
+			<LineString>
+				<tessellate>1</tessellate>
+				<coordinates>
+					152.4658761878029,-27.73087830957966,0 152.4659005426608,-27.72995309765529,0 152.4663771033334,-27.72874638585155,0 
+				</coordinates>
+			</LineString>
+		</Placemark>
+		<Placemark>
+			<name>P Horse Paddock 01</name>
+			<styleUrl>#msn_ylw-pushpin80</styleUrl>
+			<LineString>
+				<tessellate>1</tessellate>
+				<coordinates>
+					152.4588988995061,-27.71050960830757,0 152.4622977107651,-27.71114470973044,0 
+				</coordinates>
+			</LineString>
+		</Placemark>
+		<Placemark>
+			<name>P House Paddock</name>
+			<styleUrl>#msn_ylw-pushpin80</styleUrl>
+			<LineString>
+				<tessellate>1</tessellate>
+				<coordinates>
+					152.4656910084387,-27.73221030478606,0 152.4659264240655,-27.73315906365629,0 152.4646620773543,-27.73435509467459,0 
+				</coordinates>
+			</LineString>
+		</Placemark>
+		<Placemark>
+			<name>P Koala 01</name>
+			<styleUrl>#msn_ylw-pushpin80</styleUrl>
+			<LineString>
+				<tessellate>1</tessellate>
+				<coordinates>
+					152.4776727845771,-27.74490080754507,0 152.4800602800497,-27.74521542793463,0 
+				</coordinates>
+			</LineString>
+		</Placemark>
+		<Placemark>
+			<name>P Koala 02</name>
+			<styleUrl>#msn_ylw-pushpin80</styleUrl>
+			<LineString>
+				<tessellate>1</tessellate>
+				<coordinates>
+					152.4800219154735,-27.74518587133785,0 152.4811803908649,-27.73872441640749,0 
+				</coordinates>
+			</LineString>
+		</Placemark>
+		<Placemark>
+			<name>P Koala 03</name>
+			<styleUrl>#msn_ylw-pushpin80</styleUrl>
+			<LineString>
+				<tessellate>1</tessellate>
+				<coordinates>
+					152.481204765122,-27.7387269375388,0 152.479206390998,-27.738689797486,0 152.4788562721555,-27.7386030107654,0 
+				</coordinates>
+			</LineString>
+		</Placemark>
+		<Placemark>
+			<name>P Little Paddies 01</name>
+			<styleUrl>#msn_ylw-pushpin80</styleUrl>
+			<LineString>
+				<tessellate>1</tessellate>
+				<coordinates>
+					152.4415045217882,-27.75565121392274,0 152.4472049768093,-27.75653928885173,0 
+				</coordinates>
+			</LineString>
+		</Placemark>
+		<Placemark>
+			<name>P Little Paddies 02</name>
+			<styleUrl>#msn_ylw-pushpin80</styleUrl>
+			<LineString>
+				<tessellate>1</tessellate>
+				<coordinates>
+					152.4509600235894,-27.74914794700003,0 152.4492000675529,-27.75504841954699,0 152.448741883585,-27.75581493194052,0 152.4481756006057,-27.7561573787337,0 152.4471592024873,-27.75651908133661,0 
+				</coordinates>
+			</LineString>
+		</Placemark>
+		<Placemark>
+			<name>P Lookout 01</name>
+			<styleUrl>#msn_ylw-pushpin80</styleUrl>
+			<LineString>
+				<tessellate>1</tessellate>
+				<coordinates>
+					152.3926538264998,-27.70843627744269,0 152.3922031197671,-27.71196330381454,0 152.39317048768,-27.71205915357241,0 152.3924394389154,-27.71654534042303,0 
+				</coordinates>
+			</LineString>
+		</Placemark>
+		<Placemark>
+			<name>P Lookout 02</name>
+			<styleUrl>#msn_ylw-pushpin80</styleUrl>
+			<LineString>
+				<tessellate>1</tessellate>
+				<coordinates>
+					152.3908605218082,-27.69768660945341,0 152.3895279409634,-27.70492173813878,0 152.3892523580639,-27.70615967391494,0 152.389033346544,-27.70698459981393,0 152.389006189187,-27.7078552573424,0 152.3926531648966,-27.7084133278299,0 
+				</coordinates>
+			</LineString>
+		</Placemark>
+		<Placemark>
+			<name>P Lower Top Dewers 01</name>
+			<styleUrl>#msn_ylw-pushpin80</styleUrl>
+			<LineString>
+				<tessellate>1</tessellate>
+				<coordinates>
+					152.4341035539768,-27.7071024235289,0 152.428381694399,-27.70620248030572,0 
+				</coordinates>
+			</LineString>
+		</Placemark>
+		<Placemark>
+			<name>P Lucerne 01</name>
+			<styleUrl>#msn_ylw-pushpin80</styleUrl>
+			<LineString>
+				<tessellate>1</tessellate>
+				<coordinates>
+					152.4709652281273,-27.72462590125346,0 152.4694037972549,-27.72919353917014,0 
+				</coordinates>
+			</LineString>
+		</Placemark>
+		<Placemark>
+			<name>P Meadow Flat 02</name>
+			<styleUrl>#msn_ylw-pushpin80</styleUrl>
+			<LineString>
+				<tessellate>1</tessellate>
+				<coordinates>
+					152.4711059616865,-27.73734233388731,0 152.4690493964243,-27.73730933303782,0 152.4686655512087,-27.73728691082691,0 152.4680900645486,-27.73708336800283,0 152.467629881095,-27.73683458234922,0 152.4670233840559,-27.73613949955547,0 
+				</coordinates>
+			</LineString>
+		</Placemark>
+		<Placemark>
+			<name>P Meadow Flat 02</name>
+			<styleUrl>#msn_ylw-pushpin80</styleUrl>
+			<LineString>
+				<tessellate>1</tessellate>
+				<coordinates>
+					152.4769730821796,-27.73829982975213,0 152.4711054160307,-27.73734795714607,0 
+				</coordinates>
+			</LineString>
+		</Placemark>
+		<Placemark>
+			<name>P Meadow Flat Hayshed</name>
+			<styleUrl>#msn_ylw-pushpin80</styleUrl>
+			<LineString>
+				<tessellate>1</tessellate>
+				<coordinates>
+					152.4788003894213,-27.73862781167836,0 152.4769801594905,-27.73830516465371,0 
+				</coordinates>
+			</LineString>
+		</Placemark>
+		<Placemark>
+			<name>P Middle Dewers</name>
+			<styleUrl>#msn_ylw-pushpin80</styleUrl>
+			<LineString>
+				<tessellate>1</tessellate>
+				<coordinates>
+					152.4377866285064,-27.70749673453097,0 152.4341509005273,-27.70710219028297,0 
+				</coordinates>
+			</LineString>
+		</Placemark>
+		<Placemark>
+			<name>P Middle Flat 01</name>
+			<styleUrl>#msn_ylw-pushpin80</styleUrl>
+			<LineString>
+				<tessellate>1</tessellate>
+				<coordinates>
+					152.4610616654721,-27.74268142280333,0 152.4776763843423,-27.74492729210223,0 
+				</coordinates>
+			</LineString>
+		</Placemark>
+		<Placemark>
+			<name>P No 1</name>
+			<styleUrl>#msn_ylw-pushpin80</styleUrl>
+			<LineString>
+				<tessellate>1</tessellate>
+				<coordinates>
+					152.4671298598942,-27.7209392610999,0 152.4674954701519,-27.7222564438869,0 152.4674807787872,-27.72279559814601,0 152.4671971391547,-27.72350911832958,0 152.4669020628266,-27.72398559567024,0 152.4669058330433,-27.72592413254487,0 
+				</coordinates>
+			</LineString>
+		</Placemark>
+		<Placemark>
+			<name>P No 1 #2</name>
+			<styleUrl>#msn_ylw-pushpin80</styleUrl>
+			<LineString>
+				<tessellate>1</tessellate>
+				<coordinates>
+					152.4679996428477,-27.71854997142896,0 152.4676611008543,-27.71910279688593,0 152.467452071645,-27.71984237727545,0 152.467385142898,-27.72029462865877,0 152.4671547320493,-27.72091225512513,0 
+				</coordinates>
+			</LineString>
+		</Placemark>
+		<Placemark>
+			<name>P Old Yards 01</name>
+			<styleUrl>#msn_ylw-pushpin80</styleUrl>
+			<LineString>
+				<tessellate>1</tessellate>
+				<coordinates>
+					152.4718445369178,-27.71986502494933,0 152.4736815410455,-27.72213957159999,0 
+				</coordinates>
+			</LineString>
+		</Placemark>
+		<Placemark>
+			<name>P Old Yards 02</name>
+			<styleUrl>#msn_ylw-pushpin80</styleUrl>
+			<LineString>
+				<tessellate>1</tessellate>
+				<coordinates>
+					152.4700276325366,-27.72415050566248,0 152.4736806457661,-27.72214223822088,0 
+				</coordinates>
+			</LineString>
+		</Placemark>
+		<Placemark>
+			<name>P Paddies 01</name>
+			<styleUrl>#msn_ylw-pushpin80</styleUrl>
+			<LineString>
+				<tessellate>1</tessellate>
+				<coordinates>
+					152.4559537450264,-27.74077343328097,0 152.4559918530934,-27.74268582587865,0 152.4558221592469,-27.74354640728451,0 152.4551182381218,-27.7440784839746,0 152.4543676432245,-27.74473263273641,0 152.4539851021626,-27.74581703630691,0 152.4535008399345,-27.7465583618247,0 152.451787653261,-27.74807801099453,0 152.4510010290489,-27.7490950816696,0 
+				</coordinates>
+			</LineString>
+		</Placemark>
+		<Placemark>
+			<name>P Pasture</name>
+			<styleUrl>#msn_ylw-pushpin80</styleUrl>
+			<LineString>
+				<tessellate>1</tessellate>
+				<coordinates>
+					152.466174377691,-27.73361374262155,0 152.4658719428635,-27.73208265481484,0 152.4658763339742,-27.73089255559327,0 
+				</coordinates>
+			</LineString>
+		</Placemark>
+		<Placemark>
+			<name>P Retreat Front</name>
+			<styleUrl>#msn_ylw-pushpin80</styleUrl>
+			<LineString>
+				<tessellate>1</tessellate>
+				<coordinates>
+					152.4694458795633,-27.71603106699185,0 152.4693450805358,-27.71687525889185,0 152.4689996639406,-27.71750834463215,0 152.467965345773,-27.71852907221101,0 
+				</coordinates>
+			</LineString>
+		</Placemark>
+		<Placemark>
+			<name>P Unknown Bore Pump</name>
+			<styleUrl>#msn_ylw-pushpin80</styleUrl>
+			<LineString>
+				<tessellate>1</tessellate>
+				<coordinates>
+					152.4673256635675,-27.73628574993306,0 152.4662049707826,-27.73503440096967,0 152.4661069665333,-27.734922992374,0 152.4661066817216,-27.73484629614906,0 152.4662295205644,-27.73460991834165,0 152.4662781378126,-27.73433781328135,0 152.4662484160774,-27.73399013371504,0 152.4661995203771,-27.73379470888472,0 152.4661560795528,-27.73362625190154,0 
+				</coordinates>
+			</LineString>
+		</Placemark>
+		<Placemark>
+			<name>P Unkown</name>
+			<styleUrl>#msn_ylw-pushpin80</styleUrl>
+			<LineString>
+				<tessellate>1</tessellate>
+				<coordinates>
+					152.4040804516116,-27.73341343414885,0 152.4044865646404,-27.73563087450709,0 
+				</coordinates>
+			</LineString>
+		</Placemark>
+		<Placemark>
+			<name>P Unkown 01</name>
+			<styleUrl>#msn_ylw-pushpin80</styleUrl>
+			<LineString>
+				<tessellate>1</tessellate>
+				<coordinates>
+					152.4449788319672,-27.7087510428175,0 152.4377866245929,-27.70753886973411,0 
+				</coordinates>
+			</LineString>
+		</Placemark>
+		<Placemark>
+			<name>P Unkown 02</name>
+			<styleUrl>#msn_ylw-pushpin80</styleUrl>
+			<LineString>
+				<tessellate>1</tessellate>
+				<coordinates>
+					152.458863667588,-27.71051528742629,0 152.4449791654017,-27.70879315502673,0 
+				</coordinates>
+			</LineString>
+		</Placemark>
+		<Placemark>
+			<name>P Upper Gorge 01</name>
+			<styleUrl>#msn_ylw-pushpin80</styleUrl>
+			<LineString>
+				<tessellate>1</tessellate>
+				<coordinates>
+					152.390876112828,-27.7263035020892,0 152.3982911145919,-27.72747210123536,0 
+				</coordinates>
+			</LineString>
+		</Placemark>
+		<Placemark>
+			<name>P Upper Gorge 02</name>
+			<styleUrl>#msn_ylw-pushpin80</styleUrl>
+			<LineString>
+				<tessellate>1</tessellate>
+				<coordinates>
+					152.3924662308303,-27.71653815309208,0 152.3915923078198,-27.72201488615142,0 152.3908803406058,-27.72623562146037,0 
+				</coordinates>
+			</LineString>
+		</Placemark>
+		<Placemark>
+			<name>P Whitehouse 01</name>
+			<styleUrl>#msn_ylw-pushpin80</styleUrl>
+			<LineString>
+				<tessellate>1</tessellate>
+				<coordinates>
+					152.4681053107176,-27.72228799076032,0 152.467827719534,-27.72224729020343,0 152.467373062474,-27.72088193854938,0 152.4677838827473,-27.71955083810773,0 152.4680964507473,-27.71856887160923,0 152.4692299347814,-27.71771763281058,0 152.4695159632058,-27.71775434767653,0 152.4696278674522,-27.71719947325866,0 
+				</coordinates>
+			</LineString>
+		</Placemark>
+		<Placemark>
+			<name>P Whitehouse 02</name>
+			<styleUrl>#msn_ylw-pushpin80</styleUrl>
+			<LineString>
+				<tessellate>1</tessellate>
+				<coordinates>
+					152.4696407506912,-27.71716629476685,0 152.4718375266755,-27.7198582508541,0 
+				</coordinates>
+			</LineString>
+		</Placemark>
+		<Placemark>
+			<name>P Yard Paddock</name>
+			<styleUrl>#msn_ylw-pushpin80</styleUrl>
+			<LineString>
+				<tessellate>1</tessellate>
+				<coordinates>
+					152.4669057803477,-27.72591926066651,0 152.4666854650563,-27.72749292011702,0 152.4656742015007,-27.72993626529415,0 
+				</coordinates>
+			</LineString>
+		</Placemark>
+		<Placemark>
+			<name>Untitled Path</name>
+			<styleUrl>#msn_ylw-pushpin80</styleUrl>
+			<LineString>
+				<tessellate>1</tessellate>
+				<coordinates>
+					152.4692693275221,-27.730859901912,0 152.4696450888662,-27.73100356421113,0 152.4699960522492,-27.73144919931392,0 152.4702012267831,-27.73181880428571,0 152.4704404631697,-27.73216555303561,0 152.4707310237575,-27.73236132955171,0 152.4712242820016,-27.73259477113828,0 152.4714794712391,-27.73267008504963,0 
+				</coordinates>
+			</LineString>
+		</Placemark>
+	</Folder>
+</Document>
+</kml>
