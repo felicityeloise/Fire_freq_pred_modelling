@@ -4,21 +4,35 @@
 ##### Fire frequency analysis ----
 # This script tests for correlations in the data, performs model selection, investigates spatial autocorrelation and produces training and testing data sets. 
 
+# R version 4.3.1
+
 # 1. Load required packages ----
-library(MASS)
-library(blockCV)
-library(automap)
-library(sf)
-library(gstat)
-library(dismo)
-library(terra)
-library(ModelMetrics)
-library(precrec)
-library(ggplot2)
-library(Metrics)
-library(mgcv)
-library(tidyterra)
-library(ggspatial)
+library(MASS) # MASS_7.3-60
+library(blockCV) # blockCV_3.1-4 
+library(automap) #  automap_1.1-9
+library(sf) # sf_1.0-14
+library(gstat) # gstat_2.1-1
+library(dismo) # dismo_1.3-14
+library(terra) # terra_1.7-78 
+library(ModelMetrics) # ModelMetrics_1.2.2.2
+library(precrec) # precrec_0.14.4 
+library(ggplot2) # ggplot2_3.5.1
+library(Metrics) # Metrics_0.1.4 
+library(mgcv) # mgcv_1.9-1
+library(tidyterra) # tidyterra_0.6.1 
+library(ggspatial) # ggspatial_1.1.9
+library(caret) # caret_6.0-94
+library(gbm) # gbm_2.1.9
+library(doParallel) # doParallel_1.0.17
+
+
+# Other attached packages not called directly
+# iterators_1.0.14    
+# foreach_1.5.2       
+# lattice_0.21-8      
+# nlme_3.1-162             
+# raster_3.6-23        
+# sp_2.0-0            
 
 
 
@@ -64,7 +78,8 @@ cor1
 
 
 # 4. Determine which variables to include in the modelling ----
-# Lets use a basic linear regression model to perform stepwise variable elimination. We will also investigate the results of stepwise elimination if it was fit on a boosted regression tree model using code produced by Jane Elith and John Leathwick for Elith, Leathwick & Hastie (2008) Journal of Animal Ecology. 
+# Lets use a basic linear regression model to perform stepwise variable elimination. 
+
 # 4.1 Stepwise elimination ----
 # Following other papers on the topic we want to use AIC backwards stepwise elimination
 
@@ -72,17 +87,17 @@ full.model <- lm(Sentinel_rand_firefreq ~ QPWS_rand_firefreq + TWI + tempseason 
 
 step.model <- stepAIC(full.model, direction = "backward")
 summary(step.model)
-# This suggests that some variables may be dropped lm(formula = Sentinel_rand_firefreq ~ QPWS_rand_firefreq + TWI + tempseason + precipseason + diurnal_temp + solar_radiation + FPC + soil_clay + slope + aspect + elevation, data = Pres_back)
+# This suggests that some variables may be dropped lm(formula = Sentinel_rand_firefreq ~ QPWS_rand_firefreq + TWI + tempseason + precipseason + diurnal_temp + FPC + soil_clay + slope + aspect + topo_position + elevation, data = Pres_back)
 
 head(Pres_back);dim(Pres_back)
-Pres_back <- Pres_back[,c(2,1,3:13,15)]
+Pres_back <- Pres_back[,c(2,1,3:8,10:15)]
 head(Pres_back); dim(Pres_back)
-colnames(Pres_back) <- c("Sentinel_ff", "QPWS_ff", 'Lon', 'Lat', "TWI", "Temp_season", "Precip_season", "Diurnal_temp", "Solar_rad", "FPC", "Soil_clay", "Slope", "Aspect", "Elevation")
+colnames(Pres_back) <- c("Sentinel_ff", "QPWS_ff", 'Lon', 'Lat', "TWI", "Temp_season", "Precip_season", "Diurnal_temp", "FPC", "Soil_clay", "Slope", "Aspect", "TPI", "Elevation")
 head(Pres_back)
 
 
 head(environmental_preds)
-environmental_preds <- subset(environmental_preds, c(1:10, 12))
+environmental_preds <- subset(environmental_preds, c(1:5, 7:12))
 head(environmental_preds)
 
 
@@ -95,11 +110,11 @@ class(Pres_back_sf)
 # Use the blockCV package to estimate extent of spatial autocorrelation
 sac <- cv_spatial_autocor(x = Pres_back_sf, column = 'Sentinel_ff')
 plot(sac$variograms[[1]])
-# According to this if we were to fit our own empirical variogram the parameters should be nugget = 0.95, sill = 2.7, range = 10791, model = Ste
+# According to this if we were to fit our own empirical variogram the parameters should be nugget = 0.95, sill = 2.7, range = 10761, model = Ste
 
 
 # Experimental variogram
-vario1 <- variogram(Sentinel_ff ~ QPWS_ff + TWI + Temp_season + Precip_season + Diurnal_temp + Solar_rad + FPC + Soil_clay + Slope + Aspect + Elevation, data = Pres_back_sf)
+vario1 <- variogram(Sentinel_ff ~ QPWS_ff + TWI + Temp_season + Precip_season + Diurnal_temp + FPC + Soil_clay + Slope + Aspect + TPI + Elevation, data = Pres_back_sf)
 plot(vario1)
 summary(vario1)
 
@@ -107,7 +122,7 @@ summary(vario1)
 vario.fit <- fit.variogram(vario1,
                            model = vgm(psill = 2.7,
                                        model = "Ste",
-                                       range = 10791,
+                                       range = 10761,
                                        nugget = 0.95))
 
 vario.fit # Look at the result
@@ -118,25 +133,25 @@ plot(vario1, vario.fit)
 
 # Make adjustments to the empirical variogram
 vario.fit1 <- fit.variogram(vario1, 
-                            model = vgm(psill = 1.427864,
+                            model = vgm(psill = 1.289863,
                                         model = "Ste",
-                                        range = 11171.36,
-                                        nugget = 1.076107))
+                                        range = 11739.16,
+                                        nugget = 1.086171))
 vario.fit1
 plot(vario1, vario.fit1) # Change is minimal but now we know what the block size should be for spatial blocking of the data
 
 vario.fit2 <- fit.variogram(vario1, 
-                            model = vgm(psill = 1.427893,
+                            model = vgm(psill = 1.289930,
                                         model = "Ste",
-                                        range = 11170.84,
-                                        nugget = 1.076070))
+                                        range = 11737.61,
+                                        nugget = 1.086082))
 vario.fit2
 
 vario.fit3 <- fit.variogram(vario1, 
-                            model = vgm(psill = 1.427893,
+                            model = vgm(psill = 1.289932,
                                         model = "Ste",
-                                        range = 11170.83,
-                                        nugget = 1.076070))
+                                        range = 11737.58,
+                                        nugget = 1.086080))
 vario.fit3
 
 
@@ -147,7 +162,7 @@ vario.fit3
 sb_folds <- cv_spatial(x = Pres_back_sf,
                        column = "Sentinel_ff", # The response column
                        k = 5L, # number of folds
-                       size = 11170, # size of the blocks
+                       size = 11737, # size of the blocks
                        selection = "random", # random blocks-to-fold
                        seed = 503, # Set a random seed for reproducibility
                        iteration = 50L) #  find evenly dispersed folds over 50 attempts
@@ -184,22 +199,22 @@ for(k in seq_len(length(folds))){
 length(folds[[k]][[1]]) # Length of the training set
 length(folds[[k]][[2]]) # Length of the testing set
 
-# This is an approximate 80 : 20 spit 
+head(Pres_back)
 testing <- Pres_back[testSet, c(1,2, 5:ncol(Pres_back))]
 training <- Pres_back[trainSet,c(1,2, 5:ncol(Pres_back))]
 
 
-colnames(training) <- c("Sentinel_ff", "QPWS_ff", "TWI", "Temp_season", "Precip_season", "Diurnal_temp", "Solar_rad", "FPC", "Soil_clay", "Slope", "Aspect", "Elevation")
+colnames(training) <- c("Sentinel_ff", "QPWS_ff", "TWI", "Temp_season", "Precip_season", "Diurnal_temp", "FPC", "Soil_clay", "Slope", "Aspect", "TPI", "Elevation")
 head(training)
 
 
-colnames(testing) <- c("Sentinel_ff", "QPWS_ff","TWI", "Temp_season", "Precip_season", "Diurnal_temp", "Solar_rad", "FPC", "Soil_clay", "Slope", "Aspect", "Elevation")
+colnames(testing) <- c("Sentinel_ff", "QPWS_ff","TWI", "Temp_season", "Precip_season", "Diurnal_temp", "FPC", "Soil_clay", "Slope", "Aspect", "TPI", "Elevation")
 testing$pres <- ifelse(testing$QPWS_ff == 0, 0, 1)
 head(testing)
 tail(testing)
 
 
-#save.image('./02_Workspaces/004_predictive_modelling_pre_hypertune.RData')
+save.image('./02_Workspaces/004_predictive_modelling_pre_hypertune.RData')
 
 
 
@@ -224,7 +239,7 @@ fitcontrol <- trainControl(method = "cv", number = 10, search = "grid", allowPar
 
 # Note here that tree complexity is interaction.depth and shrinkage is the learning rate.
 # Train a BRT model while tuning parameters. START: 2024-09-23 15:55:12 AEST; END 2024-09-24 21:04:05 AEST
-gbmGrid <- expand.grid(n.trees = seq(from = 500, to = 20000, by = 100),
+gbmGrid <- expand.grid(n.trees = seq(from = 500, to = 10000, by = 100),
                        interaction.depth = seq(from = 1, to = 8, by = 1),
                        shrinkage = c(0.0001,
                                      0.005,
@@ -257,8 +272,7 @@ p1 <- plot(gbm_tune, metric = 'RMSE')
 
 
 # FINAL MODEL HYPERPARAMETER SETTINGS
-# Without considering weighting of psuedoabsences/background points, the final model is n.trees = 5700, interaction.depth = 8, shrinkage = 0.005.
-
+# Without considering weighting of psuedoabsences/background points, the final model is n.trees = 10000, interaction.depth = 8, shrinkage = 0.1 and n.minobsinnode = 50.
 
 # Lets now confirm the optimal number of trees using the dismo::gbm.step function as this is the function we shall be using for modelling as it was designed to work with this sort of presence/background data
 
@@ -276,13 +290,14 @@ load('./02_Workspaces/004_predictive_modelling_pre_hypertune.RData')
 environmental_preds <- rast('./00_Data/SDM_data/predictors.tif')
 names(environmental_preds) <- c("QPWS_ff", "TWI", "Temp_season", "Precip_season", "Diurnal_temp", "Solar_rad", "FPC", "Soil_clay", "Slope", "Aspect", "TPI", "Elevation")
 head(environmental_preds)
-environmental_preds <- subset(environmental_preds, c(1:10, 12))
+environmental_preds <- subset(environmental_preds, c(1:5, 7:12))
 head(environmental_preds)
 
 
 
 
 # 6.1 Check data structure and add column for binary coding of presences and absences
+head(Pres_back)
 Pres_back <- Pres_back[, c(1:2, 5:ncol(Pres_back))]
 Pres_back$pres <- ifelse(Pres_back$QPWS_ff == 0, 0, 1)
 head(Pres_back);dim(Pres_back)
@@ -452,7 +467,7 @@ p_fun_m2 <- gbm.plot(fire_tc8lr.1_wt, plot.layout = c(2,5))
 dev.new(width = 15, height = 7, noRStudioGD = T)
 pr_fun_m3 <- gbm.plot(fire_tc8lr.1_IWLR, plot.layout = c(2,5))
 
-# The IWLR model had no influence of TWI or QPWS. All models suggested Solar radiation, temperature seasonality and FPC to be the top 3 explanatory variables. QPWS and TWI were also ranked the lowest for the other two models.
+# The IWLR model had very minimal influence of aspect and TWI, with no influence of QPWS fire frequency. Temperature seasonality was the most influential predictor variable in all models, followed by diurnal temperature. All models ranked TWI and aspect among the lowest influential variables.
 
 
 
@@ -478,24 +493,16 @@ unweighted_pred <- terra::predict(object = environmental_preds,
                                    n.trees = fire_tc8lr.1$gbm.call$best.trees,
                                 filename = './04_Results/Prediction_rasters/Unweighted_pred.tif', overwrite = T)
 
-
-
-
 plot(unweighted_pred) # Check how this looks
+unweighted_pred
 # The value seems too high
-unique(unweighted_pred$lyr1)
+round(unique(unweighted_pred$lyr1))
 
 hist(unweighted_pred[unweighted_pred<10])
 hist(unweighted_pred[unweighted_pred >1 & unweighted_pred<10])
-table(unweighted_pred[unweighted_pred >1 & unweighted_pred<10])
-
-plot(unweighted_pred[unweighted_pred >1 & unweighted_pred<10])
-
-round(unique(unweighted_pred_005))
-
-range(unweighted_pred[unweighted_pred<10])
-summary(unweighted_pred[unweighted_pred<10])
-length(unweighted_pred[unweighted_pred<10])
+table(round(unweighted_pred[unweighted_pred >1 & unweighted_pred <10]))
+table(round(unweighted_pred[unweighted_pred >1 & unweighted_pred <80]))
+# We can see from this table that we do have fire frequencies that seem abnormally high (e.g., those outside of the range of Sentinel of 26 fires), but above this range, the number of points where these frequencies are observed is relatively small compared to the low fire frequencies. There are also jumps between frequencies at these higher predictions (e.g., 54 to 63 and nothing in between)
 
 
 # 8.2.2 Model 2 - background points down-weighted
@@ -503,11 +510,17 @@ down_wt_pred <- terra::predict(object = environmental_preds,
                              model = fire_tc8lr.1_wt,
                              type = "response",
                              n.trees = fire_tc8lr.1_wt$gbm.call$best.trees,
-                             filename = './04_Results/Prediction_rasters/Downweighted_pred.tif')
+                             filename = './04_Results/Prediction_rasters/Downweighted_pred.tif', overwrite = T)
+
 
 plot(down_wt_pred)
 down_wt_pred
 
+
+hist(down_wt_pred[down_wt_pred >1 & down_wt_pred <10])
+table(round(down_wt_pred[down_wt_pred >1 & down_wt_pred <10]))
+table(round(down_wt_pred[down_wt_pred >1 & down_wt_pred <80]))
+# As with the unweighted model, while we have abnormally high fire frequencies predicted by the downweighted BRT, above 26 fires, the number of points where these frequencies is relatively small and decreases. It is also not a steady increase, as we have a jump from 51 to 72 with nothing between these frequencies.
 
 
 # 8.2.3 Model 3 - IWLR
@@ -516,10 +529,15 @@ IWLR_pred <- terra::predict(object = environmental_preds,
                             model = fire_tc8lr.1_IWLR,
                             type = 'response',
                             n.trees = fire_tc8lr.1_IWLR$gbm.call$best.trees,
-                            filename = './04_Results/Prediction_rasters/IWLR_pred.tif')
+                            filename = './04_Results/Prediction_rasters/IWLR_pred.tif', overwrite = T)
 
 plot(IWLR_pred)
 IWLR_pred
+
+QPWS_ff <- rast('./00_Data/Fire_data/Outputs/SEQ/QPWS_SEQ_freq_hydrographical_mask_cropped_reproj.tif')
+plot(QPWS_ff)
+
+# Much lower predictions of fire frequency which does seem more similar to that of QPWS dat. However, this model only tended to build 50 trees, so it may not be performing comparatively well to the other BRT models which tend to overpredict.
 
 
 
@@ -532,7 +550,7 @@ save.image('./02_Workspaces/004_predictive_modelling_predictions.RData')
 # Note that ROC and PR curves work on the basis of probabilities (0,1)
 # Need to extract predictions for the same coordinates as the testing data
 Pres_back_crds <- rbind(Rand_fire, Background_data)
-test_dat <- Pres_back_crds[testSet, c(2,1,3:13, 15)]
+test_dat <- Pres_back_crds[testSet, c(2,1,3:8, 10:15)]
 head(test_dat)
 test_dat_crds <- test_dat[, 3:4]
 
@@ -574,7 +592,6 @@ sm2_eval <- evalmod(sm2)
 sm2_eval
 sm2_eval_basic <- evalmod(sm2, mode = 'basic')
 sm2_eval_basic
-attr(sm2_eval)
 
 # Add measures to file
 write(paste("The following model evaluation measures were calculated using precrec::evalmod(), by including mode = 'basic' this returns further measures beyond AUC ROC and precision-recall curves."), file = param_file_m2, append = T)
@@ -618,25 +635,31 @@ write(paste("Matthews correlation coefficient = ", round(attr(sm2_eval_basic, "e
 
 # 9.2 Model prediction deviance from testing data and Pearsons correlation coefficient ----
 # 9.2.1 For the unweighted model
-# Calculate some further model metrics
+# Calculate some further model metrics, note we calculate deviance from QPWS data as if it were calculated for Sentinel it returns an infinite number, we are also more interetsed in how well our model predicts for QPWS than Sentinel.
+preds_unweighted[is.na(preds_unweighted)] <- 0
+
 m1_mse <- mse(Pres_back[testSet, 1], preds_unweighted)
 m1_r2 <- (1-m1_mse)/var(Pres_back[trainSet, 1])
 m1_dev <- calc.deviance(testing$QPWS_ff, preds_unweighted, family = "poisson", calc.mean = T)
 
 write(paste("Mean squared error = ", round(m1_mse, digit = 3), sep = ""), file = param_file_m1, append = T)
 write(paste("R-squared = ", round(m1_r2, digit = 3), sep = ""), file = param_file_m1, append = T)
-write(paste("Deviance of observed and predicted values = ", round(m1_dev,digit = 3), sep = ""), file = param_file_m1, append = T)
+write(paste("Deviance of observed and predicted values for QPWS data = ", round(m1_dev,digit = 3), sep = ""), file = param_file_m1, append = T)
 
 # 9.2.2 For the down-weighted model
+preds_downwt[is.na(preds_downwt)] <- 0
+
 m2_mse <- mse(Pres_back[testSet, 1], preds_downwt)
 m2_r2 <- (1-m2_mse)/var(Pres_back[trainSet, 1])
 m2_dev <- calc.deviance(testing$QPWS_ff, preds_downwt, family = "poisson", calc.mean = T)
+
 
 write(paste("Mean squared error = ", round(m2_mse, digit = 3), sep = ""), file = param_file_m2, append = T)
 write(paste("R-squared = ", round(m2_r2, digit = 3), sep = ""), file = param_file_m2, append = T)
 write(paste("Deviance of observed and predicted values = ", round(m2_dev,digit = 3), sep = ""), file = param_file_m2, append = T)
 
 # 9.2.3 IWLR weighting
+preds_IWLR[is.na(preds_IWLR)] <- 0
 m3_mse <- mse(Pres_back[testSet, 1], preds_IWLR)
 m3_r2 <- (1-m3_mse)/var(Pres_back[trainSet, 1])
 m3_dev <- calc.deviance(testing$QPWS_ff, preds_IWLR, family = "poisson", calc.mean = T)
@@ -656,7 +679,7 @@ preds_curves <- evalmod(all_preds)
 preds_curves
 preds_curves_basic <- evalmod(all_preds, mode = "basic")
 preds_curves_basic
-# We can see that all models perform quite similarly. Performance of all models is moderate as they fall within the range of 0.75 to 0.8. There are only very small differences between the models performance based on AUC. The down-weighted model has marginally higher values, therefore is likely the best model for a BRT implementation.
+# We can see that all models perform quite similarly. Performance of the unweighted and down-weighted BRT is moderate as they fall within the range of 0.75 to 0.8., performance of the IWLR BRT is poor. There are only very small differences between the models performance based on AUC. The down-weighted model has marginally higher values, therefore is likely the best model for a BRT implementation.
 
 
 #dev.new(height = 7, width = 5, dpi = 80)
@@ -690,9 +713,8 @@ for(k in seq_len(length(folds))){
   
   
   # Model with down-weighted background points 
-  #am(Sentinel_ff ~ te(QPWS_ff, k = 6) + te(TWI) + te(Temp_season, bs = 'cc') + te(Precip_season, k = 8, bs = 'cc') + te(Diurnal_temp, k = 8, bs = 'cc') + te(Solar_rad) + te(FPC, k = 8) + te(Soil_clay, k = 9) + te(Slope) + te(Aspect, k = 8) +  te(Elevation, k = 12),
   set.seed(480)
-  fire_gam <- bam(Sentinel_ff ~ te(QPWS_ff, k = 6) + te(TWI) + te(Temp_season, bs = 'cc', k = 6) + te(Precip_season, bs = 'cc', k = 6) + te(Diurnal_temp, bs = 'cc', k = 6) + te(Solar_rad, bs = 'cc', k = 6) + te(FPC, k = 9) + te(Soil_clay, k = 8) + te(Slope) + te(Aspect, k = 8) +  te(Elevation, k = 9),
+  fire_gam <- bam(Sentinel_ff ~ te(QPWS_ff, k = 6) + te(TWI) + te(Temp_season, bs = 'cc', k = 6) + te(Precip_season, bs = 'cc', k = 6) + te(Diurnal_temp, bs = 'cc', k = 6) + te(FPC, k = 9) + te(Soil_clay, k = 8) + te(Slope) + te(Aspect, k = 8) + te(TPI) + te(Elevation, k = 12),
                   data = Pres_back[trainSet,],
                   family = "poisson",
                   weights = ifelse(Pres_back[trainSet, 13] == 1, 1, prNum/bgNum))
@@ -717,7 +739,7 @@ for(k in seq_len(length(folds))){
   
   # Model with down-weighted background points 
   set.seed(480)
-  fire_glm <- glm(Sentinel_ff ~ QPWS_ff + TWI + Temp_season + Precip_season + Diurnal_temp + Solar_rad + FPC + Soil_clay + Slope + Aspect + Elevation,
+  fire_glm <- glm(Sentinel_ff ~ QPWS_ff + TWI + Temp_season + Precip_season + Diurnal_temp + FPC + Soil_clay + Slope + Aspect + TPI + Elevation,
                   data = Pres_back[trainSet,],
                   family = "poisson",
                   weights = ifelse(Pres_back[trainSet, 13] == 1, 1, prNum/bgNum))
@@ -732,7 +754,7 @@ gam_pred <- terra::predict(object = environmental_preds,
                            type = 'response',
                            model = fire_gam,
                            na.rm = F,
-                           filename = './04_Results/Prediction_rasters/GAM_pred.tif')
+                           filename = './04_Results/Prediction_rasters/GAM_pred.tif', overwrite = T)
 plot(gam_pred)
 
 
@@ -741,7 +763,7 @@ glm_pred <- terra::predict(object = environmental_preds,
                            model = fire_glm,
                            type = 'response',
                            na.rm = F,
-                           filename = './04_Results/Prediction_rasters/GLM_pred.tif')
+                           filename = './04_Results/Prediction_rasters/GLM_pred.tif', overwrite = T)
 plot(glm_pred)
 
 
@@ -841,469 +863,48 @@ all_models_mm <- mmdata(all_models, labels = ifelse(testing[,1] !=0, 1, 0), modn
 all_models_eval <- evalmod(all_models_mm)
 all_models_eval
 
-# The GAM model does perform marginally better than a down-weighted BRT, the difference is only 0.01 for ROC and PRC. A GLM performs the worst.
+# The down-weighted BRT model does perform marginally better than a down-weighted GAM. A GLM performs the worst.
 
 
 # Lets compare some further model metrics
 gam_eval_basic
 sm2_eval_basic
-# These statistics also show that the GAM performs marginally better than the down-weighted BRT 
+# These statistics also show that the down-weighted BRT performs marginally better than a GAM
 
 #dev.new(height = 7, width = 5, dpi = 80)
 dev.new(height = 10, width = 20)
 par(mfrow = c(2,1), oma = c(0,0,0,0))
 plot(all_models_eval)
 
-# The GAM ROC is higher as specificity and sensitivity increase but its precision-recall curve is lower than down-weighted and unweighted BRT models. GLM is the worst performing model. 
+# The GAM ROC is similar to that of down-weighted BRT but its precision-recall curve is lower than down-weighted and unweighted BRT models. GLM is the worst performing model. 
 
 
 save.image('./02_Workspaces/004_predictive_modelling_predictions.RData')
 
 
 
-
-# 11. Validate model predictions ----
-# We know when we look at the each raster the min and max value are incorrect as this is not what gets plotted on a map.
-
-Sentinel_ff # Maximum is 22
-environmental_preds$QPWS_ff # Maximum is 12
-gam_pred # Maximum is 10
-down_wt_pred # Maximum is 59 so there is definitely over-estimation. We could undertake post-processing to remove this over-estimation
-unweighted_pred # Maximum is 28
-IWLR_pred # Maximum is 5, underestimating
-glm_pred # Maximum is 7, underestimating
-
-# So just looking at the minimum and maximum values, the IWLR weighted, glm, and gam models are underestimating fire frequency. The IWLR model only ran 50 trees, so underestimation is not entirely surprising. The GAM is our best model, it does underestimate for QPWS and sentinel but for QPWS it is only a slight underestimation. Our second best model is the downweighted BRT which while maybe only a few locations does overestimate to a large degree. 
-
-# 11.1 Check correlation of predictive outputs with QPWS data
-QPWS_rand <- vect('./00_Data/Fire_data/Outputs/QPWS_random.gpkg')
-QPWS_ff_rand <- extract(environmental_preds$QPWS_ff, QPWS_rand)
-
-# Original Sentinel data
-Sentinel_rand <- extract(Sentinel_ff, QPWS_rand)
-sent_cor <- cor.test(QPWS_ff_rand$QPWS_ff, Sentinel_rand$focal_mean) # Correlation = 0.2539538 
-
-
-# Unweighted model
-unweighted_rand <- extract(unweighted_pred, QPWS_rand)
-unwt_cor <- cor.test(QPWS_ff_rand$QPWS_ff, unweighted_rand$lyr1) # Correlation = 0.2964704  
-# Slight improvement of correlation between from Sentinel data
-
-
-# Downweighted model
-down_rand <- extract(down_wt_pred, QPWS_rand)
-down_cor <- cor.test(QPWS_ff_rand$QPWS_ff, down_rand$lyr1) # Correlation = 0.2934303  
-
-
-# IWLR weighted model
-IWLR_rand <- extract(IWLR_pred, QPWS_rand)
-cor.test(QPWS_ff_rand$QPWS_ff, IWLR_rand$lyr1) # Correlation = 0.2421581    
-
-
-# GAM 
-gam_rand <- extract(gam_pred, QPWS_rand)
-gam_cor <- cor.test(QPWS_ff_rand$QPWS_ff, gam_rand$lyr1) # correlation = 0.4682567   
-
-# GLM
-glm_rand <- extract(glm_pred, QPWS_rand)
-glm_cor <- cor.test(QPWS_ff_rand$QPWS_ff, glm_rand$lyr1) # correlation = 0.5411435  
-
-
-# The IWLR model predicts fire frequency worse than the original Sentinel data for QPWS areas. While we will likely still use the QPWS data where it is available it is still important to know how the models perform in this area. Of the BRT models, the unweighted model has the highest correlation but the downweighted model is only slightly less correlated. The GLM model does have the highest correlation of all but it is our worst performing model. The GAM which is our best performing model has a higher correlation than Sentinel data with QPWS data.
-
-
-
-# 11.2 Check correlation of predictive outputs with Sentinel data
-set.seed(480)
-SEQ_pts <- spatSample(Sentinel_ff, 10000, na.rm = T, xy = T)
-SEQ_pts <- SEQ_pts[,1:2]
-
-Sent_SEQ <- extract(Sentinel_ff, SEQ_pts)
-
-# Unweighted model
-unweighted_SEQ <- extract(unweighted_pred, SEQ_pts)
-unweighted_SEQ <- round(unweighted_SEQ)
-cor.test(Sent_SEQ$focal_mean, unweighted_SEQ$lyr1) # Correlation = 0.2392367 
-
-# Down-weighted model
-down_SEQ <- round(extract(down_wt_pred, SEQ_pts))
-cor.test(Sent_SEQ$focal_mean, down_SEQ$lyr1) # Correlation = 0.2429423 
-
-
-# IWLR weighted model
-IWLR_SEQ <- round(extract(IWLR_pred, SEQ_pts))
-cor.test(Sent_SEQ$focal_mean, IWLR_SEQ$lyr1) # Correlation = 0.3212381  
-
-# GAM model
-GAM_SEQ <- round(extract(gam_pred, SEQ_pts))
-cor.test(Sent_SEQ$focal_mean, GAM_SEQ$lyr1) # Correlation = 0.2939057 
-
-
-# GLM model
-GLM_SEQ <- round(extract(glm_pred, SEQ_pts))
-cor.test(Sent_SEQ$focal_mean, GLM_SEQ$lyr1) # Correlation = 0.2387477
-
-# GLM has lowest correlation with Sentinel data. The IWLR weighted model has the highest correlation with the Sentinel data but it is underestimating fire frequency. The GAM model which is our best model has the second best correlation with Sentinel data so the model is performing ok
-
-
-
-# 11.3 Compare predictions to QPWS and Sentinel data for locations which I have sampled
-# 11.3.1 Transect based comparison
-transects <- read.csv('C:/Users/s4590925/OneDrive - The University of Queensland/Desktop/GitHub/Fire_recruit/00_Data/Transect_location_data.csv', header = T, stringsAsFactors = T)
-head(transects)
-View(transects)
-
-QPWS_ff <- rast('./00_Data/Fire_data/Outputs/SEQ/QPWS_SEQ_freq_hydrographical_mask_cropped_reproj.tif')
-
-# Convert to spatial
-transects_sf <- st_as_sf(transects, coords = c("Latitude", "Longitude"), crs = 'EPSG:4326')
-
-
-transects_v <- vect(transects_sf) %>% 
-  project('EPSG:3577')
-plet(transects_v)
-
-
-transects_rand <- extract(QPWS_ff, transects_v) # QPWS
-transects_sent <- extract(Sentinel_ff, transects_v) 
-transects_unwt <- extract(unweighted_pred, transects_v)
-transects_dwt <- extract(down_wt_pred, transects_v)
-transects_IWLR <- extract(IWLR_pred, transects_v)
-transect_gam <- extract(gam_pred, transects_v)
-transect_glm <- extract(glm_pred, transects_v)
-
-transects_fire <- as.data.frame(transects$Transect)
-transects_fire$Sentinel <- transects_sent$focal_mean
-transects_fire$QPWS <- transects_rand$QPWS_SEQ_freq_raster
-transects_fire$GAM <- transect_gam$lyr1
-transects_fire$Downweighted <- transects_dwt$lyr1
-transects_fire$Unweighted <- transects_unwt$lyr1
-transects_fire$IWLR <- transects_IWLR$lyr1
-transects_fire$GLM <- transect_glm$lyr1
-
-
-transects_fire$GAM_rnd <- round(transect_gam$lyr1)
-transects_fire$Downweighted_rnd <- round(transects_dwt$lyr1)
-transects_fire$Unweighted_rnd <- round(transects_unwt$lyr1)
-transects_fire$IWLR_rnd <- round(transects_IWLR$lyr1)
-transects_fire$GLM_rnd <- round(transect_glm$lyr1)
-
-View(transects_fire)
-
-# All models tend to underpredict for QPWS but the GAM produces predictions that are more close to those for Sentinel where there is no QPWS data compared to the down-weighted model.
-
-
-# 11.3.2 Genetics based comparison
-genetics <- read.table('C:/Users/s4590925/OneDrive - The University of Queensland/Desktop/GitHub/Allocasuarina__genfire/00_Data/Individual_site_data.txt', header = T, stringsAsFactors = T)
-head(genetics)
-
-# Convert to spatial
-genetics_sf <- st_as_sf(genetics, coords = c("Latitude", "Longitude"), crs = 'EPSG:4326')
-
-genetics_v <- vect(genetics_sf) %>% 
-  project('EPSG:3577')
-plet(genetics_v)
-
-
-genetics_qpws <- extract(QPWS_ff, genetics_v)
-genetics_sent <- extract(Sentinel_ff, genetics_v)
-genetics_unwt <- extract(unweighted_pred, genetics_v)
-genetics_dwt <- extract(down_wt_pred, genetics_v)
-genetics_IWLR <- extract(IWLR_pred, genetics_v)
-genetics_gam <- extract(gam_pred, genetics_v)
-genetics_glm <- extract(glm_pred, genetics_v)
-
-genetics_fire <- as.data.frame(genetics$ind)
-genetics_fire$Sentinel <- genetics_sent$focal_mean
-genetics_fire$QPWS <- genetics_qpws$QPWS_SEQ_freq_raster
-genetics_fire$GAM <- round(genetics_gam$lyr1)
-genetics_fire$Downweighted <- round(genetics_dwt$lyr1)
-genetics_fire$Unweighted <- round(genetics_unwt$lyr1)
-genetics_fire$IWLR <- round(genetics_IWLR$lyr1)
-genetics_fire$glm <- round(genetics_glm$lyr1)
-
-View(genetics_fire)
-
-# As above, the GAM is more likely to predict fire frequency that is closer to the value from Sentinel for areas of no QPWS data than our down-weighted BRT. 
-
-
-
-
-
-
-
-
-
-# 11.1 Create histograms for the distribution of fire frequency on QPWS land which we will plot as inset map
-QPWS_rand <- vect('./00_Data/Fire_data/Outputs/QPWS_random.gpkg')
-
-QPWS_r <- extract(QPWS_ff, QPWS_rand)
-QPWS_r[is.na(QPWS_r)] <- 0
-summary(QPWS_r)
-colnames(QPWS_r) <- c('ID', 'lyr1')
-QPWS_r$Dataset <- 'QPWS'
-
-Sent_r <- extract(Sentinel_ff, QPWS_rand)
-colnames(Sent_r) <- c('ID', 'lyr1')
-Sent_r$Dataset <- 'Sentinel'
-head(Sent_r)
-
-
-dwt_r <- extract(down_wt_pred, QPWS_rand)
-dwt_r$lyr1 <- round(dwt_r$lyr1)
-dwt_r$Dataset <- 'Down-weighted BRT'
-head(dwt_r)
-
-gam_r <- extract(gam_pred, QPWS_rand)
-gam_r$lyr1 <- round(gam_r$lyr1)
-gam_r$Dataset <- 'GAM'
-head(gam_r)
-
-glm_r <- extract(glm_pred, QPWS_rand)
-glm_r$lyr1 <- round(glm_r$lyr1)
-glm_r$Dataset <- 'GLM'
-head(glm_r)
-
-
-# Create the dataframes for histograms
-sent_qpws <- rbind(QPWS_r, Sent_r)
-
-preds_dwt <- rbind(dwt_r, QPWS_r)
-head(preds_dwt); tail(preds_dwt)
-
-preds_gam <- rbind(gam_r,QPWS_r)
-preds_gam[is.na(preds_gam)] <- 0
-
-preds_glm <- rbind(glm_r, QPWS_r)
-preds_glm[is.na(preds_glm)] <- 0
-
-
-sent_hist <- ggplot(sent_qpws, aes(x = lyr1, fill = Dataset))+
-  geom_histogram(colour = '#e9ecef', alpha = 0.6, breaks = seq(from = -1, to = 6, by = 1), position = 'identity')+
-  scale_fill_manual(values = c( 'gray35', 'steelblue'))+
-  scale_x_continuous('Fire frequency', breaks = seq(from = -0.5, to = 5.5, by = 1), labels = seq(from = 0, to = 6, by = 1))+
-  scale_y_continuous(limits = c(0, 6000), breaks = c(0, 1000, 2000, 3000, 4000, 5000, 6000), 'Count') +
-  theme_classic()+
-  annotate(geom = 'text', x = 7.8, y = 6000, label = paste("Pearson's r = ", round(sent_cor$estimate, digits = 3)), size = 7)+
-  theme(legend.title = element_text(size = 25, face = 'bold'),
-        axis.title = element_text(size = 25, face = 'bold'),
-        axis.text = element_text(size = 20),
-        legend.text = element_text(size = 20),
-        legend.key.size = unit(1, 'cm'))
-
-sent_hist
-
-sent_hist2 <- ggplot(sent_qpws, aes(x = lyr1, fill = Dataset))+
-  geom_histogram(colour = '#e9ecef', alpha = 0.6, breaks = seq(from = 6, to = 16, by = 1), position = 'identity')+
-  scale_fill_manual(values = c( 'gray35', 'steelblue'))+
-  scale_x_continuous('Fire frequency', breaks = seq(from = 6.5, to = 16.5, by = 1), labels = seq(from = 6, to = 16, by = 1))+
-  theme_classic()+
-  theme(legend.title = element_text(size = 25, face = 'bold'),
-        axis.title = element_text(size = 25, face = 'bold'),
-        axis.text = element_text(size = 20),
-        legend.text = element_text(size = 20),
-        legend.key.size = unit(1, 'cm'))
-sent_hist2
-
-
-dwt_hist <- ggplot(preds_dwt, aes(x = lyr1, fill = Dataset))+
-  geom_histogram(colour = '#e9ecef', alpha = 0.6, breaks = seq(from = -1, to = 15, by = 1), position = 'identity') +
-  scale_fill_manual(values = c('#69b3a2', 'gray35'))+
-  scale_x_continuous('Fire frequency', breaks = seq(from = -0.5, to = 14.5, by = 1), labels = seq(from = 0, to = 15, by = 1))+
-  scale_y_continuous(limits = c(0, 6000), breaks = c(0, 1000, 2000, 3000, 4000, 5000, 6000), 'Count') +
-  theme_classic() +
-  annotate(geom = 'text', x = 6.8, y = 6000, label = paste("Pearson's r = ", round(down_cor$estimate, digits = 3)), size = 7)+
-  theme(legend.title = element_text(size = 25, face = 'bold'),
-        axis.title = element_text(size = 25, face = 'bold'),
-        axis.text = element_text(size = 20),
-        legend.text = element_text(size = 20),
-        legend.key.size = unit(1, 'cm'))
-
-dwt_hist2 <- ggplot(preds_dwt, aes(x = lyr1, fill = Dataset))+
-  geom_histogram(colour = '#e9ecef', alpha = 0.6, breaks = seq(from = 6, to = 16, by = 1), position = 'identity')+
-  scale_fill_manual(values = c( '#69b3a2', 'gray35'))+
-  scale_x_continuous('Fire frequency', breaks = seq(from = 6.5, to = 16.5, by = 1), labels = seq(from = 6, to = 16, by = 1))+
-  theme_classic()+
-  theme(legend.title = element_text(size = 25, face = 'bold'),
-        axis.title = element_text(size = 25, face = 'bold'),
-        axis.text = element_text(size = 20),
-        legend.text = element_text(size = 20),
-        legend.key.size = unit(1, 'cm'))
-dwt_hist2
-
-
-gam_hist <- ggplot(preds_gam, aes(x = lyr1, fill = Dataset))+
-  geom_histogram(colour = '#e9ecef', alpha = 0.6, breaks = seq(from = -1, to = 11, by = 1), position = 'identity') +
-  scale_fill_manual(values = c('orange', 'gray35'))+
-  scale_x_continuous('Fire frequency', breaks = seq(from = -0.5, to = 10.5, by = 1), labels = seq(from = 0, to = 11, by = 1))+
-  scale_y_continuous(limits = c(0, 6000), breaks = c(0, 1000, 2000, 3000, 4000, 5000, 6000), 'Count') +
-  theme_classic()+
-  annotate(geom = 'text', x = 7.8, y = 6000, label = paste("Pearson's r = ", round(gam_cor$estimate, digits = 3)), size = 7) +
-  theme(legend.title = element_text(size = 25, face = 'bold'),
-        axis.title = element_text(size = 25, face = 'bold'),
-        axis.text = element_text(size = 20),
-        legend.text = element_text(size = 20),
-        legend.key.size = unit(1, 'cm'))
-
-gam_hist2 <- ggplot(preds_gam, aes(x = lyr1, fill = Dataset))+
-  geom_histogram(colour = '#e9ecef', alpha = 0.6, breaks = seq(from = 7, to = 12, by = 1), position = 'identity')+
-  scale_fill_manual(values = c( 'orange', 'gray35'))+
-  scale_x_continuous('Fire frequency', breaks = seq(from = 7.5, to = 12.5, by = 1), labels = seq(from = 7, to = 12, by = 1))+
-  theme_classic()+
-  theme(legend.title = element_text(size = 25, face = 'bold'),
-        axis.title = element_text(size = 25, face = 'bold'),
-        axis.text = element_text(size = 20),
-        legend.text = element_text(size = 20),
-        legend.key.size = unit(1, 'cm'))
-gam_hist2
-
-
-glm_hist <- ggplot(preds_glm, aes(x = lyr1, fill = Dataset))+
-  geom_histogram(colour = '#e9ecef', alpha = 0.6, breaks = seq(from = -1, to = 15, by = 1), position = 'identity') +
-  scale_fill_manual(values = c('purple', 'gray35'))+
-  scale_x_continuous('Fire frequency', breaks = seq(from = -0.5, to = 14.5, by = 1), labels = seq(from = 0, to = 15, by = 1))+
-  scale_y_continuous(limits = c(0, 6000), breaks = c(0, 1000, 2000, 3000, 4000, 5000, 6000)) +
-  theme_classic()+
-  annotate(geom = 'text', x = 7.8, y = 6000, label = paste("Pearson's r = ", round(glm_cor$estimate, digits = 3)), size = 7)+
-  theme(legend.title = element_text(size = 20, face = 'bold'),
-        axis.title = element_text(size = 20, face = 'bold'),
-        axis.text = element_text(size = 15),
-        legend.text = element_text(size = 15),
-        legend.key.size = unit(1, 'cm'))
-
-
-
-
-# 11.2 Examine model performance compared to Sentinel
-# Produce points to sample the whole of SEQ area, these were produced earlier so no need to run again
-#set.seed(480)
-#SEQ_pts <- spatSample(Sentinel_ff, 10000, na.rm = T, xy = T)
-#SEQ_pts <- SEQ_pts[,1:2]
-
-
-Sent_bg <- extract(Sentinel_ff, SEQ_pts)
-Sent_bg <- round(Sent_bg)
-Sent_bg$Dataset <- "eSentinel"
-colnames(Sent_bg) <- c("ID", "lyr1", "Dataset")
-
-
-QPWS_bg <- extract(QPWS_ff, SEQ_pts)
-colnames(QPWS_bg) <- c("ID", "lyr1")
-QPWS_bg$Dataset <- "QPWS"
-
-dwt_bg <- extract(down_wt_pred, SEQ_pts)
-dwt_bg <- round(dwt_bg)
-colnames(dwt_bg) <- c("ID", "lyr1")
-dwt_bg$Dataset <- "Down-weighted BRT"
-
-gam_bg <- extract(gam_pred, SEQ_pts)
-gam_bg <- round(gam_bg)
-colnames(gam_bg) <- c("ID", "lyr1")
-gam_bg$Dataset <- "GAM"
-
-
-# Combine the data
-Sentinel_QPWS <- rbind(Sent_bg, QPWS_bg)
-head(Sentinel_QPWS)
-Sentinel_QPWS[is.na(Sentinel_QPWS)] <- 0 
-unique(is.na(Sentinel_QPWS))
-
-dwt_sent <- rbind(Sent_bg, dwt_bg)
-head(dwt_sent)
-dwt_sent[is.na(dwt_sent)] <- 0
-unique(is.na(dwt_sent))
-
-
-gam_sent <- rbind(Sent_bg, gam_bg)
-head(gam_sent)
-gam_sent[is.na(gam_sent)] <- 0
-unique(is.na(gam_sent))
-
-
-
-# Calculate the correlations
-dwt_sent_cor <- cor.test(Sent_bg$lyr1, dwt_bg$lyr1)
-dwt_sent_cor # 0.2424903 
-
-
-gam_sent_cor <- cor.test(Sent_bg$lyr1, gam_bg$lyr1)
-gam_sent_cor # 0.296274 
-
-
-qpws_sent_cor <- cor.test(Sent_bg$lyr1, QPWS_bg$lyr1)
-qpws_sent_cor
-
-# The correlation with Sentinel for any model is low but any of these predictions are better than the correlation to QPWS data and considering the correlation to QPWS data for QPWS estates. 
-# Further ground truthing can be performed to ensure the predictions seem realistic considering the broad vegetation group, regional ecosystem fire regime management suggestions, and land use.
-
-
-
-ggplot(Sentinel_QPWS, aes(x = lyr1, fill = Dataset))+
-  geom_histogram(colour = '#e9ecef', alpha = 0.6, breaks = seq(from = -1, to = 7, by = 1), position = 'identity')+
-  scale_fill_manual(values = c( 'steelblue', 'gray35'), labels = c("Sentinel", "QPWS"))+
-  scale_x_continuous('Fire frequency', breaks = seq(from = -0.5, to = 6.5, by = 1), labels = seq(from = 0, to = 7, by = 1)) +
-  scale_y_continuous(limits = c(0, 9000), breaks = seq(from = 0, to = 9000, by = 1000), "Count")+
-  theme_classic()+
-  theme(legend.title = element_text(size = 25, face = 'bold'),
-        axis.title = element_text(size = 25, face = 'bold'),
-        axis.text = element_text(size = 20),
-        legend.text = element_text(size = 20),
-        legend.key.size = unit(1, 'cm'))
-
-
-Sentinel_QPWS2 <- Sentinel_QPWS[Sentinel_QPWS$lyr1 >4, ]
-
-ggplot(Sentinel_QPWS2, aes(x = lyr1, fill = Dataset))+
-  geom_histogram(colour = '#e9ecef', alpha = 0.6, position = 'identity')+
-  scale_fill_manual(values = c( 'steelblue', 'gray35'), labels = c("Sentinel", "QPWS"))+
-  scale_x_continuous('Fire frequency', breaks = seq(from = 5, to = 22, by = 1), labels = seq(from = 5, to = 22, by = 1))+
-  #scale_y_continuous(limits = c(0, 350), breaks = seq(from = 0, to = 350, by = 50), "Count")+
-  theme_classic()+
-  theme(legend.title = element_text(size = 25, face = 'bold'),
-        axis.title = element_text(size = 25, face = 'bold'),
-        axis.text = element_text(size = 20),
-        legend.text = element_text(size = 20),
-        legend.key.size = unit(1, 'cm'))
-
-
-
-dwt_sent_h <- ggplot(preds_dwt, aes(x = lyr1, fill = Dataset))+
-  geom_histogram(colour = '#e9ecef', alpha = 0.6, breaks = seq(from = -1, to = 15, by = 1), position = 'identity') +
-  scale_fill_manual(values = c('#69b3a2', 'gray35'))+
-  scale_x_continuous('Fire frequency', breaks = seq(from = -0.5, to = 14.5, by = 1), labels = seq(from = 0, to = 15, by = 1))+
-  scale_y_continuous(limits = c(0, 6000), breaks = c(0, 1000, 2000, 3000, 4000, 5000, 6000), 'Count') +
-  theme_classic() +
-  annotate(geom = 'text', x = 6.8, y = 6000, label = paste("Pearson's r = ", round(down_cor$estimate, digits = 3)), size = 7)+
-  theme(legend.title = element_text(size = 25, face = 'bold'),
-        axis.title = element_text(size = 25, face = 'bold'),
-        axis.text = element_text(size = 20),
-        legend.text = element_text(size = 20),
-        legend.key.size = unit(1, 'cm'))
-
-
-
-
-
-
-# 12. Plot the models ----
-unweighted_pred <- rast('.//04_Results/Prediction_rasters/Unweighted_pred.tif')
+# 11. Plot the models ----
+unweighted_pred <- rast('./04_Results/Prediction_rasters/Unweighted_pred.tif')
 down_wt_pred <- rast('./04_Results/Prediction_rasters/Downweighted_pred.tif')
 IWLR_pred <- rast('./04_Results/Prediction_rasters/IWLR_pred.tif')
 gam_pred <- rast('./04_Results/Prediction_rasters/GAM_pred.tif')
 glm_pred <- rast('./04_Results/Prediction_rasters/GLM_pred.tif')
-protected <- vect('./00_Data/Protected_areas/Protected_areas.shp') %>% 
+protected_land <- vect('./00_Data/Protected_areas/Protected_areas.shp') %>% 
   project('EPSG:3577') %>% 
   crop(down_wt_pred)
-Bulimbah <- download.file("https://wetlandinfo.des.qld.gov.au/resources/wetland-summary/area/nature-refuge/kml/nature-refuge-bulimbah-nature-refuge.kmz", destfile = './00_Data/Spatial data/Bulimbah_nature_refuge.kmz', mode = "wb", cacheOK = F)
-unzip(zipfile = './00_Data/Spatial data/Bulimbah_nature_refuge.kmz', exdir = './00_Data/Spatial data/')
+Sentinel_ff <- rast('./00_Data/Fire_data/Outputs/Sentinel/Sentinel_ff_hydrographical_mask_SEQ_focal_cropped.tif')
+QPWS_ff <- rast('./00_Data/Fire_data/Outputs/SEQ/QPWS_SEQ_freq_hydrographical_mask_cropped_reproj.tif') 
 
-Gillies <- download.file("https://wetlandinfo.des.qld.gov.au/resources/wetland-summary/area/nature-refuge/kml/nature-refuge-gillies-ridge-nature-refuge.kmz", destfile = './00_Data/Spatial data/Gillies_nature_refuge.kmz', mode = "wb", cacheOK = F)
-unzip(zipfile = './00_Data/Spatial data/Gillies_nature_refuge.kmz', exdir = './00_Data/Spatial data/')
+#Bulimbah <- download.file("https://wetlandinfo.des.qld.gov.au/resources/wetland-summary/area/nature-refuge/kml/nature-refuge-bulimbah-nature-refuge.kmz", destfile = './00_Data/Spatial data/Bulimbah_nature_refuge.kmz', mode = "wb", cacheOK = F)
+#unzip(zipfile = './00_Data/Spatial data/Bulimbah_nature_refuge.kmz', exdir = './00_Data/Spatial data/')
 
-Bartopia <- download.file("https://wetlandinfo.des.qld.gov.au/resources/wetland-summary/area/nature-refuge/kml/nature-refuge-bartopia-nature-refuge.kmz", destfile = './00_Data/Spatial data/Bartopia.kmz', mode = "wb", cacheOK = F)
-unzip(zipfile = './00_Data/Spatial data/Bartopia.kmz', exdir = './00_Data/Spatial data/')
+#Gillies <- download.file("https://wetlandinfo.des.qld.gov.au/resources/wetland-summary/area/nature-refuge/kml/nature-refuge-gillies-ridge-nature-refuge.kmz", destfile = './00_Data/Spatial data/Gillies_nature_refuge.kmz', mode = "wb", cacheOK = F)
+#unzip(zipfile = './00_Data/Spatial data/Gillies_nature_refuge.kmz', exdir = './00_Data/Spatial data/')
 
-unzip(zipfile = './00_Data/Spatial data/Entire_OHV_perimeter.kmz', exdir='./00_Data/Spatial data/') # Note: this needs to be renamed
+#Bartopia <- download.file("https://wetlandinfo.des.qld.gov.au/resources/wetland-summary/area/nature-refuge/kml/nature-refuge-bartopia-nature-refuge.kmz", destfile = './00_Data/Spatial data/Bartopia.kmz', mode = "wb", cacheOK = F)
+#unzip(zipfile = './00_Data/Spatial data/Bartopia.kmz', exdir = './00_Data/Spatial data/')
+
+#unzip(zipfile = './00_Data/Spatial data/Entire_OHV_perimeter.kmz', exdir='./00_Data/Spatial data/') # Note: this needs to be renamed
 
 # Read in nature refuge files
 HV <- vect('./00_Data/Spatial data/HV.kml') %>% 
@@ -1337,7 +938,6 @@ plet(Sent_m)
 
 # When plotting, rather than replacing 0s with NA we need to identify method to plot 0s as white
 
-
 unweighted <- ggplot() + 
   geom_spatraster(data = unweighted_pred) +
   theme_minimal()+
@@ -1350,7 +950,7 @@ downweighted <- ggplot() +
   geom_spatraster(data = down_wt_pred) +
   theme_minimal()+
   scale_fill_gradient(low = "#FFF5F0", high = "darkred", limits = c(1,40), breaks = c(5,10,15,20,25, 30, 35, 40), na.value = "transparent")+
-  geom_spatvector(data = protected, fill = 'transparent') +
+  geom_spatvector(data = protected_land, fill = 'transparent') +
   geom_spatvector(data = HV, fill = 'transparent', col = 'gray40')+
   geom_spatvector(data = Bulimbah, fill = 'transparent', col = 'gray40')+
   geom_spatvector(data = Bartopia, fill = 'transparent', col = 'gray40')+
@@ -1372,7 +972,7 @@ QPWS <- ggplot() +
   geom_spatraster(data = environmental_preds$QPWS_ff) +
   theme_minimal()+
   scale_fill_gradient(low = "#FFF5F0", high = "darkred", limits = c(1,40), breaks = c(5,10,15,20,25, 30, 35, 40), na.value = "transparent")+
-  geom_spatvector(data = protected, fill = 'transparent') +
+  geom_spatvector(data = protected_land, fill = 'transparent') +
   geom_spatvector(data = HV, fill = 'transparent', col = 'gray40')+
   geom_spatvector(data = Bulimbah, fill = 'transparent', col = 'gray40')+
   geom_spatvector(data = Bartopia, fill = 'transparent', col = 'gray40')+
@@ -1390,7 +990,7 @@ GAM_m <- ggplot() +
   geom_spatraster(data = gam_pred) +
   theme_minimal() +
   scale_fill_gradient(low = '#FFF5F0', high = 'darkred', limits = c(1,30), breaks = c(5,10,15,20,25, 30), na.value = 'transparent')+
-  geom_spatvector(data = protected, fill = 'transparent') +
+  geom_spatvector(data = protected_land, fill = 'transparent') +
   geom_spatvector(data = HV, fill = 'transparent', col = 'gray40')+
   geom_spatvector(data = Bulimbah, fill = 'transparent', col = 'gray40')+
   geom_spatvector(data = Bartopia, fill = 'transparent', col = 'gray40')+
@@ -1408,7 +1008,7 @@ GLM_m <- ggplot() +
   geom_spatraster(data = glm_pred) +
   theme_minimal() +
   scale_fill_gradient(low = '#FFF5F0', high = 'darkred', limits = c(1,40), breaks = c(5,10,15,20,25, 30, 35, 40), na.value = 'transparent')+
-  geom_spatvector(data = protected, fill = 'transparent') +
+  geom_spatvector(data = protected_land, fill = 'transparent') +
   geom_spatvector(data = HV, fill = 'transparent', col = 'gray40')+
   geom_spatvector(data = Bulimbah, fill = 'transparent', col = 'gray40')+
   geom_spatvector(data = Bartopia, fill = 'transparent', col = 'gray40')+
@@ -1426,7 +1026,7 @@ Sent <- ggplot() +
   geom_spatraster(data = Sent_m) +
   theme_minimal() +
   scale_fill_gradient(low = '#FFF5F0', high = 'darkred', limits = c(1,30), breaks = c(5,10,15,20,25, 30), na.value = 'transparent')+
-  geom_spatvector(data = protected, fill = 'transparent') +
+  geom_spatvector(data = protected_land, fill = 'transparent') +
   geom_spatvector(data = HV, fill = 'transparent', col = 'gray40')+
   geom_spatvector(data = Bulimbah, fill = 'transparent', col = 'gray40')+
   geom_spatvector(data = Bartopia, fill = 'transparent', col = 'gray40')+

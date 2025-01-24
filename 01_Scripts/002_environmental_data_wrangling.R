@@ -5,14 +5,18 @@
 ##### Fire frequency analysis ----
 # This script gathers together environmental data needed for predicting  fire frequency
 
+# R version 4.3.1
+
 # 1. Load required packages ----
-library(terra)
-library(dplyr)
+library(terra) # terra_1.7-78 
+library(dplyr) # dplyr_1.1.4 
+library(landform) # landform_0.2
+
 
 # Install gdalUtilities for working with large datasets
 #library(devtools)
 #install_github("JoshOBrien/gdalUtilities")
-library(gdalUtilities)
+library(gdalUtilities) # gdalUtilities_1.2.5
 
 
 # To improve our predictive accuracy for QPWS based fire frequency outside QPWS estates lets include environmental data
@@ -196,36 +200,8 @@ writeRaster(mean_FPC, './00_Data/Environmental_data/Outputs/FPC/FPC_all.tif')
 
 
 # 1.4 Elevation data ----
-# Download the DEM an access straight from download folder
+# Download the DEM ad access straight from download folder
 
-gdalwarp(srcfile = './00_Data/Environmental_data/69816/srtm-1sec-dem-v1-COG.tif',
-         dstfile = './00_Data/Environmental_data/Outputs/DEM/DEM_reproj.tif',
-         t_srs = 'EPSG:3577')
-
-# Take a look at the output
-DEM <- rast('./00_Data/Environmental_data/Outputs/DEM/DEM_reproj.tif')
-plot(DEM)
-DEM # Not quite the right resolution
-
-DEM <- crop(DEM, SEQ) # Crop the data
-DEM
-plot(DEM) # This is good, just need to fix the issue with resolution
-
-writeRaster(DEM, './00_Data/Environmental_data/Outputs/DEM/SEQ_DEM.tif')
-
-gdalwarp(srcfile = './00_Data/Environmental_data/Outputs/DEM/SEQ_DEM.tif',
-         dstfile = './00_Data/Environmental_data/Outputs/DEM/SEQ_DEM_reproj.tif',
-         tr = c(30,30)) 
-
-DEM1 <- rast('./00_Data/Environmental_data/Outputs/DEM/SEQ_DEM_reproj.tif')
-DEM1 # The resolution is closer to what we wanted but we need to crop this again
-DEM2 <- crop(DEM1, SEQ)
-DEM2 # This is better, more the extent we want
-
-writeRaster(DEM2, './00_Data/Environmental_data/Outputs/DEM/SEQ_DEM_reproj.tif', overwrite = T)
-
-
-# 1.4.1 Calculate slope, aspect and topographic position index (TPI) ----
 DEM <- rast('./00_Data/Environmental_data/69816/srtm-1sec-dem-v1-COG.tif') # Work from the original data
 
 
@@ -246,6 +222,9 @@ gdalwarp(srcfile = './00_Data/Environmental_data/Outputs/DEM/SEQ_DEM.tif',
          tr = c(30,30))
 DEM <- rast('./00_Data/Environmental_data/Outputs/DEM/SEQ_DEM_reproj.tif')
 
+
+
+# 1.4.1 Calculate slope, aspect and topographic position index (TPI) ----
 
 slope <- terrain(DEMqld, v = "slope", unit = "degrees")
 writeRaster(slope, './00_Data/Environmental_data/Outputs/DEM/slope.tif') # Save output
@@ -282,7 +261,6 @@ aspect
 writeRaster(aspect, './00_Data/Environmental_data/Outputs/DEM/SEQaspect.tif')
 
 
-library(landform)
 TP1 <- landform(DEMqld, class.type = "slope.position")
 TPI <- TP1$all
 
@@ -307,6 +285,10 @@ plot(TPI)
 TPI
 
 writeRaster(TPI, './00_Data/Environmental_data/Outputs/DEM/SEQ_TPI.tif')
+
+
+
+
 
 # 1.5 Solar radiation ----
 # Download .nc files from https://s3-ap-southeast-2.amazonaws.com/silo-open-data/Official/annual/index.html
@@ -1031,7 +1013,6 @@ plot(r21seq) # Slight rotation issue but I am unsure of why
 writeRaster(r21seq, "./00_Data/Environmental_data/Outputs/Solar_radiation/rad21_seq.tif")
 
 
-# NEED TO RUN
 r22 <- rast('./00_Data/Environmental_data/Solar_radiation/2022.radiation.nc')
 r22 <- crop(r22, QLD)
 rad_avg22 <- mean(r22)
@@ -1109,27 +1090,27 @@ writeRaster(solar_rad, './00_Data/Environmental_data/Outputs/Solar_radiation/Sol
 # This variable is included as nutrients influence plant growth which would then influence the occurrence of fire
 # As with solar radiation we will first crop to QLD and then run gdalwarp and then we can crop to SEQ
 
-# 0 to 0.5m
-clay0to0.5 <- rast("./00_Data/Environmental_data/Soil_clay/CLY_000_005_EV_N_P_AU_TRN_N_20210902.tif")
-clay0to0.5 <- crop(clay0to0.5, QLD)
-plot(clay0to0.5) # Check this worked correctly
+# 0 to 0.05m
+clay0to0.05 <- rast("./00_Data/Environmental_data/Soil_clay/CLY_000_005_EV_N_P_AU_TRN_N_20210902.tif")
+clay0to0.05 <- crop(clay0to0.05, QLD)
+plot(clay0to0.05) # Check this worked correctly
  
-writeRaster(clay0to0.5, "./00_Data/Environmental_data/Outputs/Soil_clay/QLD_Clay_0-05m.tif")
+writeRaster(clay0to0.05, "./00_Data/Environmental_data/Outputs/Soil_clay/QLD_Clay_0-05m.tif")
 
 gdalwarp(srcfile = "./00_Data/Environmental_data/Outputs/Soil_clay/QLD_Clay_0-05m.tif",
          dstfile = "./00_Data/Environmental_data/Outputs/Soil_clay/QLD_Clay_0-05m_reproj.tif",
          t_srs = 'EPSG:3577',
          tr = c(30,30))
 
-clay0to0.5 <- rast("./00_Data/Environmental_data/Outputs/Soil_clay/QLD_Clay_0-05m_reproj.tif")
-clay0to0.5 <- crop(clay0to0.5, SEQ)
-plot(clay0to0.5) # Check this looks right
+clay0to0.05 <- rast("./00_Data/Environmental_data/Outputs/Soil_clay/QLD_Clay_0-05m_reproj.tif")
+clay0to0.05 <- crop(clay0to0.05, SEQ)
+plot(clay0to0.05) # Check this looks right
 
-writeRaster(clay0to0.5, "./00_Data/Environmental_data/Outputs/Soil_clay/SEQ_Clay_0-05m.tif")
+writeRaster(clay0to0.05, "./00_Data/Environmental_data/Outputs/Soil_clay/SEQ_Clay_0-05m.tif")
 
 
 
-# 0.5 to 0.15m
+# 0.05 to 0.15m
 clay2 <- rast("./00_Data/Environmental_data/Soil_clay/CLY_005_015_EV_N_P_AU_TRN_N_20210902.tif")
 clay2 <- crop(clay2, QLD)
 plot(clay2) # Check this worked correctly

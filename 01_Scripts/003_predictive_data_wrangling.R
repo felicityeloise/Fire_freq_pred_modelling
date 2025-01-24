@@ -4,12 +4,26 @@
 ##### Fire frequency analysis ----
 # This script begins to produce the data needed for producing the predictive model for fire frequency
 
-# 1. Load required packages ----
-library(terra)
-library(dplyr)
-library(raster)
-library(tidyverse)
+# R version 4.3.1
 
+# 1. Load required packages ----
+library(terra) # terra_1.7-78 
+library(dplyr) # dplyr_1.1.4
+library(raster) # raster_3.6-23
+library(tidyverse) # tidyverse_2.0.0
+library(sf) # sf_1.0-14 
+library(tmap) # tmap_3.3-3
+
+# Other attached packages not called directly
+# lubridate_1.9.2 
+# forcats_1.0.0  
+# stringr_1.5.1   
+# purrr_1.0.2     
+# readr_2.1.4     
+# tidyr_1.3.1    
+# tibble_3.2.1    
+# ggplot2_3.5.1
+# sp_2.0-0
 
 # 2. Read in the data ----
 QPWS_SEQ_ff <- rast('./00_Data/Fire_data/Outputs/SEQ/QPWS_SEQ_freq_hydrographical_mask.tif')
@@ -114,8 +128,6 @@ View(Rand_fire)
 
 
 # Lets have a look at where the NA values may be falling
-library(sf)
-library(terra)
 Rand_fire <- read.csv('./00_Data/Fire_data/Outputs/Random_points_data/Fire_frequency_random_environmental_pres.csv', header = T)
 Rand_fire <- Rand_fire[, c(2:17)]
 head(Rand_fire)
@@ -123,7 +135,7 @@ pt_precip <- Rand_fire[is.na(Rand_fire$precipseason), c(4:5)]
 pt_precip_sf <- st_as_sf(pt_precip, coords = c(1:2), crs = 'EPSG:3577')
 precipseason <- rast('./00_Data/Environmental_data/Outputs/BioClim/precipseason_SEQ_cropped_focal.tif')
 
-library(tmap)
+
 tmap_mode("view")
 
 # NOTE the mapping does not seem to be working entirely correctly as some 'NA' values appear to be in cells with a value. This gives the general idea of what we are looking at though. 
@@ -248,7 +260,7 @@ write.csv(Rand_fire, './00_Data/Fire_data/Outputs/Random_points_data/Fire_freque
 SEQ <- vect('./00_Data/SEQ_bound/SEQ.gpkg')
 Aus <- vect('./00_Data/Australia_shapefile/STE11aAust.shp') %>% 
   project("EPSG:3577")
-canal_ar <- vect('./00_Data/Environmental_data/Outputs/Hydrographic_features/Canal_SEQ.gpkg')
+canal <- vect('./00_Data/Environmental_data/Outputs/Hydrographic_features/Canal_SEQ.gpkg')
 lake <- vect('./00_Data/Environmental_data/Outputs/Hydrographic_features/Lakes_SEQ.gpkg')
 pond <- vect('./00_Data/Environmental_data/Outputs/Hydrographic_features/Ponds_SEQ.gpkg')
 reservoir <- vect('./00_Data/Environmental_data/Outputs/Hydrographic_features/Reservoirs_SEQ.gpkg')
@@ -259,13 +271,13 @@ protected_land <-  vect('./00_Data/Protected_areas/Protected_areas.shp') %>%
   project('EPSG:3577') %>% 
   crop(Aus) %>% 
   crop(SEQ) %>% 
-  erase(canal_ar) %>%
+  erase(canal) %>%
   erase(lake) %>%
   erase(pond) %>%
   erase(reservoir) %>%
   erase(watercourse)
 
-rm(Aus, canal_ar, lake, pond, reservoir, SEQ, watercourse)
+rm(Aus, canal, lake, pond, reservoir, SEQ, watercourse)
 gc()
 
 # Create the background points
@@ -315,8 +327,8 @@ Sentinel_bg_ff <- Sentinel_bg_ff[c(1,2)]
 
 
 QPWS_bg_ff <- terra::extract(QPWS_SEQ_ff, bg_rand)
-unique(QPWS_bg_ff$QPWS_SEQ_freq_raster) # We expect to get NA values as there are locations with no fire history but we are replacing all values with 0 to treat them as background points
-QPWS_bg_ff$QPWS_SEQ_freq_raster <- 0
+unique(QPWS_bg_ff$QPWS_SEQ_freq_raster) # We expect to get NA values as there are locations with no fire history (e.g., any area outside QPWS estates), we will replace all NA values with 0.
+QPWS_bg_ff[is.na(QPWS_bg_ff$QPWS_SEQ_freq_raster),] <- 0
 unique(QPWS_bg_ff$QPWS_SEQ_freq_raster) # Check this has worked
 
 
@@ -482,7 +494,7 @@ Background_data$aspect <- ifelse(is.na(Background_data$aspect), aspect.na$aspect
 Background_data$topo_position <- ifelse(is.na(Background_data$topo_position), topo.na$Topo_position_index, Background_data$topo_position)
 Background_data$elevation <- ifelse(is.na(Background_data$elevation), elev.na$elevation, Background_data$elevation)
 unique(is.na(Background_data)) # Make sure all NA values have been replaced.
-
+head(Background_data)
 
 ## FINAL OUTPUT
 # Save the output

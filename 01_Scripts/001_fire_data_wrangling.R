@@ -4,13 +4,14 @@
 
 ##### Fire frequency analysis ----
 # This script gathers together data needed for determining the fire frequency from readily available fire history products including the QLD spatial catalogue and TERN.
+# R version 4.3.1
 
 # Load required packages
-library(fasterize)
-library(terra)
-library(ggplot2)
-library(dplyr)
-
+library(fasterize) # fasterize_1.0.5
+library(terra) # terra_1.7-78
+library(ggplot2) # ggplot2_3.5.1
+library(dplyr) # dplyr_1.1.4
+library(sf) # sf_1.0-14
 
 
 # 1. Read in QPWS fire history data ----
@@ -67,15 +68,15 @@ plot(QPWS)
 
 # 2. Lets create the hydrogaphic features mask for generating random points and masking these areas on the fire frequency map
 # 2.1 Read in hydrographic feature data
-canal_ar <- vect('./00_Data/Environmental_data/Hydrographic_features/Canal_areas.shp') %>% 
+canal <- vect('./00_Data/Environmental_data/Hydrographic_features/Canal_areas.shp') %>% 
   project('EPSG:3577') %>% 
   crop(SEQ)
-writeVector(canal_ar, './00_Data/Environmental_data/Outputs/Hydrographic_features/Canal_SEQ.gpkg')
+writeVector(canal, './00_Data/Environmental_data/Outputs/Hydrographic_features/Canal_SEQ.gpkg')
 
-lakes <- vect('./00_Data/Environmental_data/Hydrographic_features/Lakes.shp') %>% 
+lake <- vect('./00_Data/Environmental_data/Hydrographic_features/Lakes.shp') %>% 
   project('EPSG:3577') %>% 
   crop(SEQ)
-writeVector(lakes, './00_Data/Environmental_data/Outputs/Hydrographic_features/Lakes_SEQ.gpkg')
+writeVector(lake, './00_Data/Environmental_data/Outputs/Hydrographic_features/Lakes_SEQ.gpkg')
 
 
 pond <- vect('./00_Data/Environmental_data/Hydrographic_features/Pondage.shp') %>% 
@@ -90,21 +91,21 @@ reservoir <- vect('./00_Data/Environmental_data/Hydrographic_features/Reservoirs
 writeVector(reservoir, './00_Data/Environmental_data/Outputs/Hydrographic_features/Reservoirs_SEQ.gpkg')
 
 
-water_ar <- vect('./00_Data/Environmental_data/Hydrographic_features/Watercourse_areas.shp') %>% 
+watercourse <- vect('./00_Data/Environmental_data/Hydrographic_features/Watercourse_areas.shp') %>% 
   project('EPSG:3577') %>% 
   crop(SEQ)
-writeVector(water_ar, './00_Data/Environmental_data/Outputs/Hydrographic_features/Watercourses_SEQ.gpkg')
+writeVector(watercourse, './00_Data/Environmental_data/Outputs/Hydrographic_features/Watercourses_SEQ.gpkg')
 
 # Mask the hydrological features 
-QPWS_ff1 <- mask(QPWS_ff, canal_ar, inverse = T)
+QPWS_ff1 <- mask(QPWS_ff, canal, inverse = T)
 plot(QPWS_ff1)
-QPWS_ff2 <- mask(QPWS_ff1, lakes, inverse = T)
+QPWS_ff2 <- mask(QPWS_ff1, lake, inverse = T)
 plot(QPWS_ff2)
 QPWS_ff3 <- mask(QPWS_ff2, pond, inverse = T)
 plot(QPWS_ff3)
 QPWS_ff4 <- mask(QPWS_ff3, reservoir, inverse = T)
 plot(QPWS_ff4)
-QPWS_ff5 <- mask(QPWS_ff4, water_ar, inverse = T)
+QPWS_ff5 <- mask(QPWS_ff4, watercourse, inverse = T)
 plot(QPWS_ff5)
 writeRaster(QPWS_ff5, './00_Data/Fire_data/Outputs/SEQ/QPWS_SEQ_freq_hydrographical_mask.tif')
 
@@ -901,29 +902,28 @@ Sent2_ext8 <- rast('./00_Data/Fire_data/Outputs/Sentinel/Extent8/Sentinel2_ff_ex
 
 
 # Now when we put the two extents for each 'row' of the Sentinel image together
-# Here we want the maximum number as we have already calculated the number of fires through the years
-Sentinel_ff_ext1 <- mosaic(Sent1_ext1, Sent2_ext1, fun = "max")
+Sentinel_ff_ext1 <- mosaic(Sent1_ext1, Sent2_ext1, fun = "sum")
 writeRaster(Sentinel_ff_ext1, './00_Data/Fire_data/Outputs/Sentinel/Extent1/Sentinelff_ext1.tif')
 
-Sentinel_ff_ext2 <- mosaic(Sent1_ext2, Sent2_ext2, fun = "max")
+Sentinel_ff_ext2 <- mosaic(Sent1_ext2, Sent2_ext2, fun = "sum")
 writeRaster(Sentinel_ff_ext2, './00_Data/Fire_data/Outputs/Sentinel/Extent2/Sentinelff_ext2.tif')
 
-Sentinel_ff_ext3 <- mosaic(Sent1_ext3, Sent2_ext3, fun = "max")
+Sentinel_ff_ext3 <- mosaic(Sent1_ext3, Sent2_ext3, fun = "sum")
 writeRaster(Sentinel_ff_ext3, './00_Data/Fire_data/Outputs/Sentinel/Extent3/Sentinelff_ext3.tif')
 
-Sentinel_ff_ext4 <- mosaic(Sent1_ext4, Sent2_ext4, fun = "max")
+Sentinel_ff_ext4 <- mosaic(Sent1_ext4, Sent2_ext4, fun = "sum")
 writeRaster(Sentinel_ff_ext4, './00_Data/Fire_data/Outputs/Sentinel/Extent4/Sentinelff_ext4.tif')
 
-Sentinel_ff_ext5 <- mosaic(Sent1_ext5, Sent2_ext5, fun = "max")
+Sentinel_ff_ext5 <- mosaic(Sent1_ext5, Sent2_ext5, fun = "sum")
 writeRaster(Sentinel_ff_ext5, './00_Data/Fire_data/Outputs/Sentinel/Extent5/Sentinelff_ext5.tif')
 
-Sentinel_ff_ext6 <- mosaic(Sent1_ext6, Sent2_ext6, fun = "max")
+Sentinel_ff_ext6 <- mosaic(Sent1_ext6, Sent2_ext6, fun = "sum")
 writeRaster(Sentinel_ff_ext6, './00_Data/Fire_data/Outputs/Sentinel/Extent6/Sentinelff_ext6.tif')
 
-Sentinel_ff_ext7 <- mosaic(Sent1_ext7, Sent2_ext7, fun = "max")
+Sentinel_ff_ext7 <- mosaic(Sent1_ext7, Sent2_ext7, fun = "sum")
 writeRaster(Sentinel_ff_ext7, './00_Data/Fire_data/Outputs/Sentinel/Extent7/Sentinelff_ext7.tif')
 
-Sentinel_ff_ext8 <- mosaic(Sent1_ext8, Sent2_ext8, fun = "max")
+Sentinel_ff_ext8 <- mosaic(Sent1_ext8, Sent2_ext8, fun = "sum")
 writeRaster(Sentinel_ff_ext8, './00_Data/Fire_data/Outputs/Sentinel/Extent8/Sentinelff_ext8.tif')
 
 
@@ -942,20 +942,19 @@ gc()
 
 
 # Mask Sentinel_ff by the hydrological features, masking by one hydrographic feature and then the next
-
-Sentinel_ff1 <- mask(Sentinel_ff, canal_ar, inverse = T)
+Sentinel_ff <- rast('./00_Data/Fire_data/Outputs/Sentinel/Sentinel_ff.tif')
+Sentinel_ff1 <- mask(Sentinel_ff, canal, inverse = T)
 plot(Sentinel_ff1)
-Sentinel_ff2 <- mask(Sentinel_ff1, lakes, inverse = T)
+Sentinel_ff2 <- mask(Sentinel_ff1, lake, inverse = T)
 plot(Sentinel_ff2)
 Sentinel_ff3 <- mask(Sentinel_ff2, pond, inverse = T)
 plot(Sentinel_ff3)
 Sentinel_ff4 <- mask(Sentinel_ff3, reservoir, inverse = T)
 plot(Sentinel_ff4)
-Sentinel_ff5 <- mask(Sentinel_ff4, water_ar, inverse = T)
+Sentinel_ff5 <- mask(Sentinel_ff4, watercourse, inverse = T)
 plot(Sentinel_ff5)
 
-# Make fire frequency rounded
-Sentinel_ff5 <- round(Sentinel_ff5)
+
 unique(Sentinel_ff5$lztmre_qld_1987_dkaa2)
 
 writeRaster(Sentinel_ff5, './00_Data/Fire_data/Outputs/Sentinel/Sentinel_ff_hydrographical_mask_SEQ.tif')
@@ -975,11 +974,11 @@ Sentinel_ff <- rast("./00_Data/Fire_data/Outputs/Sentinel/Sentinel_ff_hydrograph
 QPWS_SEQ_ff <- rast("./00_Data/Fire_data/Outputs/SEQ/QPWS_SEQ_freq_hydrographical_mask.tif")
 
 # 7.1 Limit QPWS data to QPWS estates
-protected <- vect('./00_Data/Protected_areas/Protected_areas.shp')
-protected <- project(protected, y = 'EPSG:3577')
-protected <- crop(protected, QPWS_SEQ_ff)
+protected_land <- vect('./00_Data/Protected_areas/Protected_areas.shp')
+protected_land <- project(protected_land, y = 'EPSG:3577')
+protected_land <- crop(protected_land, QPWS_SEQ_ff)
 
-QPWS_SEQ_ff_mask <- mask(QPWS_SEQ_ff, protected) # Restrict QPWS fire frequency data to only those areas that are managed by QPWS
+QPWS_SEQ_ff_mask <- mask(QPWS_SEQ_ff, protected_land) # Restrict QPWS fire frequency data to only those areas that are managed by QPWS
 QPWS_SEQ_ff_mask # Check how this looks 
 
 plot(QPWS_SEQ_ff_mask)
@@ -1059,7 +1058,7 @@ Fire_transect_cor # Vary in the same direction, but a weak correlation between t
 SEQ <- vect('./00_Data/SEQ_bound/SEQ.gpkg')
 Aus <- vect('./00_Data/Australia_shapefile/STE11aAust.shp') %>% 
   project("EPSG:3577")
-canal_ar <- vect('./00_Data/Environmental_data/Outputs/Hydrographic_features/Canal_SEQ.gpkg')
+canal <- vect('./00_Data/Environmental_data/Outputs/Hydrographic_features/Canal_SEQ.gpkg')
 lake <- vect('./00_Data/Environmental_data/Outputs/Hydrographic_features/Lakes_SEQ.gpkg')
 pond <- vect('./00_Data/Environmental_data/Outputs/Hydrographic_features/Ponds_SEQ.gpkg')
 reservoir <- vect('./00_Data/Environmental_data/Outputs/Hydrographic_features/Reservoirs_SEQ.gpkg')
@@ -1070,13 +1069,13 @@ protected_land <-  vect('./00_Data/Protected_areas/Protected_areas.shp') %>%
   project('EPSG:3577') %>% 
   crop(Aus) %>% 
   crop(SEQ) %>% 
-  erase(canal_ar) %>%
+  erase(canal) %>%
   erase(lake) %>%
   erase(pond) %>%
   erase(reservoir) %>%
   erase(watercourse)
 
-rm(Aus, canal_ar, lake, pond, reservoir, SEQ, watercourse)
+rm(Aus, canal, lake, pond, reservoir, SEQ, watercourse)
 gc()
 
 # Convert to a simple features object
