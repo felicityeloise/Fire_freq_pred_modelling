@@ -1,19 +1,19 @@
 Generalised linear model for predicting fire frequency in South east Queensland using a Boosted regression tree. The following information provides details on model parameters and evluation metrics.
 Model = glm
-Model = Sentinel_ff ~ QPWS_ff + TWI + Temp_season + Precip_season + Diurnal_temp + Solar_rad + FPC + Soil_clay + Slope + Aspect + Elevation
+Model = Sentinel_ff ~ QPWS_ff + TWI + Temp_season + Precip_season + Diurnal_temp + FPC + Soil_clay + Slope + Aspect + TPI + Elevation
 Model = poisson
 Model = Pres_back[trainSet, ]
 Model = ifelse(Pres_back[trainSet, 13] == 1, 1, prNum/bgNum)
 The following model evaluation measures were calculated using precrec::evalmod(), by including mode = 'basic' this returns further measures beyond AUC ROC and precision-recall curves.
-Area Under the Reciever Operating Characteristic Curve (AUC ROC)  =  0.742
-Precision-Recall curve (PRC) =  0.742
-Classification error rate =  0.379
-Accuracy =  0.621
-Precision =  0.706
-Specificity (TNR) =  0.626
-Sensitivity (TPR) =  0.616
-F-score, a balanced measure of model performance based on precision and recall =  0.587
-Matthews correlation coefficient =  0.279
-Mean squared error = 2.492
-R-squared = -0.613
-Deviance of observed and predicted values = 1.639
+Area Under the Reciever Operating Characteristic Curve (AUC ROC)  =  0.668
+Precision-Recall curve (PRC) =  0.668
+Classification error rate =  0.416
+Accuracy =  0.584
+Precision =  0.651
+Specificity (TNR) =  0.584
+Sensitivity (TPR) =  0.583
+F-score, a balanced measure of model performance based on precision and recall =  0.544
+Matthews correlation coefficient =  0.198
+Mean squared error = 1.737
+R-squared = -0.273
+Deviance of observed and predicted values = 1.402

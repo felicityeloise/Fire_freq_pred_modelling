@@ -4,33 +4,33 @@ Predictors = TWI
 Predictors = Temp_season
 Predictors = Precip_season
 Predictors = Diurnal_temp
-Predictors = Solar_rad
 Predictors = FPC
 Predictors = Soil_clay
 Predictors = Slope
+Predictors = Aspect
 Response = Sentinel_ff
 Family = poisson
 Tree complexity = 8
 Learning rate = 0.1
 CV folds = 10
 Best number of trees = 50
-Time taken = 0.62 minutes
-Mean total deviance = 1707405.999
-Mean residual deviance = 1158992.03
-Estimated cv deviance = 1167219.554 and standard error = 6317.798
-training data correlation = 0.568
-CV correlation = 0.561 and standard error = 0.003
+Time taken = 0.63 minutes
+Mean total deviance = 728100.458
+Mean residual deviance = 513113.154
+Estimated cv deviance = 529227.963 and standard error = 6733.487
+training data correlation = 0.426
+CV correlation = 0.414 and standard error = 0.004
 The following model evaluation measures were calculated using precrec::evalmod(), by including mode = 'basic' this returns further measures beyond AUC ROC and precision-recall curves.
-Area Under the Reciever Operating Characteristic Curve (AUC ROC)  =  0.756
-Precision-Recall curve (PRC) =  0.762
+Area Under the Reciever Operating Characteristic Curve (AUC ROC)  =  0.669
+Precision-Recall curve (PRC) =  0.665
 Basic performance evaluation measures averages
-Classification error rate =  0.369
-Accuracy =  0.631
-Precision =  0.723
-Specificity (TNR) =  0.637
-Sensitivity (TPR) =  0.626
-F-score, a balanced measure of model performance based on precision and recall =  0.597
-Matthews correlation coefficient =  0.31
-Mean squared error = 2.34
-R-squared = -0.551
-Deviance of observed and predicted values = 1.892
+Classification error rate =  0.396
+Accuracy =  0.604
+Precision =  0.667
+Specificity (TNR) =  0.605
+Sensitivity (TPR) =  0.604
+F-score, a balanced measure of model performance based on precision and recall =  0.563
+Matthews correlation coefficient =  0.247
+Mean squared error = 1.89
+R-squared = -0.33
+Deviance of observed and predicted values = 2.464
