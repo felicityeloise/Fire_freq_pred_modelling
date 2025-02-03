@@ -135,7 +135,7 @@ Shrubland <- RE[RE$dbvg5m == 12 | RE$dbvg5m == 13 | RE$dbvg5m == 14, ]
 Shrubland$Agg <- "Grassland & Shrubland"
 
 Other <- RE[RE$dbvg5m == 15 | RE$dbvg5m == 16, ]
-Other$Agg <- "Other"
+Other$Agg <- "Wetland, Mangrove, Saltmarsh"
 
 
 set.seed(480)
@@ -166,162 +166,153 @@ unique(RE_pts$Agg)
 
 
 # Create a raster stack to extract information
-names(QPWS_ff) <- "Ground based"
-names(Sentinel_ff) <- "Satellite"
-names(glm_pred) <- "GLM"
+names(QPWS_ff) <- "Fire_freq"
+names(Sentinel_ff) <- "Fire_freq"
+names(glm_pred) <- "Fire_freq"
 
 glm_pred <- round(glm_pred)
 glm_pred[is.na(glm_pred)] <- 0 
 
-enviro_info <- c(QPWS_ff, Sentinel_ff, glm_pred)
 
 # Extract information
-enviro_info_pts <- extract(enviro_info, RE_pts)
-head(enviro_info_pts)
-unique(is.na(enviro_info_pts))
-dim(enviro_info_pts)
-
-
+QPWS_pts <- extract(QPWS_ff, RE_pts)
+QPWS_pts$Dataset <- "Ground_based"
+Sent_pts <- extract(Sentinel_ff, RE_pts)
+Sent_pts$Dataset <- "Satellite"
+glm_pts <- extract(glm_pred, RE_pts)
+glm_pts$Dataset <- "GLM"
 
 RE_ext <- extract(RE, RE_pts) # This contains the regional ecosystem, BVG, and estimated maximum and minimum fire frequencies
 head(RE_ext)
 RE_ext_subset <- RE_ext[, c(1,3,29,32:ncol(RE_ext))]
 head(RE_ext_subset)
+colnames(RE_ext_subset) <- c("ID", "re1", "dbvg5m", 'interval_min', "interval_max", "max_ff_est", "min_ff_est")
 unique(RE_ext_subset$re1)
 
-# 5. Create dataframe from extracted information ----
-colnames(enviro_info_pts) <- c("id.y", "Ground_based", "Satellite", "GLM")
 
-RE_randpt_fire <- RE_ext_subset
-RE_randpt_fire <- left_join(RE_ext_subset, enviro_info_pts, by = 'id.y')
-head(RE_randpt_fire)
-unique(RE_randpt_fire$re1)
 
-# Add BVG aggregation information
+# Now we are going to combine each fire dataset with the RE information, then this will be stacked so that we have one column for fire frequency
 RE_pts_df <- as.data.frame(RE_pts[, 35])
-RE_pts_df$id.y <- 1:4000
+RE_pts_df$ID <- 1:4000
 head(RE_pts_df)
-RE_randpt_fire <- left_join(RE_randpt_fire, RE_pts_df, by = 'id.y')
-head(RE_randpt_fire)
-unique(RE_randpt_fire$Agg)
+RE_ext_subset <- left_join(RE_ext_subset, RE_pts_df, by = 'ID')
+head(RE_ext_subset)
 
-# Overwrite NA values
+QPWS_RE <- left_join(RE_ext_subset, QPWS_pts, by = 'ID')
+head(QPWS_RE)
 
-RE_randpt_fire$Satellite[is.na(RE_randpt_fire$Satellite)] <- 0
-unique(is.na(RE_randpt_fire$Satellite))
+Sent_RE <- left_join(RE_ext_subset, Sent_pts, by = "ID")
+head(Sent_RE)
 
-RE_randpt_fire$Ground_based[is.na(RE_randpt_fire$Ground_based)] <- 0
+GLM_RE <- left_join(RE_ext_subset, glm_pts, by = "ID")
+head(GLM_RE)
+
+
+RE_randpt_fire <- rbind(QPWS_RE, Sent_RE, GLM_RE)
+head(RE_randpt_fire); tail(RE_randpt_fire); dim(RE_randpt_fire)
 unique(is.na(RE_randpt_fire))
-unique(RE_randpt_fire$Agg)
-head(RE_randpt_fire)
 
-# Create new dataset with average and standard deviation information for each dataset
-Rainforest_fire <- RE_randpt_fire[RE_randpt_fire$Agg == "Rainforest", ]
-Sclero_fire <- RE_randpt_fire[RE_randpt_fire$Agg == "Sclerophyll", ]
-Shrub_fire <- RE_randpt_fire[RE_randpt_fire$Agg == "Grassland & Shrubland", ]
-Other_fire <- RE_randpt_fire[RE_randpt_fire$Agg == "Other", ]
+# Overwrite NA values for fire frequency
+RE_randpt_fire$Fire_freq[is.na(RE_randpt_fire$Fire_freq)] <- 0
+unique(is.na(RE_randpt_fire))
+str(RE_randpt_fire)
 
+RE_randpt_fire$Dataset <- factor(RE_randpt_fire$Dataset, levels = c("GLM", "Ground_based", "Satellite"))
+RE_randpt_fire$Dataset <- factor(RE_randpt_fire$Dataset, levels = c("Ground_based", "Satellite", "GLM"))
 
-Rainforest_fire_df <- as.data.frame(rbind(mean(Rainforest_fire$Ground_based), mean(Rainforest_fire$Satellite), mean(Rainforest_fire$GLM)))
-colnames(Rainforest_fire_df) <- "fire_freq_mean"
-Rainforest_fire_df$Dataset <- as.factor(c("Ground_based", "Satellite", "GLM"))
-Rainforest_fire_df$sdv <- rbind(sd(Rainforest_fire$Ground_based), sd(Rainforest_fire$Satellite), sd(Rainforest_fire$GLM))
-Rainforest_fire_df$Min_ff <- round(mean(Rainforest_fire$min_ff_est))
-Rainforest_fire_df$Max_ff <- round(mean(Rainforest_fire$max_ff_est))
-Rainforest_fire_df$Agg <- as.factor("Rainforest")
-head(Rainforest_fire_df)
+str(RE_randpt_fire)
+unique(RE_randpt_fire$Fire_freq)
+RE_randpt_fire$Fire_freq <- round(RE_randpt_fire$Fire_freq)
 
 
+RE_randpt_fire$Agg <- factor(RE_randpt_fire$Agg)
+RE_randpt_fire$Agg <- factor(RE_randpt_fire$Agg, levels = c("Rainforest", "Sclerophyll", "Grassland & Shrubland", "Wetland, Mangrove, Saltmarsh"))
 
 
-Sclero_fire_df <- as.data.frame(rbind(mean(Sclero_fire$Ground_based), mean(Sclero_fire$Satellite), mean(Sclero_fire$GLM)))
-colnames(Sclero_fire_df) <- "fire_freq_mean"
-Sclero_fire_df$Dataset <- as.factor(c("Ground_based", "Satellite", "GLM"))
-Sclero_fire_df$sdv <- rbind(sd(Sclero_fire$Ground_based), sd(Sclero_fire$Satellite), sd(Sclero_fire$GLM))
-Sclero_fire_df$Min_ff <- round(mean(Sclero_fire$min_ff_est))
-Sclero_fire_df$Max_ff <- round(mean(Sclero_fire$max_ff_est))
-Sclero_fire_df$Agg <- as.factor("Sclero")
-head(Sclero_fire_df)
+# Labels for facetting, to add some extra information 
+Agg_labs <- c("Rainforest" = "(a) Rainforest \n BVG 1-7",
+              "Sclerophyll" = "(b) Sclerophyll \n BVG 8-27",
+              "Grassland & Shrubland" = '(c) Grassland & Shrubland \n BVG 28-33',
+            "Wetland, Mangrove, Saltmarsh" = "(d) Wetland, Mangrove, Saltmarsh \n BVG 34-35")
 
-
-
-Shrub_fire_df <- as.data.frame(rbind(mean(Shrub_fire$Ground_based), mean(Shrub_fire$Satellite), mean(Shrub_fire$GLM)))
-colnames(Shrub_fire_df) <- "fire_freq_mean"
-Shrub_fire_df$Dataset <- as.factor(c("Ground_based", "Satellite", "GLM"))
-Shrub_fire_df$sdv <- rbind(sd(Shrub_fire$Ground_based), sd(Shrub_fire$Satellite), sd(Shrub_fire$GLM))
-Shrub_fire_df$Min_ff <- round(mean(Shrub_fire$min_ff_est))
-Shrub_fire_df$Max_ff <- round(mean(Shrub_fire$max_ff_est))
-Shrub_fire_df$Agg <- as.factor("Grassland & Shrubland")
-head(Shrub_fire_df)
-
-
-
-
-Other_fire_df <- as.data.frame(rbind(mean(Other_fire$Ground_based), mean(Other_fire$Satellite), mean(Other_fire$GLM)))
-colnames(Other_fire_df) <- "fire_freq_mean"
-Other_fire_df$Dataset <- as.factor(c("Ground_based", "Satellite", "GLM"))
-Other_fire_df$sdv <- rbind(sd(Other_fire$Ground_based), sd(Other_fire$Satellite), sd(Other_fire$GLM))
-Other_fire_df$Min_ff <- round(mean(Other_fire$min_ff_est))
-Other_fire_df$Max_ff <- mean(Other_fire$max_ff_est)
-Other_fire_df$Agg <- as.factor("Other")
-head(Other_fire_df)
-# The average maximum fire frequency estimate returns a very small number here which seems unusual
-Other_fire$max_ff_est
-# The data is zero-inflated and we can see that we have only three other values of "4". Let's manually calculate the average instead
-Other_fire_df$Max_ff <- (0+4)/2
-head(Other_fire_df)
-
-
-
-RE_avg_fire <- rbind(Rainforest_fire_df, Sclero_fire_df, Shrub_fire_df, Other_fire_df)
-RE_avg_fire
-str(RE_avg_fire)
-RE_avg_fire$Dataset <- factor(RE_avg_fire$Dataset, levels = c("Ground_based", "Satellite", "GLM"))
-
-# For all BVG aggregations the minimum fire frequency estimate based on fire return interval guidelines for the past 35 years is 0. We won't draw this on the plot, just make note of this in the caption, we will only plot the maximum bar for each aggregation. Need to note the average maximum fire frequency estimate for the other BVG aggregate was manually calculated due to the zero-inflated data. 
-
-
-# 7. Produce plot ----
-# We have to manually plot the horizontal lines
-ggplot(RE_avg_fire, aes(x = Agg, y = fire_freq_mean, fill = Dataset)) +
-  geom_col(position = position_dodge()) +
-  geom_textsegment(aes(x = 0.55, xend = 1.45, y = 0, yend = 0, label = "Recommended frequency"), colour = 'gray60', vjust = 1.2)+
-  geom_segment(aes(x = 0.55, xend = 1.45, 0), colour = 'gray60', size = 1.5) +
-
-  geom_textsegment(aes(x = 1.55, xend = 2.45, y = 9, yend = 9, label = "Max. recommended"), colour = 'gray60', vjust = 1.2)+
-  geom_segment(aes(x = 1.55, xend = 2.45, 9), colour = 'gray60', size = 1.5)+
-  geom_textsegment(aes(x = 1.55, xend = 2.45, y = 3, yend = 3, label = "Min. recommended"), colour = 'gray60', vjust = -0.2)+
-  geom_segment(aes(x = 1.55, xend = 2.45, 3), colour = 'gray60', size = 1.5)+
-  
-  geom_textsegment(aes(x = 2.55, xend = 3.45, y = 9, yend = 9, label = "Max. recommended"), colour = 'gray60', vjust = 1.2)+
-  geom_segment(aes(x = 2.55, xend = 3.45, 9), colour = 'gray60', size = 1.5)+
-  geom_textsegment(aes(x = 2.55, xend = 3.45, y = 2, yend = 2, label = "Min. recommended"), colour = 'gray60', vjust = -0.2)+
-  geom_segment(aes(x = 2.55, xend = 3.45, 2), colour = 'gray60', size = 1.5)+
-  
-  geom_textsegment(aes(x = 3.55, xend = 4.45, y= 2, yend = 2, label = "Max. recommended"), colour = 'gray60', vjust = -0.2)+
-  geom_segment(aes(x = 3.55, xend = 4.45, y = 2), colour = 'gray60', size = 1.5) +
-  geom_textsegment(aes(x = 3.55, xend = 4.45, y = 0, yend = 0, label = "Min. recommended"), colour = 'gray60', vjust = 1.2) +
-  geom_segment(aes(x = 3.55, xend = 4.45, y = 0), colour = 'gray60', size = 1.5) +
-    
-  geom_errorbar(aes(ymin = ifelse(fire_freq_mean - sdv <0, 0, fire_freq_mean - sdv), ymax = round(fire_freq_mean + sdv)), position = position_dodge(0.9), width = 0.1)+
-  scale_y_continuous(limits = c(0, 9.1), breaks = seq(0,9,1))+
-  scale_fill_manual(values = c('gray80', 'steelblue', '#492050'), labels = c("Ground based", "Sentinel", "GLM"))+
+ggplot(data = RE_randpt_fire, aes(x = Fire_freq, fill = Dataset))+
+  geom_histogram(bins = 11, position = position_dodge(0.5))+
+  scale_fill_manual(values = c("gray80", "steelblue", "#492050"), labels = c("Ground based", "Satellite", "GLM"))+
   theme_bw()+
-  theme(panel.grid.major = element_blank(),
+  scale_y_continuous(expression(bold("Count")), limits = c(0,900), breaks = seq(0,900,100)) +
+  scale_x_continuous(expression(bold("Fire frequency")), breaks = seq(0,10,1)) +
+  facet_wrap(vars(RE_randpt_fire$Agg), labeller = as_labeller(Agg_labs), scales = 'fixed', axes = "all")+
+  theme(axis.line = element_line(colour = 'black'),
+        panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
+        strip.text = element_text(face = 'bold', size = 20),
+        axis.text = element_text(size = 14),
+        axis.title = element_text(size = 20),
         legend.title = element_blank(),
-        axis.title = element_text(size = 20, face = 'bold'),
-        axis.text = element_text(size = 15),
-        legend.text = element_text(size = 20),
-        legend.position = "bottom")+
-  labs(x = expression(bold("Broad vegetation aggregation")), y = expression(bold("Fire frequency")))+
-  scale_x_discrete(labels = c("Rainforest \n BVG 1-7", "Sclerophyll \n BVG 8-27", "Grassland & Shrubland \n BVG 28-33", "Other \n BVG 34-35"))
-  
-
-  
-
+        legend.text = element_text(size = 18),
+        legend.position = "bottom")
 
 
 save.image('./02_Workspaces/005_predictive_model_validations_vegetation.RData')
 #load('./02_Workspaces/005_predictive_model_validations_vegetation.RData')
 
+
+# Lets do this again but add predictions from the GAM as well
+names(gam_pred) <- "Fire_freq"
+
+gam_pred <- round(gam_pred)
+gam_pred[is.na(gam_pred)] <- 0 
+
+
+# Extract information
+GAM_pts <- extract(gam_pred, RE_pts)
+GAM_pts$Dataset <- "GAM"
+
+
+
+GAM_RE <- left_join(RE_ext_subset, GAM_pts, by = "ID")
+head(GAM_RE)
+
+
+RE_randpt_fire <- rbind(QPWS_RE, Sent_RE, GLM_RE, GAM_RE)
+head(RE_randpt_fire); tail(RE_randpt_fire); dim(RE_randpt_fire)
+unique(is.na(RE_randpt_fire))
+
+# Overwrite NA values for fire frequency
+RE_randpt_fire$Fire_freq[is.na(RE_randpt_fire$Fire_freq)] <- 0
+unique(is.na(RE_randpt_fire))
+str(RE_randpt_fire)
+
+RE_randpt_fire$Dataset <- factor(RE_randpt_fire$Dataset, levels = c("GAM", "GLM", "Ground_based", "Satellite"))
+RE_randpt_fire$Dataset <- factor(RE_randpt_fire$Dataset, levels = c("Ground_based", "Satellite", "GLM", "GAM"))
+
+str(RE_randpt_fire)
+unique(RE_randpt_fire$Fire_freq)
+RE_randpt_fire$Fire_freq <- round(RE_randpt_fire$Fire_freq)
+
+
+RE_randpt_fire$Agg <- factor(RE_randpt_fire$Agg)
+RE_randpt_fire$Agg <- factor(RE_randpt_fire$Agg, levels = c("Rainforest", "Sclerophyll", "Grassland & Shrubland", "Wetland, Mangrove, Saltmarsh"))
+
+
+
+ggplot(data = RE_randpt_fire, aes(x = Fire_freq, fill = Dataset))+
+  geom_histogram(bins = 11, position = position_dodge(0.5))+
+  scale_fill_manual(values = c("gray80", "steelblue", "#492050", "#AAA970"), labels = c("Ground based", "Satellite", "GLM", "GAM"))+
+  theme_bw()+
+  scale_y_continuous(expression(bold("Count")), limits = c(0,900), breaks = seq(0,900,100)) +
+  scale_x_continuous(expression(bold("Fire frequency")), breaks = seq(0,10,1)) +
+  facet_wrap(vars(RE_randpt_fire$Agg), labeller = as_labeller(Agg_labs), scales = 'fixed', axes = "all")+
+  theme(axis.line = element_line(colour = 'black'),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        strip.text = element_text(face = 'bold', size = 20),
+        axis.text = element_text(size = 14),
+        axis.title = element_text(size = 20),
+        legend.title = element_blank(),
+        legend.text = element_text(size = 18),
+        legend.position = "bottom")
+
+
+
+table(RE_randpt_fire$Dataset, RE_randpt_fire$Fire_freq)
