@@ -176,7 +176,7 @@ glm_pred[is.na(glm_pred)] <- 0
 
 # Extract information
 QPWS_pts <- extract(QPWS_ff, RE_pts)
-QPWS_pts$Dataset <- "Ground_based"
+QPWS_pts$Dataset <- "Public"
 Sent_pts <- extract(Sentinel_ff, RE_pts)
 Sent_pts$Dataset <- "Satellite"
 glm_pts <- extract(glm_pred, RE_pts)
@@ -217,8 +217,8 @@ RE_randpt_fire$Fire_freq[is.na(RE_randpt_fire$Fire_freq)] <- 0
 unique(is.na(RE_randpt_fire))
 str(RE_randpt_fire)
 
-RE_randpt_fire$Dataset <- factor(RE_randpt_fire$Dataset, levels = c("GLM", "Ground_based", "Satellite"))
-RE_randpt_fire$Dataset <- factor(RE_randpt_fire$Dataset, levels = c("Ground_based", "Satellite", "GLM"))
+RE_randpt_fire$Dataset <- factor(RE_randpt_fire$Dataset, levels = c("GLM", "Public", "Satellite"))
+RE_randpt_fire$Dataset <- factor(RE_randpt_fire$Dataset, levels = c("Public", "Satellite", "GLM"))
 
 str(RE_randpt_fire)
 unique(RE_randpt_fire$Fire_freq)
@@ -237,7 +237,7 @@ Agg_labs <- c("Rainforest" = "(a) Rainforest \n BVG 1-7",
 
 ggplot(data = RE_randpt_fire, aes(x = Fire_freq, fill = Dataset))+
   geom_histogram(bins = 11, position = position_dodge(0.5))+
-  scale_fill_manual(values = c("gray80", "steelblue", "#492050"), labels = c("Ground based", "Satellite", "GLM"))+
+  scale_fill_manual(values = c("gray80", "steelblue", "#492050"), labels = c("Public", "Satellite", "GLM"))+
   theme_bw()+
   scale_y_continuous(expression(bold("Count")), limits = c(0,900), breaks = seq(0,900,100)) +
   scale_x_continuous(expression(bold("Fire frequency")), breaks = seq(0,10,1)) +
@@ -283,8 +283,8 @@ RE_randpt_fire$Fire_freq[is.na(RE_randpt_fire$Fire_freq)] <- 0
 unique(is.na(RE_randpt_fire))
 str(RE_randpt_fire)
 
-RE_randpt_fire$Dataset <- factor(RE_randpt_fire$Dataset, levels = c("GAM", "GLM", "Ground_based", "Satellite"))
-RE_randpt_fire$Dataset <- factor(RE_randpt_fire$Dataset, levels = c("Ground_based", "Satellite", "GLM", "GAM"))
+RE_randpt_fire$Dataset <- factor(RE_randpt_fire$Dataset, levels = c("GAM", "GLM", "Public", "Satellite"))
+RE_randpt_fire$Dataset <- factor(RE_randpt_fire$Dataset, levels = c("Public", "Satellite", "GLM", "GAM"))
 
 str(RE_randpt_fire)
 unique(RE_randpt_fire$Fire_freq)
@@ -297,10 +297,10 @@ RE_randpt_fire$Agg <- factor(RE_randpt_fire$Agg, levels = c("Rainforest", "Scler
 
 
 ggplot(data = RE_randpt_fire, aes(x = Fire_freq, fill = Dataset))+
-  geom_histogram(bins = 11, position = position_dodge(0.5))+
-  scale_fill_manual(values = c("gray80", "steelblue", "#492050", "#AAA970"), labels = c("Ground based", "Satellite", "GLM", "GAM"))+
+  geom_histogram(bins = 11, position = position_dodge(0.7))+
+  scale_fill_manual(values = c("gray80", "steelblue", "#492050", "#AAA970"), labels = c("Public", "Satellite", "GLM", "GAM"))+
   theme_bw()+
-  scale_y_continuous(expression(bold("Count")), limits = c(0,900), breaks = seq(0,900,100)) +
+  scale_y_continuous(expression(bold("Count of cells")), limits = c(0,900), breaks = seq(0,900,100)) +
   scale_x_continuous(expression(bold("Fire frequency")), breaks = seq(0,10,1)) +
   facet_wrap(vars(RE_randpt_fire$Agg), labeller = as_labeller(Agg_labs), scales = 'fixed', axes = "all")+
   theme(axis.line = element_line(colour = 'black'),

@@ -150,7 +150,16 @@ transects_v <- vect(transects_sf) %>%
 plet(transects_v)
 
 
+pred_ff <- mosaic(glm_pred, gam_pred, fun = "max")
+pred_ff
+
+transects_pred <- extract(pred_ff, transects_v)
 transects_rand <- extract(QPWS_ff, transects_v) # QPWS
+transects_fire$QPWS <- transects_rand$QPWS_SEQ_freq_raster
+transects_fire$pred <- round(transects_pred$lyr1)
+
+
+
 transects_sent <- extract(Sentinel_ff, transects_v) 
 transects_unwt <- extract(unweighted_pred, transects_v)
 transects_dwt <- extract(down_wt_pred, transects_v)
@@ -275,8 +284,7 @@ GAM_m <- ggplot() +
   theme_cowplot(font_size = 17)+  
   scale_fill_viridis_c(na.value = 'transparent', limits = c(0.51,17), breaks = seq(1,18,1), direction = 1) +
   labs(fill = 'Fire frequency')+
-  annotation_scale(location = "bl", style = 'ticks', pad_y = unit(0.5, 'cm'), pad_x = unit(15, 'cm'), text_cex = 2)+
-  annotation_north_arrow(location = "bl", which_north = T, height = unit(2, "cm"), width = unit(1.75, "cm"), pad_y = unit(0.1, "cm"), pad_x = unit(25, 'cm'), style = north_arrow_fancy_orienteering) +
+  annotation_north_arrow(location = "br", which_north = T, height = unit(2, "cm"), width = unit(1.75, "cm"), pad_y = unit(0.1, "cm"), pad_x = unit(-0.3, 'cm'), style = north_arrow_fancy_orienteering) +
   theme(legend.key.height = unit(2.5, 'cm'),
         legend.key.width = unit(1, 'cm'),
         legend.title = element_text(face = 'bold', size = 25),
@@ -327,8 +335,7 @@ QPWS <- ggplot()+
   scale_fill_viridis_c(na.value = 'transparent', limits = c(1,17), breaks = seq(1,18,1), direction = 1) +
   geom_spatvector(data = SEQ, fill = 'transparent', col = 'black')+
   labs(fill = 'Fire frequency')+
-  annotation_scale(location = "bl", style = 'ticks', pad_y = unit(0.5, 'cm'), pad_x = unit(15, 'cm'), text_cex = 2)+
-  annotation_north_arrow(location = "bl", which_north = T, height = unit(2, "cm"), width = unit(1.75, "cm"), pad_y = unit(0.1, "cm"), pad_x = unit(25, 'cm'), style = north_arrow_fancy_orienteering) +
+  annotation_north_arrow(location = "br", which_north = T, height = unit(2, "cm"), width = unit(1.75, "cm"), pad_y = unit(0.1, "cm"), pad_x = unit(-0.3, 'cm'), style = north_arrow_fancy_orienteering) +
   theme(legend.key.height = unit(2.5, 'cm'),
         legend.key.width = unit(1, 'cm'),
         legend.title = element_text(face = 'bold', size = 25),
@@ -487,7 +494,7 @@ axis(side = 2, at = seq(0, 0.02, 0.01), cex.axis = 1.8, line = 0.3, las = 1)
 #mtext(expression(bold("Density")), side = 2, cex = 2.2, line = 3)
 
 par(xpd = NA)
-legend('topright', inset = c(-0.52, -0.35), fill = c('gray80', 'steelblue', "#492050", '#AAA970', '#2A6D7A','#579C97','#8FCCB4'), legend = c("Ground based", "Satellite", "GLM", "GAM", "Unweigthed BRT", "Down-weighted BRT", "IWLR BRT"), cex = 2.5, bty = 'n', border = 'transparent')
+legend('topright', inset = c(-0.52, -0.35), fill = c('gray80', 'steelblue', "#492050", '#AAA970', '#2A6D7A','#579C97','#8FCCB4'), legend = c("Public", "Satellite", "GLM", "GAM", "Unweigthed BRT", "Down-weighted BRT", "IWLR BRT"), cex = 2.5, bty = 'n', border = 'transparent')
 par(xpd = F)
 
 

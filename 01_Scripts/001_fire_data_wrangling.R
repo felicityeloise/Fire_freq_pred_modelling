@@ -726,7 +726,7 @@ Y2016 <- rast("/vsicurl/https://data.tern.org.au/rs/public/data/landsat/burnt_ar
 
 
 Y2017 <- rast("/vsicurl/https://data.tern.org.au/rs/public/data/sentinel2/fire_scars/annual_fire_scars/cvmsre_qld_2017_afma2.tif") %>% 
-  crop(extent8) %>% 
+  crop(extent7) %>% 
   classify(cbind(NaN, 0)) %>% 
   classify(cbind(0,0)) %>% 
   classify(cbind(1,1)) %>% 
@@ -744,7 +744,7 @@ Y2017 <- rast("/vsicurl/https://data.tern.org.au/rs/public/data/sentinel2/fire_s
 
 
 Y2018 <- rast("/vsicurl/https://data.tern.org.au/rs/public/data/sentinel2/fire_scars/annual_fire_scars/cvmsre_qld_2018_afma2.tif") %>% 
-  crop(extent8) %>% 
+  crop(extent7) %>% 
   classify(cbind(NaN, 0)) %>% 
   classify(cbind(0,0)) %>% 
   classify(cbind(1,1)) %>% 
@@ -763,7 +763,7 @@ Y2018 <- rast("/vsicurl/https://data.tern.org.au/rs/public/data/sentinel2/fire_s
 
 
 Y2019 <- rast("/vsicurl/https://data.tern.org.au/rs/public/data/sentinel2/fire_scars/annual_fire_scars/cvmsre_qld_2019_afma2.tif") %>% 
-  crop(extent8) %>% 
+  crop(extent7) %>% 
   classify(cbind(NaN, 0)) %>% 
   classify(cbind(0,0)) %>% 
   classify(cbind(1,1)) %>% 
@@ -782,7 +782,7 @@ Y2019 <- rast("/vsicurl/https://data.tern.org.au/rs/public/data/sentinel2/fire_s
 
 
 Y2020 <- rast("/vsicurl/https://data.tern.org.au/rs/public/data/sentinel2/fire_scars/annual_fire_scars/cvmsre_qld_2020_afma2.tif") %>% 
-  crop(extent8) %>% 
+  crop(extent7) %>% 
   classify(cbind(NaN, 0)) %>% 
   classify(cbind(0,0)) %>% 
   classify(cbind(1,1)) %>% 
@@ -801,7 +801,7 @@ Y2020 <- rast("/vsicurl/https://data.tern.org.au/rs/public/data/sentinel2/fire_s
 
 
 Y2021 <- rast("/vsicurl/https://data.tern.org.au/rs/public/data/sentinel2/fire_scars/annual_fire_scars/cvmsre_qld_2021_afma2.tif") %>% 
-  crop(extent8) %>% 
+  crop(extent7) %>% 
   classify(cbind(NaN, 0)) %>% 
   classify(cbind(0,0)) %>% 
   classify(cbind(1,1)) %>% 
@@ -819,7 +819,7 @@ Y2021 <- rast("/vsicurl/https://data.tern.org.au/rs/public/data/sentinel2/fire_s
 
 
 Y2022 <- rast("./vsicurl/https://data.tern.org.au/rs/public/data/sentinel2/fire_scars/annual_fire_scars/cvmsre_qld_2022_afma2.tif") %>% 
-  crop(extent8) %>% 
+  crop(extent7) %>% 
   classify(cbind(NaN, 0)) %>% 
   classify(cbind(0,0)) %>% 
   classify(cbind(1,1)) %>% 
@@ -835,8 +835,8 @@ Y2022 <- rast("./vsicurl/https://data.tern.org.au/rs/public/data/sentinel2/fire_
   classify(cbind(11,1)) %>% 
   classify(cbind(12,1))
 
-Y2023 <- rast('./vsicurl/https://data.tern.org.au/rs/public/data/sentinel2/fire_scars/annual_fire_scars/cvmsre_qld_2022_afma2.tif') %>% 
-  crop(extent8) %>% 
+Y2023 <- rast('./vsicurl/https://data.tern.org.au/rs/public/data/sentinel2/fire_scars/annual_fire_scars/cvmsre_qld_2023_afma2.tif') %>% 
+  crop(extent7) %>% 
   classify(cbind(NaN, 0)) %>% 
   classify(cbind(0,0)) %>% 
   classify(cbind(1,1)) %>% 
@@ -893,6 +893,8 @@ Sent2_ext6 <- rast('./00_Data/Fire_data/Outputs/Sentinel/Extent6/Sentinel2_ff_ex
 
 Sent1_ext7 <- rast('./00_Data/Fire_data/Outputs/Sentinel/Extent7/Sentinel1_ff_ext7.tif')
 Sent2_ext7 <- rast('./00_Data/Fire_data/Outputs/Sentinel/Extent7/Sentinel2_ff_ext7.tif')
+plot(Sent1_ext7)
+plot(Sent2_ext7)
 
 Sent1_ext8 <- rast('./00_Data/Fire_data/Outputs/Sentinel/Extent8/Sentinel1_ff_ext8.tif')
 Sent2_ext8 <- rast('./00_Data/Fire_data/Outputs/Sentinel/Extent8/Sentinel2_ff_ext8.tif')
@@ -921,11 +923,12 @@ Sentinel_ff_ext6 <- mosaic(Sent1_ext6, Sent2_ext6, fun = "sum")
 writeRaster(Sentinel_ff_ext6, './00_Data/Fire_data/Outputs/Sentinel/Extent6/Sentinelff_ext6.tif')
 
 Sentinel_ff_ext7 <- mosaic(Sent1_ext7, Sent2_ext7, fun = "sum")
+
+plot(Sentinel_ff_ext7)
 writeRaster(Sentinel_ff_ext7, './00_Data/Fire_data/Outputs/Sentinel/Extent7/Sentinelff_ext7.tif')
 
 Sentinel_ff_ext8 <- mosaic(Sent1_ext8, Sent2_ext8, fun = "sum")
 writeRaster(Sentinel_ff_ext8, './00_Data/Fire_data/Outputs/Sentinel/Extent8/Sentinelff_ext8.tif')
-
 
 
 # 6. Create QLD Sentinel fire frequency data layer ----
@@ -966,6 +969,8 @@ Sent_foc # The same range of values
 names(Sent_foc) <- "Sentinel_fire_freq"
 Sent_foc <- round(Sent_foc)
 writeRaster(Sent_foc, './00_Data/Fire_data/Outputs/Sentinel/Sentinel_ff_hydrographical_mask_SEQ_focal.tif')
+
+plot(Sent_foc)
 
 
 # 7. Compare the two fire frequency datasets ----
