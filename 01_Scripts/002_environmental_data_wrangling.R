@@ -100,14 +100,14 @@ writeRaster(precipr1, '00_Data/Environmental_data/Outputs/BioClim/precipseason_S
 # 1.3 Foliage projective cover ----
 FPC14 <- rast('./00_Data/Environmental_data/FPC/DP_QLD_FPC2014.tif')
 unique(FPC14$DP_QLD_FPC2014)
-# Need to do some more adjustments to this data - metadata states that data ranges between 100-200 which is equivalent to 0-100% FPC. values erroneously predicted above 100% or below 0% have been classed as 200 and 100 respectively. Zero values indicate NULL data. The data actually seems to be ranging between 88-213. Post 2014, values range between 0-100 which would denote the % cover without any further changes being required. Let's take a look at the data in ArcGIS as well to make sure this is true for the 2014 dataset. Looking in ArcGIS we can see that the actual values do range between 100-200 with additional 0 for NULL data.
+# Need to do some more adjustments to this data - metadata states that data ranges between 100-200 which is equivalent to 0-100% FPC. values erroneously predicted above 100% or below 0% have been classed as above 200 and below 100 respectively. Zero values indicate NULL data. The data actually seems to be ranging between 88-213. Post 2014, values range between 0-100 which would denote the % cover without any further changes being required. Let's take a look at the data in ArcGIS as well to make sure this is true for the 2014 dataset.
 
 
 # Create matrices for reclassification
 
 A = matrix(
-  c(88:99),
-  nrow = 12,
+  c(88:99, 201:213),
+  nrow = 25,
   ncol = 2)
 A[,2] <- 0
 
@@ -118,15 +118,8 @@ B = matrix(
 )
 B <- cbind(B, 0:100)
 
-C = matrix(
-  c(201:213),
-  nrow = 13,
-  ncol = 2
-)
-C[,2] <- 100
 
-
-reclas <- rbind(A, B, C)
+reclas <- rbind(A, B)
 
 # Now reclassify FPC14
 FPC14r <- classify(FPC14, rcl = reclas)
@@ -184,17 +177,17 @@ writeRaster(FPC21seq, './00_Data/Environmental_data/Outputs/FPC/FPC21_SEQ.tif')
 
 
 # 1.3.2 Combine the FPC data into one raster ----
-FPC14 <- resample(FPC14, FPC18) # Need the extents to match
+FPC14seq <- resample(FPC14seq, FPC18seq) # Need the extents to match
 
 #stack <- c(FPC14,FPC18,FPC19,FPC20,FPC21)
 # This produces a raster with each year as a separate raster layer. But what we want, because FPC2014 is from 1988-2014 and the others are separate years, we need an average FPC value across the years.
 
-FPC <- terra::mean(FPC14, FPC18, FPC19, FPC20, FPC21)
+FPC <- terra::mean(FPC14seq, FPC18seq, FPC19seq, FPC20seq, FPC21seq)
 FPC
 plot(FPC)
 
 
-writeRaster(mean_FPC, './00_Data/Environmental_data/Outputs/FPC/FPC_all.tif')
+writeRaster(FPC, './00_Data/Environmental_data/Outputs/FPC/FPC_all.tif')
 
 
 
@@ -290,802 +283,7 @@ writeRaster(TPI, './00_Data/Environmental_data/Outputs/DEM/SEQ_TPI.tif')
 
 
 
-# 1.5 Solar radiation ----
-# Download .nc files from https://s3-ap-southeast-2.amazonaws.com/silo-open-data/Official/annual/index.html
-
-
-# First crop the data down to QLD then run gdalwarp and then crop to SEQ to reduce run times
-Aus <- vect('./00_Data/Australia_shapefile/STE11aAust.shp')
-QLD <- subset(Aus, Aus$STATE_NAME == "Queensland")
-QLD <- project(QLD, "EPSG:4326")
-
-SEQ <- vect('./00_Data/SEQ_bound/SEQ.gpkg') # Make sure we have the original SEQ file here
-
-
-# Note that the Averaged files and reproj files were deleted due to their large space requirements
-# These steps take ~ 1 hour
-r87 <- rast('./00_Data/Environmental_data/Solar_radiation/1987.radiation.nc')
-r87 <- crop(r87, QLD)
-rad_avg87 <- mean(r87)
-plot(rad_avg87)
-writeRaster(rad_avg87, './00_Data/Environmental_data/Outputs/Solar_radiation/Averaged/rad87_avg.tif')
-
-gdalwarp(srcfile = './00_Data/Environmental_data/Outputs/Solar_radiation/Averaged/rad87_avg.tif',
-         dstfile = './00_Data/Environmental_data/Outputs/Solar_radiation/r87avg_reproj.tif',
-         t_srs = 'EPSG:3577',
-         tr = c(30,30))
-
-r87 <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/r87avg_reproj.tif')
-plot(r87)
-r87seq <- crop(r87, SEQ)
-plot(r87seq) # Slight rotation issue but I am unsure of why
-
-writeRaster(r87seq, "./00_Data/Environmental_data/Outputs/Solar_radiation/rad87_seq.tif")
-
-
-
-r88 <- rast('./00_Data/Environmental_data/Solar_radiation/1988.radiation.nc')
-r88 <- crop(r88, QLD)
-rad_avg88 <- mean(r88)
-plot(rad_avg88)
-writeRaster(rad_avg88, './00_Data/Environmental_data/Outputs/Solar_radiation/Averaged/rad88_avg.tif')
-
-
-gdalwarp(srcfile = './00_Data/Environmental_data/Outputs/Solar_radiation/Averaged/rad88_avg.tif',
-         dstfile = './00_Data/Environmental_data/Outputs/Solar_radiation/r88avg_reproj.tif',
-         t_srs = 'EPSG:3577',
-         tr = c(30,30))
-
-r88 <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/r88avg_reproj.tif')
-
-r88seq <- crop(r88, SEQ)
-plot(r88seq) 
-
-writeRaster(r88seq, "./00_Data/Environmental_data/Outputs/Solar_radiation/rad88_seq.tif")
-
-
-r89 <- rast('./00_Data/Environmental_data/Solar_radiation/1989.radiation.nc')
-r89 <- crop(r89, QLD)
-rad_avg89 <- mean(r89)
-writeRaster(rad_avg89, './00_Data/Environmental_data/Outputs/Solar_radiation/Averaged/rad89_avg.tif')
-
-gdalwarp(srcfile = './00_Data/Environmental_data/Outputs/Solar_radiation/Averaged/rad89_avg.tif',
-         dstfile = './00_Data/Environmental_data/Outputs/Solar_radiation/r89avg_reproj.tif',
-         t_srs = 'EPSG:3577',
-         tr = c(30,30))
-
-r89 <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/r89avg_reproj.tif')
-
-r89seq <- crop(r89, SEQ)
-plot(r89seq) # Slight rotation issue but I am unsure of why
-
-writeRaster(r89seq, "./00_Data/Environmental_data/Outputs/Solar_radiation/rad89_seq.tif")
-
-
-
-
-
-
-
-r90 <- rast('./00_Data/Environmental_data/Solar_radiation/1990.radiation.nc')
-r90 <- crop(r90, QLD)
-rad_avg90 <- mean(r90)
-writeRaster(rad_avg90, './00_Data/Environmental_data/Outputs/Solar_radiation/Averaged/rad90_avg.tif')
-
-gdalwarp(srcfile = './00_Data/Environmental_data/Outputs/Solar_radiation/Averaged/rad90_avg.tif',
-         dstfile = './00_Data/Environmental_data/Outputs/Solar_radiation/r90avg_reproj.tif',
-         t_srs = 'EPSG:3577',
-         tr = c(30,30))
-
-r90 <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/r90avg_reproj.tif')
-
-r90seq <- crop(r90, SEQ)
-plot(r90seq) # Slight rotation issue but I am unsure of why
-
-writeRaster(r90seq, "./00_Data/Environmental_data/Outputs/Solar_radiation/rad90_seq.tif")
-
-
-
-
-r91 <- rast('./00_Data/Environmental_data/Solar_radiation/1991.radiation.nc')
-r91 <- crop(r91, QLD)
-rad_avg91 <- mean(r91)
-writeRaster(rad_avg91, './00_Data/Environmental_data/Outputs/Solar_radiation/Averaged/rad91_avg.tif')
-
-gdalwarp(srcfile = './00_Data/Environmental_data/Outputs/Solar_radiation/Averaged/rad91_avg.tif',
-         dstfile = './00_Data/Environmental_data/Outputs/Solar_radiation/r91avg_reproj.tif',
-         t_srs = 'EPSG:3577',
-         tr = c(30,30))
-
-r91 <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/r91avg_reproj.tif')
-
-r91seq <- crop(r91, SEQ)
-plot(r91seq) # Slight rotation issue but I am unsure of why
-
-writeRaster(r91seq, "./00_Data/Environmental_data/Outputs/Solar_radiation/rad91_seq.tif")
-
-
-
-
-r92 <- rast('./00_Data/Environmental_data/Solar_radiation/1992.radiation.nc')
-r92 <- crop(r92, QLD)
-rad_avg92 <- mean(r92)
-writeRaster(rad_avg92, './00_Data/Environmental_data/Outputs/Solar_radiation/Averaged/rad92_avg.tif')
-
-gdalwarp(srcfile = './00_Data/Environmental_data/Outputs/Solar_radiation/Averaged/rad92_avg.tif',
-         dstfile = './00_Data/Environmental_data/Outputs/Solar_radiation/r92avg_reproj.tif',
-         t_srs = 'EPSG:3577',
-         tr = c(30,30))
-
-r92 <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/r92avg_reproj.tif')
-
-r92seq <- crop(r92, SEQ)
-plot(r92seq) # Slight rotation issue but I am unsure of why
-
-writeRaster(r92seq, "./00_Data/Environmental_data/Outputs/Solar_radiation/rad92_seq.tif")
-
-
-
-
-r93 <- rast('./00_Data/Environmental_data/Solar_radiation/1993.radiation.nc')
-r93 <- crop(r93, QLD)
-rad_avg93 <- mean(r93)
-writeRaster(rad_avg93, './00_Data/Environmental_data/Outputs/Solar_radiation/Averaged/rad93_avg.tif')
-
-gdalwarp(srcfile = './00_Data/Environmental_data/Outputs/Solar_radiation/Averaged/rad93_avg.tif',
-         dstfile = './00_Data/Environmental_data/Outputs/Solar_radiation/r93avg_reproj.tif',
-         t_srs = 'EPSG:3577',
-         tr = c(30,30))
-
-r93 <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/r93avg_reproj.tif')
-
-r93seq <- crop(r93, SEQ)
-plot(r93seq) # Slight rotation issue but I am unsure of why
-
-writeRaster(r93seq, "./00_Data/Environmental_data/Outputs/Solar_radiation/rad93_seq.tif")
-
-
-
-
-r94 <- rast('./00_Data/Environmental_data/Solar_radiation/1994.radiation.nc')
-r94 <- crop(r94, QLD)
-rad_avg94 <- mean(r94)
-writeRaster(rad_avg94, './00_Data/Environmental_data/Outputs/Solar_radiation/Averaged/rad94_avg.tif')
-
-gdalwarp(srcfile = './00_Data/Environmental_data/Outputs/Solar_radiation/Averaged/rad94_avg.tif',
-         dstfile = './00_Data/Environmental_data/Outputs/Solar_radiation/r94avg_reproj.tif',
-         t_srs = 'EPSG:3577',
-         tr = c(30,30))
-
-
-r94 <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/r94avg_reproj.tif')
-
-r94seq <- crop(r94, SEQ)
-plot(r94seq) # Slight rotation issue but I am unsure of why
-
-writeRaster(r94seq, "./00_Data/Environmental_data/Outputs/Solar_radiation/rad94_seq.tif")
-
-
-
-
-
-r95 <- rast('./00_Data/Environmental_data/Solar_radiation/1995.radiation.nc')
-r95 <- crop(r95, QLD)
-rad_avg95 <- mean(r95)
-writeRaster(rad_avg95, './00_Data/Environmental_data/Outputs/Solar_radiation/Averaged/rad95_avg.tif')
-
-gdalwarp(srcfile = './00_Data/Environmental_data/Outputs/Solar_radiation/Averaged/rad95_avg.tif',
-         dstfile = './00_Data/Environmental_data/Outputs/Solar_radiation/r95avg_reproj.tif',
-         t_srs = 'EPSG:3577',
-         tr = c(30,30))
-
-r95 <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/r95avg_reproj.tif')
-
-r95seq <- crop(r95, SEQ)
-plot(r95seq) # Slight rotation issue but I am unsure of why
-
-writeRaster(r95seq, "./00_Data/Environmental_data/Outputs/Solar_radiation/rad95_seq.tif")
-
-
-
-
-r96 <- rast('./00_Data/Environmental_data/Solar_radiation/1996.radiation.nc')
-r96 <- crop(r96, QLD)
-rad_avg96 <- mean(r96)
-writeRaster(rad_avg96, './00_Data/Environmental_data/Outputs/Solar_radiation/Averaged/rad96_avg.tif')
-
-gdalwarp(srcfile = './00_Data/Environmental_data/Outputs/Solar_radiation/Averaged/rad96_avg.tif',
-         dstfile = './00_Data/Environmental_data/Outputs/Solar_radiation/r96avg_reproj.tif',
-         t_srs = 'EPSG:3577',
-         tr = c(30,30))
-
-r96 <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/r96avg_reproj.tif')
-
-r96seq <- crop(r96, SEQ)
-plot(r96seq) # Slight rotation issue but I am unsure of why
-
-writeRaster(r96seq, "./00_Data/Environmental_data/Outputs/Solar_radiation/rad96_seq.tif")
-
-
-
-
-r97 <- rast('./00_Data/Environmental_data/Solar_radiation/1997.radiation.nc')
-r97 <- crop(r97, QLD)
-rad_avg97 <- mean(r97)
-writeRaster(rad_avg97, './00_Data/Environmental_data/Outputs/Solar_radiation/Averaged/rad97_avg.tif')
-
-gdalwarp(srcfile = './00_Data/Environmental_data/Outputs/Solar_radiation/Averaged/rad97_avg.tif',
-         dstfile = './00_Data/Environmental_data/Outputs/Solar_radiation/r97avg_reproj.tif',
-         t_srs = 'EPSG:3577',
-         tr = c(30,30))
-
-r97 <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/r97avg_reproj.tif')
-
-r97seq <- crop(r97, SEQ)
-plot(r97seq) # Slight rotation issue but I am unsure of why
-
-writeRaster(r97seq, "./00_Data/Environmental_data/Outputs/Solar_radiation/rad97_seq.tif")
-
-
-
-
-r98 <- rast('./00_Data/Environmental_data/Solar_radiation/1998.radiation.nc')
-r98 <- crop(r98, QLD)
-rad_avg98 <- mean(r98)
-writeRaster(rad_avg98, './00_Data/Environmental_data/Outputs/Solar_radiation/Averaged/rad98_avg.tif')
-
-gdalwarp(srcfile = './00_Data/Environmental_data/Outputs/Solar_radiation/Averaged/rad98_avg.tif',
-         dstfile = './00_Data/Environmental_data/Outputs/Solar_radiation/r98avg_reproj.tif',
-         t_srs = 'EPSG:3577',
-         tr = c(30,30))
-
-r98 <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/r98avg_reproj.tif')
-
-r98seq <- crop(r98, SEQ)
-plot(r98seq) # Slight rotation issue but I am unsure of why
-
-writeRaster(r98seq, "./00_Data/Environmental_data/Outputs/Solar_radiation/rad98_seq.tif")
-
-
-
-
-
-r99 <- rast('./00_Data/Environmental_data/Solar_radiation/1999.radiation.nc')
-r99 <- crop(r99, QLD)
-rad_avg99 <- mean(r99)
-writeRaster(rad_avg99, './00_Data/Environmental_data/Outputs/Solar_radiation/Averaged/rad99_avg.tif')
-
-gdalwarp(srcfile = './00_Data/Environmental_data/Outputs/Solar_radiation/Averaged/rad99_avg.tif',
-         dstfile = './00_Data/Environmental_data/Outputs/Solar_radiation/r99avg_reproj.tif',
-         t_srs = 'EPSG:3577',
-         tr = c(30,30))
-
-r99 <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/r99avg_reproj.tif')
-
-r99seq <- crop(r99, SEQ)
-plot(r99seq) # Slight rotation issue but I am unsure of why
-
-writeRaster(r99seq, "./00_Data/Environmental_data/Outputs/Solar_radiation/rad99_seq.tif")
-
-
-
-
-r00 <- rast('./00_Data/Environmental_data/Solar_radiation/2000.radiation.nc')
-r00 <- crop(r00, QLD)
-rad_avg00 <- mean(r00)
-writeRaster(rad_avg00, './00_Data/Environmental_data/Outputs/Solar_radiation/Averaged/rad00_avg.tif')
-
-gdalwarp(srcfile = './00_Data/Environmental_data/Outputs/Solar_radiation/Averaged/rad00_avg.tif',
-         dstfile = './00_Data/Environmental_data/Outputs/Solar_radiation/r00avg_reproj.tif',
-         t_srs = 'EPSG:3577',
-         tr = c(30,30))
-
-r00 <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/r00avg_reproj.tif')
-
-r00seq <- crop(r00, SEQ)
-plot(r00seq) # Slight rotation issue but I am unsure of why
-
-writeRaster(r00seq, "./00_Data/Environmental_data/Outputs/Solar_radiation/rad00_seq.tif")
-
-
-
-
-r01 <- rast('./00_Data/Environmental_data/Solar_radiation/2001.radiation.nc')
-r01 <- crop(r01, QLD)
-rad_avg01 <- mean(r01)
-writeRaster(rad_avg01, './00_Data/Environmental_data/Outputs/Solar_radiation/Averaged/rad01_avg.tif')
-
-gdalwarp(srcfile = './00_Data/Environmental_data/Outputs/Solar_radiation/Averaged/rad01_avg.tif',
-         dstfile = './00_Data/Environmental_data/Outputs/Solar_radiation/r01avg_reproj.tif',
-         t_srs = 'EPSG:3577',
-         tr = c(30,30))
-
-r01 <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/r01avg_reproj.tif')
-
-r01seq <- crop(r01, SEQ)
-plot(r01seq) # Slight rotation issue but I am unsure of why
-
-writeRaster(r01seq, "./00_Data/Environmental_data/Outputs/Solar_radiation/rad01_seq.tif")
-
-
-
-r02 <- rast('./00_Data/Environmental_data/Solar_radiation/2002.radiation.nc')
-r02 <- crop(r02, QLD)
-rad_avg02 <- mean(r02)
-writeRaster(rad_avg02, './00_Data/Environmental_data/Outputs/Solar_radiation/Averaged/rad02_avg.tif')
-
-gdalwarp(srcfile = './00_Data/Environmental_data/Outputs/Solar_radiation/Averaged/rad02_avg.tif',
-         dstfile = './00_Data/Environmental_data/Outputs/Solar_radiation/r02avg_reproj.tif',
-         t_srs = 'EPSG:3577',
-         tr = c(30,30))
-
-r02 <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/r02avg_reproj.tif')
-
-r02seq <- crop(r02, SEQ)
-plot(r02seq) # Slight rotation issue but I am unsure of why
-
-writeRaster(r02seq, "./00_Data/Environmental_data/Outputs/Solar_radiation/rad02_seq.tif")
-
-
-
-
-
-r03 <- rast('./00_Data/Environmental_data/Solar_radiation/2003.radiation.nc')
-r03 <- crop(r03, QLD)
-rad_avg03 <- mean(r03)
-writeRaster(rad_avg03, './00_Data/Environmental_data/Outputs/Solar_radiation/Averaged/rad03_avg.tif')
-
-gdalwarp(srcfile = './00_Data/Environmental_data/Outputs/Solar_radiation/Averaged/rad03_avg.tif',
-         dstfile = './00_Data/Environmental_data/Outputs/Solar_radiation/r03avg_reproj.tif',
-         t_srs = 'EPSG:3577',
-         tr = c(30,30))
-
-
-r03 <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/r03avg_reproj.tif')
-
-r03seq <- crop(r03, SEQ)
-plot(r03seq) # Slight rotation issue but I am unsure of why
-
-writeRaster(r03seq, "./00_Data/Environmental_data/Outputs/Solar_radiation/rad03_seq.tif")
-
-
-
-
-r04 <- rast('./00_Data/Environmental_data/Solar_radiation/2004.radiation.nc')
-r04 <- crop(r04, QLD)
-rad_avg04 <- mean(r04)
-writeRaster(rad_avg04, './00_Data/Environmental_data/Outputs/Solar_radiation/Averaged/rad04_avg.tif')
-
-gdalwarp(srcfile = './00_Data/Environmental_data/Outputs/Solar_radiation/Averaged/rad04_avg.tif',
-         dstfile = './00_Data/Environmental_data/Outputs/Solar_radiation/r04avg_reproj.tif',
-         t_srs = 'EPSG:3577',
-         tr = c(30,30))
-
-
-r04 <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/r04avg_reproj.tif')
-
-r04seq <- crop(r04, SEQ)
-plot(r04seq) # Slight rotation issue but I am unsure of why
-
-writeRaster(r04seq, "./00_Data/Environmental_data/Outputs/Solar_radiation/rad04_seq.tif")
-
-
-
-
-r05 <- rast('./00_Data/Environmental_data/Solar_radiation/2005.radiation.nc')
-r05 <- crop(r05, QLD)
-rad_avg05 <- mean(r05)
-writeRaster(rad_avg05, './00_Data/Environmental_data/Outputs/Solar_radiation/Averaged/rad05_avg.tif')
-
-gdalwarp(srcfile = './00_Data/Environmental_data/Outputs/Solar_radiation/Averaged/rad05_avg.tif',
-         dstfile = './00_Data/Environmental_data/Outputs/Solar_radiation/r05avg_reproj.tif',
-         t_srs = 'EPSG:3577',
-         tr = c(30,30))
-
-r05 <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/r05avg_reproj.tif')
-
-r05seq <- crop(r05, SEQ)
-plot(r05seq) # Slight rotation issue but I am unsure of why
-
-writeRaster(r05seq, "./00_Data/Environmental_data/Outputs/Solar_radiation/rad05_seq.tif")
-
-
-
-
-r06 <- rast('./00_Data/Environmental_data/Solar_radiation/2006.radiation.nc')
-r06 <- crop(r06, QLD)
-rad_avg06 <- mean(r06)
-writeRaster(rad_avg06, './00_Data/Environmental_data/Outputs/Solar_radiation/Averaged/rad06_avg.tif')
-
-gdalwarp(srcfile = './00_Data/Environmental_data/Outputs/Solar_radiation/Averaged/rad06_avg.tif',
-         dstfile = './00_Data/Environmental_data/Outputs/Solar_radiation/r06avg_reproj.tif',
-         t_srs = 'EPSG:3577',
-         tr = c(30,30))
-
-r06 <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/r06avg_reproj.tif')
-
-r06seq <- crop(r06, SEQ)
-plot(r06seq) # Slight rotation issue but I am unsure of why
-
-writeRaster(r06seq, "./00_Data/Environmental_data/Outputs/Solar_radiation/rad06_seq.tif")
-
-
-
-
-r07 <- rast('./00_Data/Environmental_data/Solar_radiation/2007.radiation.nc')
-r07 <- crop(r07, QLD)
-rad_avg07 <- mean(r07)
-writeRaster(rad_avg07, './00_Data/Environmental_data/Outputs/Solar_radiation/Averaged/rad07_avg.tif')
-
-gdalwarp(srcfile = './00_Data/Environmental_data/Outputs/Solar_radiation/Averaged/rad07_avg.tif',
-         dstfile = './00_Data/Environmental_data/Outputs/Solar_radiation/r07avg_reproj.tif',
-         t_srs = 'EPSG:3577',
-         tr = c(30,30))
-
-r07 <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/r07avg_reproj.tif')
-
-r07seq <- crop(r07, SEQ)
-plot(r07seq) # Slight rotation issue but I am unsure of why
-
-writeRaster(r07seq, "./00_Data/Environmental_data/Outputs/Solar_radiation/rad07_seq.tif")
-
-
-
-
-r08 <- rast('./00_Data/Environmental_data/Solar_radiation/2008.radiation.nc')
-r08 <- crop(r08, QLD)
-rad_avg08 <- mean(r08)
-writeRaster(rad_avg08, './00_Data/Environmental_data/Outputs/Solar_radiation/Averaged/rad08_avg.tif')
-
-gdalwarp(srcfile = './00_Data/Environmental_data/Outputs/Solar_radiation/Averaged/rad08_avg.tif',
-         dstfile = './00_Data/Environmental_data/Outputs/Solar_radiation/r08avg_reproj.tif',
-         t_srs = 'EPSG:3577',
-         tr = c(30,30))
-
-r08 <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/r08avg_reproj.tif')
-
-r08seq <- crop(r08, SEQ)
-plot(r08seq) # Slight rotation issue but I am unsure of why
-
-writeRaster(r08seq, "./00_Data/Environmental_data/Outputs/Solar_radiation/rad08_seq.tif")
-
-
-
-
-r09 <- rast('./00_Data/Environmental_data/Solar_radiation/2009.radiation.nc')
-r09 <- crop(r09, QLD)
-rad_avg09 <- mean(r09)
-writeRaster(rad_avg09, './00_Data/Environmental_data/Outputs/Solar_radiation/Averaged/rad09_avg.tif')
-
-gdalwarp(srcfile = './00_Data/Environmental_data/Outputs/Solar_radiation/Averaged/rad09_avg.tif',
-         dstfile = './00_Data/Environmental_data/Outputs/Solar_radiation/r09avg_reproj.tif',
-         t_srs = 'EPSG:3577',
-         tr = c(30,30))
-
-r09 <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/r09avg_reproj.tif')
-
-r09seq <- crop(r09, SEQ)
-plot(r09seq) # Slight rotation issue but I am unsure of why
-
-writeRaster(r09seq, "./00_Data/Environmental_data/Outputs/Solar_radiation/rad09_seq.tif")
-
-
-
-
-r10 <- rast('./00_Data/Environmental_data/Solar_radiation/2010.radiation.nc')
-r10 <- crop(r10, QLD)
-rad_avg10 <- mean(r10)
-writeRaster(rad_avg10, './00_Data/Environmental_data/Outputs/Solar_radiation/Averaged/rad10_avg.tif')
-
-gdalwarp(srcfile = './00_Data/Environmental_data/Outputs/Solar_radiation/Averaged/rad10_avg.tif',
-         dstfile = './00_Data/Environmental_data/Outputs/Solar_radiation/r10avg_reproj.tif',
-         t_srs = 'EPSG:3577',
-         tr = c(30,30))
-
-
-
-r10 <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/r10avg_reproj.tif')
-
-r10seq <- crop(r10, SEQ)
-plot(r10seq) # Slight rotation issue but I am unsure of why
-
-writeRaster(r10seq, "./00_Data/Environmental_data/Outputs/Solar_radiation/rad10_seq.tif")
-
-
-
-
-r11 <- rast('./00_Data/Environmental_data/Solar_radiation/2011.radiation.nc')
-r11 <- crop(r11, QLD)
-rad_avg11 <- mean(r11)
-writeRaster(rad_avg11, './00_Data/Environmental_data/Outputs/Solar_radiation/Averaged/rad11_avg.tif')
-
-gdalwarp(srcfile = './00_Data/Environmental_data/Outputs/Solar_radiation/Averaged/rad11_avg.tif',
-         dstfile = './00_Data/Environmental_data/Outputs/Solar_radiation/r11avg_reproj.tif',
-         t_srs = 'EPSG:3577',
-         tr = c(30,30))
-
-r11 <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/r11avg_reproj.tif')
-
-r11seq <- crop(r11, SEQ)
-plot(r11seq) # Slight rotation issue but I am unsure of why
-
-writeRaster(r11seq, "./00_Data/Environmental_data/Outputs/Solar_radiation/rad11_seq.tif")
-
-
-
-r12 <- rast('./00_Data/Environmental_data/Solar_radiation/2012.radiation.nc')
-r12 <- crop(r12, QLD)
-rad_avg12 <- mean(r12)
-writeRaster(rad_avg12, './00_Data/Environmental_data/Outputs/Solar_radiation/Averaged/rad12_avg.tif')
-
-gdalwarp(srcfile = './00_Data/Environmental_data/Outputs/Solar_radiation/Averaged/rad12_avg.tif',
-         dstfile = './00_Data/Environmental_data/Outputs/Solar_radiation/r12avg_reproj.tif',
-         t_srs = 'EPSG:3577',
-         tr = c(30,30))
-
-
-r12 <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/r12avg_reproj.tif')
-
-r12seq <- crop(r12, SEQ)
-plot(r12seq) # Slight rotation issue but I am unsure of why
-
-writeRaster(r12seq, "./00_Data/Environmental_data/Outputs/Solar_radiation/rad12_seq.tif")
-
-
-
-
-r13 <- rast('./00_Data/Environmental_data/Solar_radiation/2013.radiation.nc')
-r13 <- crop(r13, QLD)
-rad_avg13 <- mean(r13)
-writeRaster(rad_avg13, './00_Data/Environmental_data/Outputs/Solar_radiation/Averaged/rad13_avg.tif')
-
-gdalwarp(srcfile = './00_Data/Environmental_data/Outputs/Solar_radiation/Averaged/rad13_avg.tif',
-         dstfile = './00_Data/Environmental_data/Outputs/Solar_radiation/r13avg_reproj.tif',
-         t_srs = 'EPSG:3577',
-         tr = c(30,30))
-
-
-r13 <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/r13avg_reproj.tif')
-
-r13seq <- crop(r13, SEQ)
-plot(r13seq) # Slight rotation issue but I am unsure of why
-
-writeRaster(r13seq, "./00_Data/Environmental_data/Outputs/Solar_radiation/rad13_seq.tif")
-
-
-
-r14 <- rast('./00_Data/Environmental_data/Solar_radiation/2014.radiation.nc')
-r14 <- crop(r14, QLD)
-rad_avg14 <- mean(r14)
-writeRaster(rad_avg14, './00_Data/Environmental_data/Outputs/Solar_radiation/Averaged/rad14_avg.tif')
-
-gdalwarp(srcfile = './00_Data/Environmental_data/Outputs/Solar_radiation/Averaged/rad14_avg.tif',
-         dstfile = './00_Data/Environmental_data/Outputs/Solar_radiation/r14avg_reproj.tif',
-         t_srs = 'EPSG:3577',
-         tr = c(30,30))
-
-r14 <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/r14avg_reproj.tif')
-
-r14seq <- crop(r14, SEQ)
-plot(r14seq) # Slight rotation issue but I am unsure of why
-
-writeRaster(r14seq, "./00_Data/Environmental_data/Outputs/Solar_radiation/rad14_seq.tif")
-
-
-
-
-r15 <- rast('./00_Data/Environmental_data/Solar_radiation/2015.radiation.nc')
-r15 <- crop(r15, QLD)
-rad_avg15 <- mean(r15)
-writeRaster(rad_avg15, './00_Data/Environmental_data/Outputs/Solar_radiation/Averaged/rad15_avg.tif')
-
-gdalwarp(srcfile = './00_Data/Environmental_data/Outputs/Solar_radiation/Averaged/rad15_avg.tif',
-         dstfile = './00_Data/Environmental_data/Outputs/Solar_radiation/r15avg_reproj.tif',
-         t_srs = 'EPSG:3577',
-         tr = c(30,30))
-
-r15 <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/r15avg_reproj.tif')
-
-r15seq <- crop(r15, SEQ)
-plot(r15seq) # Slight rotation issue but I am unsure of why
-
-writeRaster(r15seq, "./00_Data/Environmental_data/Outputs/Solar_radiation/rad15_seq.tif")
-
-
-
-
-r16 <- rast('./00_Data/Environmental_data/Solar_radiation/2016.radiation.nc')
-r16 <- crop(r16, QLD)
-rad_avg16 <- mean(r16)
-writeRaster(rad_avg16, './00_Data/Environmental_data/Outputs/Solar_radiation/Averaged/rad16_avg.tif')
-
-gdalwarp(srcfile = './00_Data/Environmental_data/Outputs/Solar_radiation/Averaged/rad16_avg.tif',
-         dstfile = './00_Data/Environmental_data/Outputs/Solar_radiation/r16avg_reproj.tif',
-         t_srs = 'EPSG:3577',
-         tr = c(30,30))
-
-r16 <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/r16avg_reproj.tif')
-
-r16seq <- crop(r16, SEQ)
-plot(r16seq) # Slight rotation issue but I am unsure of why
-
-writeRaster(r16seq, "./00_Data/Environmental_data/Outputs/Solar_radiation/rad16_seq.tif")
-
-
-
-
-r17 <- rast('./00_Data/Environmental_data/Solar_radiation/2017.radiation.nc')
-r17 <- crop(r17, QLD)
-rad_avg17 <- mean(r17)
-writeRaster(rad_avg17, './00_Data/Environmental_data/Outputs/Solar_radiation/Averaged/rad17_avg.tif')
-
-gdalwarp(srcfile = './00_Data/Environmental_data/Outputs/Solar_radiation/Averaged/rad17_avg.tif',
-         dstfile = './00_Data/Environmental_data/Outputs/Solar_radiation/r17avg_reproj.tif',
-         t_srs = 'EPSG:3577',
-         tr = c(30,30))
-
-r17 <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/r17avg_reproj.tif')
-
-r17seq <- crop(r17, SEQ)
-plot(r17seq) # Slight rotation issue but I am unsure of why
-
-writeRaster(r17seq, "./00_Data/Environmental_data/Outputs/Solar_radiation/rad17_seq.tif")
-
-
-
-
-r18 <- rast('./00_Data/Environmental_data/Solar_radiation/2018.radiation.nc')
-r18 <- crop(r18, QLD)
-rad_avg18 <- mean(r18)
-writeRaster(rad_avg18, './00_Data/Environmental_data/Outputs/Solar_radiation/Averaged/rad18_avg.tif')
-
-gdalwarp(srcfile = './00_Data/Environmental_data/Outputs/Solar_radiation/Averaged/rad18_avg.tif',
-         dstfile = './00_Data/Environmental_data/Outputs/Solar_radiation/r18avg_reproj.tif',
-         t_srs = 'EPSG:3577',
-         tr = c(30,30))
-
-r18 <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/r18avg_reproj.tif')
-
-r18seq <- crop(r18, SEQ)
-plot(r18seq) # Slight rotation issue but I am unsure of why
-
-writeRaster(r18seq, "./00_Data/Environmental_data/Outputs/Solar_radiation/rad18_seq.tif")
-
-
-
-
-
-r19 <- rast('./00_Data/Environmental_data/Solar_radiation/2019.radiation.nc')
-r19 <- crop(r19, QLD)
-rad_avg19 <- mean(r19)
-writeRaster(rad_avg19, './00_Data/Environmental_data/Outputs/Solar_radiation/Averaged/rad19_avg.tif')
-
-gdalwarp(srcfile = './00_Data/Environmental_data/Outputs/Solar_radiation/Averaged/rad19_avg.tif',
-         dstfile = './00_Data/Environmental_data/Outputs/Solar_radiation/r19avg_reproj.tif',
-         t_srs = 'EPSG:3577',
-         tr = c(30,30))
-
-r19 <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/r19avg_reproj.tif')
-
-r19seq <- crop(r19, SEQ)
-plot(r19seq) # Slight rotation issue but I am unsure of why
-
-writeRaster(r19seq, "./00_Data/Environmental_data/Outputs/Solar_radiation/rad19_seq.tif")
-
-
-
-
-r20 <- rast('./00_Data/Environmental_data/Solar_radiation/2020.radiation.nc')
-r20 <- crop(r20, QLD)
-rad_avg20 <- mean(r20)
-writeRaster(rad_avg20, './00_Data/Environmental_data/Outputs/Solar_radiation/Averaged/rad20_avg.tif')
-
-gdalwarp(srcfile = './00_Data/Environmental_data/Outputs/Solar_radiation/Averaged/rad20_avg.tif',
-         dstfile = './00_Data/Environmental_data/Outputs/Solar_radiation/r20avg_reproj.tif',
-         t_srs = 'EPSG:3577',
-         tr = c(30,30))
-
-r20 <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/r20avg_reproj.tif')
-
-r20seq <- crop(r20, SEQ)
-plot(r20seq) # Slight rotation issue but I am unsure of why
-
-writeRaster(r20seq, "./00_Data/Environmental_data/Outputs/Solar_radiation/rad20_seq.tif")
-
-
-
-
-r21 <- rast('./00_Data/Environmental_data/Solar_radiation/2021.radiation.nc')
-r21 <- crop(r21, QLD)
-rad_avg21 <- mean(r21)
-writeRaster(rad_avg21, './00_Data/Environmental_data/Outputs/Solar_radiation/Averaged/rad21_avg.tif')
-
-gdalwarp(srcfile = './00_Data/Environmental_data/Outputs/Solar_radiation/Averaged/rad21_avg.tif',
-         dstfile = './00_Data/Environmental_data/Outputs/Solar_radiation/r21avg_reproj.tif',
-         t_srs = 'EPSG:3577',
-         tr = c(30,30))
-
-r21 <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/r21avg_reproj.tif')
-
-r21seq <- crop(r21, SEQ)
-plot(r21seq) # Slight rotation issue but I am unsure of why
-
-writeRaster(r21seq, "./00_Data/Environmental_data/Outputs/Solar_radiation/rad21_seq.tif")
-
-
-r22 <- rast('./00_Data/Environmental_data/Solar_radiation/2022.radiation.nc')
-r22 <- crop(r22, QLD)
-rad_avg22 <- mean(r22)
-writeRaster(rad_avg22, './00_Data/Environmental_data/Outputs/Solar_radiation/Averaged/rad22_avg.tif')
-
-gdalwarp(srcfile = './00_Data/Environmental_data/Outputs/Solar_radiation/Averaged/rad22_avg.tif',
-         dstfile = './00_Data/Environmental_data/Outputs/Solar_radiation/r22avg_reproj.tif',
-         t_srs = 'EPSG:3577',
-         tr = c(30,30))
-
-r22 <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/r22avg_reproj.tif')
-
-r22seq <- crop(r22, SEQ)
-plot(r22seq) # Slight rotation issue but I am unsure of why
-
-writeRaster(r22seq, "./00_Data/Environmental_data/Outputs/Solar_radiation/rad22_seq.tif")
-
-
-
-# 1.5.1 Read in the solar radiation data for SEQ and combine into one raster ----
-
-r87 <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/rad87_seq.tif')
-r88 <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/rad88_seq.tif')
-r89 <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/rad89_seq.tif')
-r90 <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/rad90_seq.tif')
-r91 <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/rad91_seq.tif')
-r92 <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/rad92_seq.tif')
-r93 <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/rad93_seq.tif')
-r94 <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/rad94_seq.tif')
-r95 <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/rad95_seq.tif')
-r96 <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/rad96_seq.tif')
-r97 <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/rad97_seq.tif')
-r98 <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/rad98_seq.tif')
-r99 <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/rad99_seq.tif')
-r00 <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/rad00_seq.tif')
-r01 <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/rad01_seq.tif')
-r02 <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/rad02_seq.tif')
-r03 <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/rad03_seq.tif')
-r04 <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/rad04_seq.tif')
-r05 <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/rad05_seq.tif')
-r06 <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/rad06_seq.tif')
-r07 <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/rad07_seq.tif')
-r08 <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/rad08_seq.tif')
-r09 <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/rad09_seq.tif')
-r10 <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/rad10_seq.tif')
-r11 <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/rad11_seq.tif')
-r12 <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/rad12_seq.tif')
-r13 <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/rad13_seq.tif')
-r14 <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/rad14_seq.tif')
-r15 <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/rad15_seq.tif')
-r16 <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/rad16_seq.tif')
-r17 <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/rad17_seq.tif')
-r18 <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/rad18_seq.tif')
-r19 <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/rad19_seq.tif')
-r20 <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/rad20_seq.tif')
-r21 <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/rad21_seq.tif')
-r22 <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/rad22_seq.tif')
-
-# As with the other environmental variables, to work with this data we need it to be averaged
-solar_rad <- terra::mean(r87, r88, r89, r90, r91, r92, r93, r94, r95, r96, r97, r98, r99, r00, r01, r02, r03, r04, r05, r06, r07, r08, r09, r10, r11, r12, r13, r14, r15, r16, r17, r18, r19, r20, r21, r22)
-
-plot(solar_rad)
-solar_rad # Check this has worked
-
-
-
-writeRaster(solar_rad, './00_Data/Environmental_data/Outputs/Solar_radiation/Solar_radiation_seq.tif', overwrite = T)
-
-
-
-
-
-# 1.6 Soil nutrients using soil % clay ----
+# 1.5 Soil nutrients using soil % clay ----
 # Download data from https://esoil.io/TERNLandscapes/Public/Pages/SLGA/GetData-COGSDataStore_SLGA.html
 # This variable is included as nutrients influence plant growth which would then influence the occurrence of fire
 # As with solar radiation we will first crop to QLD and then run gdalwarp and then we can crop to SEQ
@@ -1275,10 +473,6 @@ gdalwarp(srcfile = './00_Data/Environmental_data/Outputs/TWI/SEQ_TWI.tif',
          te = c(1902030, -3257630, 2111790, -2954990))
 
 
-gdalwarp(srcfile = './00_Data/Environmental_data/Outputs/Solar_radiation/Solar_radiation_seq.tif',
-         './00_Data/Environmental_data/Outputs/Solar_radiation/Solar_radiation_seq_cropped.tif',
-         te = c(1902030, -3257630, 2111790, -2954990))
-
 
 gdalwarp(srcfile = './00_Data/Environmental_data/Outputs/Soil_clay/SEQ_soilclay.tif',
          './00_Data/Environmental_data/Outputs/Soil_clay/SEQ_soilclay_cropped.tif',
@@ -1324,8 +518,6 @@ names(precipseason) <- "precip_seasonality"
 diurnal_temp <- rast('./00_Data/Environmental_data/Outputs/BioClim/Diurnal_temp_meanSEQ_cropped.tif')
 names(diurnal_temp) <- "diurnal_temp_seasonality"
 
-solar_radiation <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/Solar_radiation_seq_cropped.tif')
-names(solar_radiation) <- "average_solar_rad."
 
 FPC <- rast('./00_Data/Environmental_data/Outputs/FPC/FPC_all_cropped.tif')
 names(FPC) <- "average_foliage_proj_cover"
@@ -1351,12 +543,6 @@ TWI_foc # The same range of values
 names(TWI_foc) <- "Topo_wetness_index"
 writeRaster(TWI_foc, './00_Data/Environmental_data/Outputs/TWI/SEQ_TWI_cropped_focal.tif')
 
-solar_rad_foc <- focal(solar_radiation, fun = "mean", na.policy = "only", na.rm = T)
-range(unique(solar_radiation$average_solar_rad.))
-solar_rad_foc
-names()
-names(solar_rad_foc) <- "Avg_solar_radiation"
-writeRaster(solar_rad_foc, './00_Data/Environmental_data/Outputs/Solar_radiation/Solar_radiation_seq_cropped_focal.tif')
 
 soil_cl_foc <- focal(soil_clay, fun = "mean", na.poly = "only", na.rm = T)
 range(unique(soil_clay$percent_clay))
@@ -1413,7 +599,6 @@ writeRaster(diurnal_foc, './00_Data/Environmental_data/Outputs/BioClim/Diurnal_t
 FPC_foc <- focal(FPC, fun = 'mean', na.policy = 'only', na.rm = T)
 range(unique(FPC$average_foliage_proj_cover))
 FPC_foc
-
 plot(FPC_foc)
 plot(FPC)
 names(FPC_foc) <- "Foliage_proj_cover"
@@ -1438,16 +623,15 @@ coast <- project(coast, 'EPSG:3577')
 coast <- crop(coast, e)
 
 TWI <- rast('./00_Data/Environmental_data/Outputs/TWI/SEQ_TWI_cropped_focal.tif')
-tempseason <- rast('E:/PhD/R_analysis/Fire_freq/00_Data/Environmental_data/Outputs/BioClim/tempseason_SEQ_cropped_focal.tif')    
-precipseason <- rast('E:/PhD/R_analysis/Fire_freq/00_Data/Environmental_data/Outputs/BioClim/precipseason_SEQ_cropped_focal.tif')  
-diurnal_temp <- rast('E:/PhD/R_analysis/Fire_freq/00_Data/Environmental_data/Outputs/BioClim/Diurnal_temp_meanSEQ_cropped_focal.tif')  
-solar_radiation <- rast('E:/PhD/R_analysis/Fire_freq/00_Data/Environmental_data/Outputs/Solar_radiation/Solar_radiation_seq_cropped_focal.tif')  
-FPC <- rast('E:/PhD/R_analysis/Fire_freq/00_Data/Environmental_data/Outputs/FPC/FPC_all_cropped_focal.tif')  
-soil_clay <- rast('E:/PhD/R_analysis/Fire_freq/00_Data/Environmental_data/Outputs/Soil_clay/SEQ_soilclay_cropped_focal.tif')  
-slope <- rast('E:/PhD/R_analysis/Fire_freq/00_Data/Environmental_data/Outputs/DEM/SEQ_slope_cropped_focal.tif')  
-aspect <- rast('E:/PhD/R_analysis/Fire_freq/00_Data/Environmental_data/Outputs/DEM/SEQaspect_cropped_focal.tif')  
-topo_position <- rast('E:/PhD/R_analysis/Fire_freq/00_Data/Environmental_data/Outputs/DEM/SEQ_TPI_cropped_focal.tif') 
-elev <- rast('E:/PhD/R_analysis/Fire_freq/00_Data/Environmental_data/Outputs/DEM/SEQ_DEM_reproj_cropped_focal.tif')
+tempseason <- rast('./00_Data/Environmental_data/Outputs/BioClim/tempseason_SEQ_cropped_focal.tif')    
+precipseason <- rast('./00_Data/Environmental_data/Outputs/BioClim/precipseason_SEQ_cropped_focal.tif')  
+diurnal_temp <- rast('./00_Data/Environmental_data/Outputs/BioClim/Diurnal_temp_meanSEQ_cropped_focal.tif')  
+FPC <- rast('./00_Data/Environmental_data/Outputs/FPC/FPC_all_cropped_focal.tif')  
+soil_clay <- rast('./00_Data/Environmental_data/Outputs/Soil_clay/SEQ_soilclay_cropped_focal.tif')  
+slope <- rast('./00_Data/Environmental_data/Outputs/DEM/SEQ_slope_cropped_focal.tif')  
+aspect <- rast('./00_Data/Environmental_data/Outputs/DEM/SEQaspect_cropped_focal.tif')  
+topo_position <- rast('./00_Data/Environmental_data/Outputs/DEM/SEQ_TPI_cropped_focal.tif') 
+elev <- rast('./00_Data/Environmental_data/Outputs/DEM/SEQ_DEM_reproj_cropped_focal.tif')
 
 TWI <- mask(TWI, canal, inverse = T)
 TWI <- mask(TWI, lake, inverse = T)
@@ -1477,13 +661,6 @@ diurnal_temp <- mask(diurnal_temp, pond, inverse = T)
 diurnal_temp <- mask(diurnal_temp, reservoir, inverse = T)
 diurnal_temp <- mask(diurnal_temp, watercourse, inverse = T)
 
-
-solar_radiation <- mask(solar_radiation, canal, inverse = T)
-solar_radiation <- mask(solar_radiation, lake, inverse = T)
-solar_radiation <- mask(solar_radiation, pond, inverse = T)
-solar_radiation <- mask(solar_radiation, reservoir, inverse = T)
-solar_radiation <- mask(solar_radiation, watercourse, inverse = T)
-solar_radiation <- mask(solar_radiation, coast)
 
 
 FPC <- mask(FPC, canal, inverse = T)
@@ -1544,8 +721,6 @@ names(precipseason) <- "Precip_seasonality"
 
 names(diurnal_temp) <- "Diurnal_temp_seasonality"
 
-names(solar_radiation) <- "Average_solar_rad"
-
 names(FPC) <- "Average_foliage_proj_cover"
 
 names(soil_clay) <- 'Percent_clay'
@@ -1575,7 +750,7 @@ names(QPWS_SEQ_ff) <- "QPWS_firefreq"
 QPWS_SEQ_ff[is.na(QPWS_SEQ_ff)] <- 0
 unique(QPWS_SEQ_ff)
 
-predictors <- c(QPWS_SEQ_ff, TWI, tempseason, precipseason, diurnal_temp, solar_radiation, FPC, soil_clay, slope, aspect, topo_position, elev)
+predictors <- c(QPWS_SEQ_ff, TWI, tempseason, precipseason, diurnal_temp, FPC, soil_clay, slope, aspect, topo_position, elev)
 writeRaster(predictors, './00_Data/SDM_data/predictors.tif', overwrite = T)
 
 

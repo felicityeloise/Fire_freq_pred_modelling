@@ -40,12 +40,12 @@ library(doParallel) # doParallel_1.0.17
 # 2.1 Point location data
 Rand_fire <- read.csv('./00_Data/Fire_data/Outputs/Random_points_data/Fire_frequency_random_environmental_pres_resampled.csv', header = T)
 head(Rand_fire); dim(Rand_fire)
-Rand_fire <- Rand_fire[, c(4, 3, 5:17)]
+Rand_fire <- Rand_fire[, c(3:16)]
 
 
 Background_data <- read.csv('./00_Data/Fire_data/Outputs/Background_points_data/Fire_frequency_background_environmental_data_resampled.csv', header = T)
 head(Background_data); dim(Background_data)
-Background_data <- Background_data[, c(3:17)]
+Background_data <- Background_data[, c(3:16)]
 
 head(Background_data)
 unique(is.na(Background_data))
@@ -61,7 +61,7 @@ str(Pres_back)
 Sentinel_ff <- rast('./00_Data/Fire_data/Outputs/Sentinel/Sentinel_ff_hydrographical_mask_SEQ_focal_cropped.tif')
 Sentinel_ff <- round(Sentinel_ff)
 environmental_preds <- rast('./00_Data/SDM_data/predictors.tif')
-names(environmental_preds) <- c("QPWS_ff", "TWI", "Temp_season", "Precip_season", "Diurnal_temp", "Solar_rad", "FPC", "Soil_clay", "Slope", "Aspect", "TPI", "Elevation")
+names(environmental_preds) <- c("QPWS_ff", "TWI", "Temp_season", "Precip_season", "Diurnal_temp", "FPC", "Soil_clay", "Slope", "Aspect", "TPI", "Elevation")
 
 
 # 3. Test for correlations ----
@@ -69,7 +69,7 @@ names(environmental_preds) <- c("QPWS_ff", "TWI", "Temp_season", "Precip_season"
 cor1 <- ggstatsplot::ggcorrmat(Pres_back,
                       type = "non-parametric", # Assuming that we are looking at non-parametric data here. The data is not normally distributed
                       label = T,
-                      cor.vars = c("QPWS_rand_firefreq", "Sentinel_rand_firefreq", "TWI", "tempseason", "precipseason", "diurnal_temp", "solar_radiation", "FPC", "soil_clay", "slope", "aspect", "topo_position", "elevation"),
+                      cor.vars = c("QPWS_rand_firefreq", "Sentinel_rand_firefreq", "TWI", "tempseason", "precipseason", "diurnal_temp", "FPC", "soil_clay", "slope", "aspect", "topo_position", "elevation"),
                       size = 2)
 cor1
 # Insignificant correlations are shown by those with a cross through the box. No correlations appear to have a Spearman rho greater than 0.8, which is our cut-off value.
@@ -83,21 +83,21 @@ cor1
 # 4.1 Stepwise elimination ----
 # Following other papers on the topic we want to use AIC backwards stepwise elimination
 
-full.model <- lm(Sentinel_rand_firefreq ~ QPWS_rand_firefreq + TWI + tempseason + precipseason + diurnal_temp + solar_radiation + FPC + soil_clay + slope + aspect + topo_position + elevation, data = Pres_back)
+full.model <- lm(Sentinel_rand_firefreq ~ QPWS_rand_firefreq + TWI + tempseason + precipseason + diurnal_temp + FPC + soil_clay + slope + aspect + topo_position + elevation, data = Pres_back)
 
 step.model <- stepAIC(full.model, direction = "backward")
 summary(step.model)
-# This suggests that some variables may be dropped lm(formula = Sentinel_rand_firefreq ~ QPWS_rand_firefreq + TWI + tempseason + precipseason + diurnal_temp + FPC + soil_clay + slope + aspect + topo_position + elevation, data = Pres_back)
+# This suggests that some variables may be dropped lm(formula = Sentinel_rand_firefreq ~ QPWS_rand_firefreq + TWI + tempseason + precipseason + diurnal_temp + FPC + slope + aspect + topo_position + elevation, data = Pres_back)
 
 head(Pres_back);dim(Pres_back)
-Pres_back <- Pres_back[,c(2,1,3:8,10:15)]
+Pres_back <- Pres_back[,c(1:9, 11:14)]
 head(Pres_back); dim(Pres_back)
-colnames(Pres_back) <- c("Sentinel_ff", "QPWS_ff", 'Lon', 'Lat', "TWI", "Temp_season", "Precip_season", "Diurnal_temp", "FPC", "Soil_clay", "Slope", "Aspect", "TPI", "Elevation")
+colnames(Pres_back) <- c("Sentinel_ff", "QPWS_ff", 'Lon', 'Lat', "TWI", "Temp_season", "Precip_season", "Diurnal_temp", "FPC", "Slope", "Aspect", "TPI", "Elevation")
 head(Pres_back)
 
 
 head(environmental_preds)
-environmental_preds <- subset(environmental_preds, c(1:5, 7:12))
+environmental_preds <- subset(environmental_preds, c(1:6, 8:11))
 head(environmental_preds)
 
 
@@ -114,7 +114,7 @@ plot(sac$variograms[[1]])
 
 
 # Experimental variogram
-vario1 <- variogram(Sentinel_ff ~ QPWS_ff + TWI + Temp_season + Precip_season + Diurnal_temp + FPC + Soil_clay + Slope + Aspect + TPI + Elevation, data = Pres_back_sf)
+vario1 <- variogram(Sentinel_ff ~ QPWS_ff + TWI + Temp_season + Precip_season + Diurnal_temp + FPC + Slope + Aspect + TPI + Elevation, data = Pres_back_sf)
 plot(vario1)
 summary(vario1)
 
@@ -133,25 +133,25 @@ plot(vario1, vario.fit)
 
 # Make adjustments to the empirical variogram
 vario.fit1 <- fit.variogram(vario1, 
-                            model = vgm(psill = 1.289863,
+                            model = vgm(psill = 1.245992,
                                         model = "Ste",
-                                        range = 11739.16,
-                                        nugget = 1.086171))
+                                        range = 11926.02,
+                                        nugget = 1.117106))
 vario.fit1
 plot(vario1, vario.fit1) # Change is minimal but now we know what the block size should be for spatial blocking of the data
 
 vario.fit2 <- fit.variogram(vario1, 
-                            model = vgm(psill = 1.289930,
+                            model = vgm(psill = 1.246051,
                                         model = "Ste",
-                                        range = 11737.61,
-                                        nugget = 1.086082))
+                                        range = 11924.58,
+                                        nugget = 1.117028))
 vario.fit2
 
 vario.fit3 <- fit.variogram(vario1, 
-                            model = vgm(psill = 1.289932,
+                            model = vgm(psill = 1.246052,
                                         model = "Ste",
-                                        range = 11737.58,
-                                        nugget = 1.086080))
+                                        range = 11924.55,
+                                        nugget = 1.117027))
 vario.fit3
 
 
@@ -162,7 +162,7 @@ vario.fit3
 sb_folds <- cv_spatial(x = Pres_back_sf,
                        column = "Sentinel_ff", # The response column
                        k = 5L, # number of folds
-                       size = 11737, # size of the blocks
+                       size = 11924, # size of the blocks
                        selection = "random", # random blocks-to-fold
                        seed = 503, # Set a random seed for reproducibility
                        iteration = 50L) #  find evenly dispersed folds over 50 attempts
@@ -204,11 +204,11 @@ testing <- Pres_back[testSet, c(1,2, 5:ncol(Pres_back))]
 training <- Pres_back[trainSet,c(1,2, 5:ncol(Pres_back))]
 
 
-colnames(training) <- c("Sentinel_ff", "QPWS_ff", "TWI", "Temp_season", "Precip_season", "Diurnal_temp", "FPC", "Soil_clay", "Slope", "Aspect", "TPI", "Elevation")
+colnames(training) <- c("Sentinel_ff", "QPWS_ff", "TWI", "Temp_season", "Precip_season", "Diurnal_temp", "FPC", "Slope", "Aspect", "TPI", "Elevation")
 head(training)
 
 
-colnames(testing) <- c("Sentinel_ff", "QPWS_ff","TWI", "Temp_season", "Precip_season", "Diurnal_temp", "FPC", "Soil_clay", "Slope", "Aspect", "TPI", "Elevation")
+colnames(testing) <- c("Sentinel_ff", "QPWS_ff","TWI", "Temp_season", "Precip_season", "Diurnal_temp", "FPC", "Slope", "Aspect", "TPI", "Elevation")
 testing$pres <- ifelse(testing$QPWS_ff == 0, 0, 1)
 head(testing)
 tail(testing)
@@ -265,7 +265,7 @@ stopCluster(cl)
 
 # RMSE was used to select the optimal model using the smallest value. The final values used for the model were n.trees = 10000, interaction.depth = 8, shrinkage = 0.1 and n.minobsinnode = 50.
 
-load('./02_Workspaces/004_predictive_model_hyperparameter_tuning.RData')
+#load('./02_Workspaces/004_predictive_model_hyperparameter_tuning.RData')
 
 # Plot the resampling profile
 p1 <- plot(gbm_tune, metric = 'RMSE')
@@ -283,14 +283,14 @@ p1 <- plot(gbm_tune, metric = 'RMSE')
 # As part of this, as we are using presence/background points we want to weight the points such that background points have a lower weighting then presences
 # The method that has been accepted for presence only data would be an infinitely weighted logistic regression. The Valavi paper does not run IWLR BRT, so referring to the GAM and GLM implementations. The BRT method uses a method that they note is naive. We will compare both these methods. 
 
-load('./02_Workspaces/004_predictive_model_hyperparameter_tuning.RData')
+#load('./02_Workspaces/004_predictive_model_hyperparameter_tuning.RData')
 load('./02_Workspaces/004_predictive_modelling_pre_hypertune.RData')
 
 
 environmental_preds <- rast('./00_Data/SDM_data/predictors.tif')
-names(environmental_preds) <- c("QPWS_ff", "TWI", "Temp_season", "Precip_season", "Diurnal_temp", "Solar_rad", "FPC", "Soil_clay", "Slope", "Aspect", "TPI", "Elevation")
+names(environmental_preds) <- c("QPWS_ff", "TWI", "Temp_season", "Precip_season", "Diurnal_temp", "FPC", "Soil_clay", "Slope", "Aspect", "TPI", "Elevation")
 head(environmental_preds)
-environmental_preds <- subset(environmental_preds, c(1:5, 7:12))
+environmental_preds <- subset(environmental_preds, c(1:6, 8:11))
 head(environmental_preds)
 
 
@@ -362,8 +362,8 @@ for(k in seq_len(length(folds))){
   testSet <- unlist(folds[[k]][2]) # Testing set indices are the second element
   
   
-  prNum <- as.numeric(table(Pres_back[trainSet, 13])["1"]) # Number of presences
-  bgNum <- as.numeric(table(Pres_back[trainSet, 13])["0"]) # Number of absences
+  prNum <- as.numeric(table(Pres_back[trainSet, 12])["1"]) # Number of presences
+  bgNum <- as.numeric(table(Pres_back[trainSet, 12])["0"]) # Number of absences
   
   # Model with down-weighted background points 
   set.seed(480)
@@ -373,7 +373,7 @@ for(k in seq_len(length(folds))){
                               family = "poisson",
                               tree.complexity = 8,
                               learning.rate = 0.1,
-                              site.weights = ifelse(Pres_back[trainSet, 13] == 1, 1, prNum/bgNum))
+                              site.weights = ifelse(Pres_back[trainSet, 12] == 1, 1, prNum/bgNum))
   summary(fire_tc8lr.1_wt)
   
 
@@ -412,7 +412,7 @@ for(k in seq_len(length(folds))){
                               family = "poisson",
                               tree.complexity = 8,
                               learning.rate = 0.1,
-                              site.weights = (10^6)^(1-Pres_back[trainSet, 13]))
+                              site.weights = (10^6)^(1-Pres_back[trainSet, 12]))
   summary(fire_tc8lr.1_IWLR)
   
 }
@@ -501,8 +501,7 @@ round(unique(unweighted_pred$lyr1))
 hist(unweighted_pred[unweighted_pred<10])
 hist(unweighted_pred[unweighted_pred >1 & unweighted_pred<10])
 table(round(unweighted_pred[unweighted_pred >1 & unweighted_pred <10]))
-table(round(unweighted_pred[unweighted_pred >1 & unweighted_pred <80]))
-# We can see from this table that we do have fire frequencies that seem abnormally high (e.g., those outside of the range of Sentinel of 26 fires), but above this range, the number of points where these frequencies are observed is relatively small compared to the low fire frequencies. There are also jumps between frequencies at these higher predictions (e.g., 54 to 63 and nothing in between)
+
 
 
 # 8.2.2 Model 2 - background points down-weighted
@@ -519,8 +518,6 @@ down_wt_pred
 
 hist(down_wt_pred[down_wt_pred >1 & down_wt_pred <10])
 table(round(down_wt_pred[down_wt_pred >1 & down_wt_pred <10]))
-table(round(down_wt_pred[down_wt_pred >1 & down_wt_pred <80]))
-# As with the unweighted model, while we have abnormally high fire frequencies predicted by the downweighted BRT, above 26 fires, the number of points where these frequencies is relatively small and decreases. It is also not a steady increase, as we have a jump from 51 to 72 with nothing between these frequencies.
 
 
 # 8.2.3 Model 3 - IWLR
@@ -550,7 +547,7 @@ save.image('./02_Workspaces/004_predictive_modelling_predictions.RData')
 # Note that ROC and PR curves work on the basis of probabilities (0,1)
 # Need to extract predictions for the same coordinates as the testing data
 Pres_back_crds <- rbind(Rand_fire, Background_data)
-test_dat <- Pres_back_crds[testSet, c(2,1,3:8, 10:15)]
+test_dat <- Pres_back_crds[testSet, c(1:9, 11:14)]
 head(test_dat)
 test_dat_crds <- test_dat[, 3:4]
 
@@ -714,16 +711,19 @@ for(k in seq_len(length(folds))){
   
   # Model with down-weighted background points 
   set.seed(480)
-  fire_gam <- bam(Sentinel_ff ~ te(QPWS_ff, k = 6) + te(TWI) + te(Temp_season, bs = 'cc', k = 6) + te(Precip_season, bs = 'cc', k = 6) + te(Diurnal_temp, bs = 'cc', k = 6) + te(FPC, k = 9) + te(Soil_clay, k = 8) + te(Slope) + te(Aspect, k = 8) + te(TPI) + te(Elevation, k = 12),
+  fire_gam <- bam(Sentinel_ff ~ te(QPWS_ff, k = 6) + te(TWI) + te(Temp_season, bs = 'cc', k = 6) + te(Precip_season, bs = 'cc', k = 6) + te(Diurnal_temp, bs = 'cc', k = 6) + te(FPC, k = 9) + + te(Slope) + te(Aspect, k = 8) + te(TPI) + te(Elevation, k = 12),
                   data = Pres_back[trainSet,],
                   family = "poisson",
-                  weights = ifelse(Pres_back[trainSet, 13] == 1, 1, prNum/bgNum))
+                  weights = ifelse(Pres_back[trainSet, 12] == 1, 1, prNum/bgNum))
 }
 
 
 # Check how the gam looks
 gam.check(fire_gam)
 plot(fire_gam)
+plot.gam(fire_gam, residuals = T)
+gam.check(fire_gam)
+summary(fire_gam)
 
 
 
@@ -739,10 +739,10 @@ for(k in seq_len(length(folds))){
   
   # Model with down-weighted background points 
   set.seed(480)
-  fire_glm <- glm(Sentinel_ff ~ QPWS_ff + TWI + Temp_season + Precip_season + Diurnal_temp + FPC + Soil_clay + Slope + Aspect + TPI + Elevation,
+  fire_glm <- glm(Sentinel_ff ~ QPWS_ff + TWI + Temp_season + Precip_season + Diurnal_temp + FPC + Slope + Aspect + TPI + Elevation,
                   data = Pres_back[trainSet,],
                   family = "poisson",
-                  weights = ifelse(Pres_back[trainSet, 13] == 1, 1, prNum/bgNum))
+                  weights = ifelse(Pres_back[trainSet, 12] == 1, 1, prNum/bgNum))
 }
 
 

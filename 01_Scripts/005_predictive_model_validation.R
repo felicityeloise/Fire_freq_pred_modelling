@@ -33,6 +33,7 @@ QPWS_ff <- rast('./00_Data/Fire_data/Outputs/SEQ/QPWS_SEQ_freq_hydrographical_ma
 SEQ <- vect('./00_Data/Australia_shapefile/STE11aAust.shp') %>% 
   project('EPSG:3577') %>% 
   crop(gam_pred)
+SEQ_land <- vect('./00_Data/SEQ_bound/SEQ_land.gpkg')
 
 Sentinel_ff_m <- mask(Sentinel_ff, QPWS_ff, inverse = T)
 plet(Sentinel_ff_m)
@@ -53,13 +54,13 @@ plet(protected_land)
 range(Sentinel_ff$focal_mean) # Maximum is 26
 environmental_preds$QPWS_firefreq # Maximum is 12
 gam_pred # Maximum is 15
-down_wt_pred # Maximum is 72 so there is definitely over-estimation. We could undertake post-processing to remove this over-estimation
+down_wt_pred # Maximum is 27 so there is definitely over-estimation. We could undertake post-processing to remove this over-estimation
 plot(down_wt_pred)
-unweighted_pred # Maximum is 64, overestimating
+unweighted_pred # Maximum is 31, overestimating
 range(unweighted_pred$lyr1)
 summary(unweighted_pred$lyr1)
 IWLR_pred # Maximum is 8, underestimating
-glm_pred # Maximum is 16, underestimating
+glm_pred # Maximum is 14, underestimating
 
 # So just looking at the maximum values, most model underpredict fire frequency. The GLM, GAM and down weighted BRT overpredict QPWS fire frequency but only the down-weighted BRT overpredicts Sentinel fire frequency as well. SO let's take a look at the distribution of the predictions to really see what is going on as overprediction may be limited to a few locations and relatively few fire frequencies.
 
@@ -99,44 +100,9 @@ glm_cor <- cor.test(QPWS_ff_rand$QPWS_SEQ_freq_raster, glm_rand$lyr1) # correlat
 # The GLM has the highest correlation with QPWS fire frequency data, followed by the GAM and then the unweighted BRT. The down-weighted BRT which has the best model fit is only slightly worse than the unweighted BRT. We need to make some decisions about which is the best model to use. Let's take a look at the correlation with the Sentinel data as this will also guide our choices. 
 
 
-# 3.2 Check correlation of predictive outputs with Sentinel data
-set.seed(480)
-SEQ_pts <- spatSample(Sentinel_ff, 10000, na.rm = T, xy = T)
-SEQ_pts <- SEQ_pts[,1:2]
 
-
-Sent_SEQ <- extract(Sentinel_ff, SEQ_pts)
-
-# Unweighted model
-unweighted_SEQ <- extract(unweighted_pred, SEQ_pts)
-unweighted_SEQ <- round(unweighted_SEQ)
-unwt_SEQ_cor <- cor.test(Sent_SEQ$focal_mean, unweighted_SEQ$lyr1) # Correlation = 0.326055  
-
-# Down-weighted model
-down_SEQ <- round(extract(down_wt_pred, SEQ_pts))
-dwt_SEQ_cor <- cor.test(Sent_SEQ$focal_mean, down_SEQ$lyr1) # Correlation = 0.3205573  
-
-
-# IWLR weighted model
-IWLR_SEQ <- round(extract(IWLR_pred, SEQ_pts))
-IWLR_SEQ_cor <- cor.test(Sent_SEQ$focal_mean, IWLR_SEQ$lyr1) # Correlation = 0.3082806   
-
-# GAM model
-GAM_SEQ <- round(extract(gam_pred, SEQ_pts))
-GAM_SEQ_cor <- cor.test(Sent_SEQ$focal_mean, GAM_SEQ$lyr1) # Correlation = 0.316026   
-GAM_SEQ[is.na(GAM_SEQ)] <- 0
-
-# GLM model
-GLM_SEQ <- round(extract(glm_pred, SEQ_pts))
-GLM_SEQ_cor <- cor.test(Sent_SEQ$focal_mean, GLM_SEQ$lyr1) # Correlation = 0.2051413  
-GLM_SEQ[is.na(GAM_SEQ)] <- 0
-
-# While the GLM performed best for the QPWS data, the correlation with Sentinel data is worse than correlation between QPWS and Sentinel. This is not the best model to be used. The model with the highest correlation to Sentinel data is the GAM, this also had the highest correlation to the QPWS data. The down-weighted and unweighted BRT models correlation to Sentinel data is not much worse than the GAM so could feasibly be considered good models. In reality, when we consider the AUC ROC and precision-recall statistics, among the other model evaulation statistics, the GAM does not perform much worse than either of these BRT models. Our best model should be the model that has the highest correlation with the data that is already available to us, considering all of these aspects, we would say that the GAM model is actually our best model.
-
-
-
-# 3.3 Compare predictions to QPWS and Sentinel data for locations which I have sampled -----
-# 3.3.1 Transect based comparison
+# 3.2 Compare predictions to QPWS and Sentinel data for locations which I have sampled -----
+# 3.2.1 Transect based comparison
 transects <- read.csv('C:/Users/s4590925/OneDrive - The University of Queensland/Desktop/GitHub/Fire_recruit/00_Data/Transect_location_data.csv', header = T, stringsAsFactors = T)
 head(transects)
 View(transects)
@@ -189,7 +155,7 @@ View(transects_fire)
 # All models tend to underpredict for QPWS but the GAM produces predictions that are more close to those for Sentinel where there is no QPWS data compared to the down-weighted model.
 
 
-# 3.3.2 Genetics based comparison ----
+# 3.2.2 Genetics based comparison ----
 genetics <- read.table('C:/Users/s4590925/OneDrive - The University of Queensland/Desktop/GitHub/Allocasuarina__genfire/00_Data/Individual_site_data.txt', header = T, stringsAsFactors = T)
 head(genetics)
 
@@ -260,7 +226,8 @@ downweighted <- ggplot() +
 
 
 
-
+# Needs to be masked prior to plotting
+IWLR_pred <- mask(IWLR_pred, SEQ_land)
 IWLR <- ggplot() + 
   geom_spatvector(data = SEQ, fill = 'transparent', col = 'black')+
   geom_spatraster(data = IWLR_pred) +
@@ -284,7 +251,7 @@ GAM_m <- ggplot() +
   theme_cowplot(font_size = 17)+  
   scale_fill_viridis_c(na.value = 'transparent', limits = c(0.51,17), breaks = seq(1,18,1), direction = 1) +
   labs(fill = 'Fire frequency')+
-  annotation_north_arrow(location = "br", which_north = T, height = unit(2, "cm"), width = unit(1.75, "cm"), pad_y = unit(0.1, "cm"), pad_x = unit(-0.3, 'cm'), style = north_arrow_fancy_orienteering) +
+  #annotation_north_arrow(location = "br", which_north = T, height = unit(2, "cm"), width = unit(1.75, "cm"), pad_y = unit(0.1, "cm"), pad_x = unit(-0.3, 'cm'), style = north_arrow_fancy_orienteering) +
   theme(legend.key.height = unit(2.5, 'cm'),
         legend.key.width = unit(1, 'cm'),
         legend.title = element_text(face = 'bold', size = 25),
@@ -343,7 +310,7 @@ QPWS <- ggplot()+
 
 # Produce plot with all maps
 
-r_map_p <- plot_grid(unweighted+ theme(legend.position = "none"), downweighted + theme(legend.position = "none"), IWLR+ theme(legend.position = "none"), nrow = 1, rel_widths = c(0.2,0.2,0.2))
+r_map_p <- plot_grid(downweighted + theme(legend.position = "none"), unweighted+ theme(legend.position = "none"), IWLR+ theme(legend.position = "none"), nrow = 1, rel_widths = c(0.2,0.2,0.2))
 
 
 
@@ -412,11 +379,11 @@ col2rgb(s_c, alpha = F)
 ga_c <- '#AAA970'
 col2rgb(ga_c, alpha = F)
 
-dwt_c <- '#579C97'
-col2rgb(dwt_c, alpha = F)
-
-uwt_c <- '#2A6D7A'
+uwt_c <- '#579C97'
 col2rgb(uwt_c, alpha = F)
+
+dwt_c <- '#2A6D7A'
+col2rgb(dwt_c, alpha = F)
 
 iwlr_c <- '#8FCCB4'
 col2rgb(iwlr_c, alpha = F)
@@ -425,17 +392,17 @@ col2rgb(iwlr_c, alpha = F)
 
 # 4.3.2 Produce histogram for each plot separately
 # Main plots 
-gb_p <- hist(round(QPWS_pres$lyr1), breaks = seq(-1,16,1))
-gl_p <- hist(round(glm_pres$lyr1), breaks = seq(-1,16,1))
-s_p <- hist(round(Sent_pres$lyr1), breaks = seq(-1,16,1))
+gb_p <- hist(round(QPWS_pres$lyr1), breaks = seq(-1,17,1))
+gl_p <- hist(round(glm_pres$lyr1), breaks = seq(-1,17,1))
+s_p <- hist(round(Sent_pres$lyr1), breaks = seq(-1,17,1))
 
 
 
 # Subplots
-ga_p <- hist(round(gam_pres$lyr1),  breaks = seq(-1,16,1))
-dwt_p <- hist(round(dwt_pres$lyr1),  breaks = seq(-1,16,1))
-uwt_p <- hist(round(uwt_pres$lyr1),  breaks = seq(-1,16,1))
-iwlr_p <- hist(round(IWLR_pres$lyr1),  breaks = seq(-1,16,1))
+ga_p <- hist(round(gam_pres$lyr1),  breaks = seq(-1,17,1))
+dwt_p <- hist(round(dwt_pres$lyr1),  breaks = seq(-1,17,1))
+uwt_p <- hist(round(uwt_pres$lyr1),  breaks = seq(-1,17,1))
+iwlr_p <- hist(round(IWLR_pres$lyr1),  breaks = seq(-1,17,1))
 
 
 
@@ -443,15 +410,15 @@ iwlr_p <- hist(round(IWLR_pres$lyr1),  breaks = seq(-1,16,1))
 
 # 4.3.3 Create the subplots with the recuded y axis
 # Main plots
-gb_ps <- hist(round(QPWS_pres$lyr1), ylim = c(0,100), breaks = seq(-1,16,1))
-gl_ps <- hist(round(glm_pres$lyr1), ylim = c(0,100), breaks = seq(-1,16,1))
-s_ps <- hist(round(Sent_pres$lyr1), ylim = c(0,100), breaks = seq(-1,16,1))
+gb_ps <- hist(round(QPWS_pres$lyr1), ylim = c(0,100), breaks = seq(-1,17,1))
+gl_ps <- hist(round(glm_pres$lyr1), ylim = c(0,100), breaks = seq(-1,17,1))
+s_ps <- hist(round(Sent_pres$lyr1), ylim = c(0,100), breaks = seq(-1,17,1))
 
 # Subplots
-ga_ps <- hist(round(gam_pres$lyr1), ylim = c(0,100), breaks = seq(-1,16,1))
-dwt_ps <- hist(round(dwt_pres$lyr1), ylim = c(0,100), breaks = seq(-1,16,1))
-uwt_ps <- hist(round(uwt_pres$lyr1), ylim = c(0,100), breaks = seq(-1,16,1))
-iwlr_ps <- hist(round(IWLR_pres$lyr1), ylim = c(0,100), breaks = seq(-1,16,1))
+ga_ps <- hist(round(gam_pres$lyr1), ylim = c(0,100), breaks = seq(-1,17,1))
+dwt_ps <- hist(round(dwt_pres$lyr1), ylim = c(0,100), breaks = seq(-1,17,1))
+uwt_ps <- hist(round(uwt_pres$lyr1), ylim = c(0,100), breaks = seq(-1,17,1))
+iwlr_ps <- hist(round(IWLR_pres$lyr1), ylim = c(0,100), breaks = seq(-1,17,1))
 
 
 
@@ -463,38 +430,38 @@ par(mfrow = c(3, 2), mar = c(4,4,4,2), oma = c(1,3,1,17))
 # Observed data
 plot(gb_p, col = rgb(204/255, 204/255,204/255, 1), 
      ylab = "",  las = 1, ylim = c(0,0.7), freq = F, yaxt = "n",
-     xlab = expression(bold('Fire frequency')), xlim = c(0,16), xaxt = "n", 
-     border = 'white', main = "", cex.axis = 2, cex.lab = 2.6)
-mtext(expression(bold("Density")), side = 2, cex = 2.2, line = 3.5)
+     xlab = expression(bold('Fire frequency')), xlim = c(0,17), xaxt = "n", 
+     border = 'white', main = "", cex.axis = 2.4, cex.lab = 2.8)
+mtext(expression(bold("Density")), side = 2, cex = 2.6, line = 3.8)
 plot(s_p, col = rgb(70/255, 130/255, 180/255, 0.4),  ylim = c(0,0.7), freq = F,
      ylab = expression(bold("")),  las = 1, , yaxt = "n",
-     xlab = expression(bold("Fire frequency")), xlim = c(0,16), xaxt = "n",  
+     xlab = expression(bold("Fire frequency")), xlim = c(0,17), xaxt = "n",  
      border = 'white',bty= 'l', main = "", 
      add = T)
-axis(side = 1, at = seq(-1,16,1), cex.axis = 1.8, line = -0.4)
-axis(side = 1, at = c(10,12,14,16), cex.axis = 1.8, line = -0.4)
-axis(side = 2, at = seq(0, 0.7, 0.1), cex.axis = 1.8, line = 0.3, las = 1)
-mtext(expression(bold("(a) Observed")), side = 3, line = 0.8, at = 16, cex = 3)
-mtext(expression(paste("Pearson's ", italic("r"), " = 0.252")), line = -2, at = 12, cex = 1.5)
+axis(side = 1, at = seq(-1,17,1), cex.axis = 2.1, line = -0.4)
+axis(side = 1, at = c(11,13,15,17), cex.axis = 2.1, line = -0.4)
+axis(side = 2, at = seq(0, 0.7, 0.1), cex.axis = 2.1, line = 0.3, las = 1)
+mtext(expression(bold("(a) Observed")), side = 3, line = 0.8, at = 17, cex = 3.4)
+mtext(expression(paste("Pearson's ", italic("r"), " = 0.252")), line = -2, at = 12, cex = 2)
 
 
 plot(gb_ps, col = rgb(204/255, 204/255, 204/255, 1), 
      ylab = "", las = 1,  ylim = c(0,0.02), freq = F, yaxt = "n",
-     xlab = expression(bold("Fire frequency")), xlim = c(0,16), xaxt = "n",
-     border = 'white', main = "", cex.axis = 2, cex.lab = 2.6)
+     xlab = expression(bold("Fire frequency")), xlim = c(0,17), xaxt = "n",
+     border = 'white', main = "", cex.axis = 2.4, cex.lab = 2.8)
 plot(s_ps, col = rgb(70/255, 130/255, 180/255, 0.5),
      ylab = expression(bold("")), las = 1, ylim = c(0,0.02), freq = F, yaxt = "n",
-     xlab = expression(bold("Fire frequency")), xlim = c(0,16), xaxt = "n",
+     xlab = expression(bold("Fire frequency")), xlim = c(0,17), xaxt = "n",
      border = 'white',  main = "", 
      add = T)
-axis(side = 1, at = seq(-1,16,1), cex.axis = 1.8, line = -0.4)
-axis(side = 1, at = c(10,12,14,16), cex.axis = 1.8, line = -0.4)
-axis(side = 2, at = seq(0, 0.02, 0.01), cex.axis = 1.8, line = 0.3, las = 1)
+axis(side = 1, at = seq(-1,17,1), cex.axis = 2.1, line = -0.3)
+axis(side = 1, at = c(11,13,15,17), cex.axis = 2.1, line = -0.4)
+axis(side = 2, at = seq(0, 0.02, 0.01), cex.axis = 2.1, line = 0.3, las = 1)
 
 #mtext(expression(bold("Density")), side = 2, cex = 2.2, line = 3)
 
 par(xpd = NA)
-legend('topright', inset = c(-0.52, -0.35), fill = c('gray80', 'steelblue', "#492050", '#AAA970', '#2A6D7A','#579C97','#8FCCB4'), legend = c("Public", "Satellite", "GLM", "GAM", "Unweigthed BRT", "Down-weighted BRT", "IWLR BRT"), cex = 2.5, bty = 'n', border = 'transparent')
+legend('topright', inset = c(-0.35, -0.25), fill = c('gray80', 'steelblue', "#492050", '#AAA970', '#2A6D7A','#579C97','#8FCCB4'), legend = c("Public", "Satellite", "GLM", "GAM", "Unweigthed BRT", "Down-weighted BRT", "IWLR BRT"), cex = 2.5, bty = 'n', border = 'transparent')
 par(xpd = F)
 
 
@@ -502,64 +469,63 @@ par(xpd = F)
 # GLM data
 plot(gb_p, col = rgb(204/255, 204/255, 204/255, 1), 
      ylab = "", las = 1,  ylim = c(0,0.7), freq = F, yaxt = "n",
-     xlab = expression(bold("Fire frequency")), xlim = c(0,16),  xaxt = "n",
-     border = 'white',bty= 'l', main = "", cex.axis = 2, cex.lab = 2.6)
+     xlab = expression(bold("Fire frequency")), xlim = c(0,17),  xaxt = "n",
+     border = 'white',bty= 'l', main = "", cex.axis = 2.4, cex.lab = 2.8)
 plot(gl_p, col = rgb(73/255, 32/255, 80/255, 0.5),
      ylab = expression(bold("Density")),  las = 1, ylim = c(0,0.7), freq = F, yaxt = "n",
-     xlab = expression(bold("Fire frequency")), xlim = c(0,16),  xaxt = "n",
-     border = 'white', main = "", cex.axis = 2, cex.lab = 2.6,
+     xlab = expression(bold("Fire frequency")), xlim = c(0,17),  xaxt = "n",
+     border = 'white', main = "", cex.axis = 2.4, cex.lab = 2.8,
      add = T)
-axis(side = 1, at = seq(-1,16,1), cex.axis = 1.8, line = -0.4)
-axis(side = 1, at = c(10,12,14,16), cex.axis = 1.8, line = -0.4)
-axis(side = 2, at = seq(0, 0.7, 0.1), cex.axis = 1.8, line = 0.3, las = 1)
-mtext(expression(bold("Density")), side = 2, cex = 2.2, line = 3.5)
-mtext(expression(bold("(b) GLM")), side = 3, line = 0.1, at = 16, cex = 3)
-mtext(expression(paste("Pearson's ", italic("r"), " = 0.745")), line = -2, at = 12, cex = 1.5)
+axis(side = 1, at = seq(-1,17,1), cex.axis = 2.1, line = -0.4)
+axis(side = 1, at = c(11,13,15,17), cex.axis = 2.1, line = -0.4)
+axis(side = 2, at = seq(0, 0.7, 0.1), cex.axis = 2.1, line = 0.3, las = 1)
+mtext(expression(bold("Density")), side = 2, cex = 2.6, line = 3.8)
+mtext(expression(bold("(b) GLM")), side = 3, line = 0.1, at = 17, cex = 3.4)
+mtext(expression(paste("Pearson's ", italic("r"), " = 0.638")), line = -2, at = 12, cex = 2)
 
 plot(gb_ps, col = rgb(204/255, 204/255, 204/255, 1),
      ylim = c(0,0.02), freq = F, ylab = "", las = 1, yaxt = "n",
-     xlab = expression(bold("Fire frequency")), xlim = c(0,16), xaxt = "n",
-     border = 'white', main = "", cex.axis = 2, cex.lab = 2.6)
+     xlab = expression(bold("Fire frequency")), xlim = c(0,17), xaxt = "n",
+     border = 'white', main = "", cex.axis = 2.4, cex.lab = 2.8)
 plot(gl_ps, col = rgb(73/255, 32/255, 80/255, 0.5),
      ylim = c(0,0.02), freq = F, ylab = expression(bold("")), las = 1, yaxt = "n", 
-     xlab = expression(bold("Fire frequency")), xlim = c(0,16), xaxt = "n",
-     border = 'white', main = "", cex.lab = 2.6, 
+     xlab = expression(bold("Fire frequency")), xlim = c(0,17), xaxt = "n",
+     border = 'white', main = "", cex.lab = 2.8, 
      add = T)
-axis(side = 1, at = seq(-1,16,1), cex.axis = 1.8, line = -0.4)
-axis(side = 1, at = c(10,12,14,16), cex.axis = 1.8, line = -0.4)
-axis(side = 2, at = seq(0, 0.02, 0.01), cex.axis = 1.8, line = 0.3, las = 1)
+axis(side = 1, at = seq(-1,17,1), cex.axis = 2.1, line = -0.4)
+axis(side = 1, at = c(11,13,15,17), cex.axis = 2.1, line = -0.4)
+axis(side = 2, at = seq(0, 0.02, 0.01), cex.axis = 2.1, line = 0.3, las = 1)
 #mtext(expression(bold("Density")), side = 2, cex = 2.2, line = 3)
 
 
 # GAM
 plot(gb_p, col = rgb(204/255, 204/255, 204/255, 1), 
      ylab = "", las = 1,  ylim = c(0,0.7), freq = F,yaxt = "n",
-     xlab = expression(bold("Fire frequency")), xlim = c(0,16),  xaxt = "n",
-     border = 'white',bty= 'l', main = "", cex.axis = 2, cex.lab = 2.6)
-plot(ga_p, col = rgb(170/255, 169/255, 112/255, 0.5),
+     xlab = expression(bold("Fire frequency")), xlim = c(0,17),  xaxt = "n",
+     border = 'white',bty= 'l', main = "", cex.axis = 2.4, cex.lab = 2.8)
+plot(ga_p, col = rgb(170/255, 179/255, 112/255, 0.5),
      ylab = expression(bold("Density")),  las = 1, ylim = c(0,0.7), freq = F,
-     xlab = expression(bold("Fire frequency")), xlim = c(0,16),  xaxt = "n",
-     border = 'white', main = "", cex.axis = 2, cex.lab = 2.6,
+     xlab = expression(bold("Fire frequency")), xlim = c(0,17),  xaxt = "n",
+     border = 'white', main = "", cex.axis = 2.4, cex.lab = 2.8,
      add = T)
-axis(side = 1, at = seq(-1,16,1), cex.axis = 1.8, line = -0.4)
-axis(side = 1, at = c(10,12,14,16), cex.axis = 1.8, line = -0.4)
-axis(side = 2, at = seq(0, 0.7, 0.1), cex.axis = 1.8, line = 0.3, las = 1)
-mtext(expression(bold("Density")), side = 2, cex = 2.2, line = 3.5)
-mtext(expression(bold("(c) GAM")), side = 3, line = 0.1, at = 16, cex = 3)
-mtext(expression(paste("Pearson's ", italic("r"), " = 0.473")), line = -2, at = 12, cex = 1.5)
+axis(side = 1, at = seq(-1,17,1), cex.axis = 2.1, line = -0.4)
+axis(side = 2, at = seq(0, 0.7, 0.1), cex.axis = 2.1, line = 0.3, las = 1)
+mtext(expression(bold("Density")), side = 2, cex = 2.6, line = 3.8)
+mtext(expression(bold("(c) GAM")), side = 3, line = 0.1, at = 17, cex = 3.4)
+mtext(expression(paste("Pearson's ", italic("r"), " = 0.538")), line = -2, at = 12, cex = 2)
 
 plot(gb_ps, col = rgb(204/255, 204/255, 204/255, 1),
      ylim = c(0,0.02), freq = F, ylab = "", las = 1,yaxt = "n",
-     xlab = expression(bold("Fire frequency")), xlim = c(0,16), xaxt = "n",
-     border = 'white', main = "", cex.axis = 2, cex.lab = 2.6)
-plot(ga_ps, col = rgb(170/255, 169/255, 112/255, 0.5),
+     xlab = expression(bold("Fire frequency")), xlim = c(0,17), xaxt = "n",
+     border = 'white', main = "", cex.axis = 2.4, cex.lab = 2.8)
+plot(ga_ps, col = rgb(170/255, 179/255, 112/255, 0.5),
      ylim = c(0,0.02), freq = F, ylab = expression(bold("")), las = 1, yaxt = "n",
-     xlab = expression(bold("Fire frequency")), xlim = c(0,16), xaxt = "n",
-     border = 'white', main = "", cex.lab = 2.6, 
+     xlab = expression(bold("Fire frequency")), xlim = c(0,17), xaxt = "n",
+     border = 'white', main = "", cex.lab = 2.8, 
      add = T)
-axis(side = 1, at = seq(-1,16,1), cex.axis = 1.8, line = -0.4)
-axis(side = 1, at = c(10,12,14,16), cex.axis = 1.8, line = -0.4)
-axis(side = 2, at = seq(0, 0.02, 0.01), cex.axis = 1.8, line = 0.3, las = 1)
+axis(side = 1, at = seq(-1,17,1), cex.axis = 2.1, line = -0.4)
+axis(side = 1, at = c(11,13,15,17), cex.axis = 2.1, line = -0.4)
+axis(side = 2, at = seq(0, 0.02, 0.01), cex.axis = 2.1, line = 0.3, las = 1)
 #mtext(expression(bold("Density")), side = 2, cex = 2.2, line = 3)
 
 
@@ -572,108 +538,108 @@ dev.new(width = 20, height = 8, res = 300, dpi = 80, noRStudioGD = T)
 par(mfrow = c(2, 4), mar = c(6,3,4,2), oma = c(1,3,0,0))
 
 
+# DWT
+plot(gb_p, col = rgb(204/255, 204/255, 204/255, 1), 
+     ylab = "", las = 1,  ylim = c(0,0.7), freq = F,yaxt = "n",
+     xlab = expression(bold("Fire frequency")), xlim = c(-1,17),  xaxt = "n",
+     border = 'white',bty= 'l', main = "", cex.axis = 2.4, cex.lab = 2.8)
+plot(dwt_p, col = rgb(42/255, 109/255, 122/255, 0.5), 
+     ylab = expression(bold("Density")),  las = 1, ylim = c(0,0.7), freq = F,yaxt = "n",
+     xlab = expression(bold("Fire frequency")), xlim = c(-1,17),  xaxt = "n",
+     border = 'white', main = "", cex.axis = 2.4, cex.lab = 2.8,
+     add = T)
+axis(side = 1, at = c(0,5,10,17), cex.axis = 1.8, line = -0.4)
+axis(side = 1, at = seq(0,17, 1), labels = F, line = -0.4)
+axis(side = 2, at = seq(0, 0.7, 0.1), cex.axis = 1.8, line = -0.8, las = 1)
+axis(side = 1, at = c(-1, 17), labels = F, line = -0.4)
+mtext(expression(bold("Density")), side = 2, cex = 2.6, line = 2.8)
+mtext(expression(bold("(d) Down-weighted BRT")), side = 3, line = 1, at = 17, cex = 2.4)
+mtext(expression(paste("Pearson's ", italic("r"), " = 0.346")), line = -2, at = 9, cex = 2)
+
+plot(gb_ps, col = rgb(204/255, 204/255, 204/255, 1),
+     ylim = c(0,0.02), freq = F, ylab = "", las = 1, yaxt = "n",
+     xlab = expression(bold("Fire frequency")), xlim = c(-1,17), xaxt = "n",
+     border = 'white', main = "", cex.axis = 2.4, cex.lab = 2.8)
+plot(dwt_ps, col = rgb(42/255, 109/255, 122/255, 0.5),
+     ylim = c(0,0.02), freq = F, ylab = expression(bold("")), las = 1, yaxt = "n",
+     xlab = expression(bold("Fire frequency")), xlim = c(-1,17), xaxt = "n",
+     border = 'white', main = "", cex.lab = 2.8, 
+     add = T)
+axis(side = 1, at = c(0,5,10,17), cex.axis = 2.1, line = -0.4)
+axis(side = 1, at = seq(0,17, 1), labels = F, line = -0.4)
+axis(side = 1, at = c(-1, 17), labels = F, line = -0.4)
+axis(side = 2, at = seq(0, 0.02, 0.01), cex.axis = 2.1, line = -0.8, las = 1)
+#mtext(expression(bold("Density")), side = 2, cex = 2.2, line = 3)
+
+
 
 # UWT
 plot(gb_p, col = rgb(204/255, 204/255, 204/255, 1), 
      ylab = "", las = 1,  ylim = c(0,0.7), freq = F,yaxt = "n",
-     xlab = expression(bold("Fire frequency")), xlim = c(-1,16),  xaxt = "n",
-     border = 'white',bty= 'l', main = "", cex.axis = 2, cex.lab = 2.6)
-plot(uwt_p, col = rgb(42/255, 109/255, 122/255, 0.5),
+     xlab = expression(bold("Fire frequency")), xlim = c(-1,17),  xaxt = "n",
+     border = 'white',bty= 'l', main = "", cex.axis = 2.4, cex.lab = 2.8)
+plot(uwt_p, col = rgb(87/255, 156/255, 151/255, 0.5),
      ylab = expression(bold("Density")),  las = 1, ylim = c(0,0.7), freq = F,yaxt = "n",
-     xlab = expression(bold("Fire frequency")), xlim = c(-1,16),  xaxt = "n",
-     border = 'white', main = "", cex.axis = 2, cex.lab = 2.6,
+     xlab = expression(bold("Fire frequency")), xlim = c(-1,17),  xaxt = "n",
+     border = 'white', main = "", cex.axis = 2.4, cex.lab = 2.8,
      add = T)
-axis(side = 1, at = c(0,5,10,16), cex.axis = 1.8, line = -0.4)
-axis(side = 1, at = seq(0,16, 1), labels = F, line = -0.4)
-axis(side = 2, at = seq(0, 0.7, 0.1), cex.axis = 1.8, line = -0.8, las = 1)
-axis(side = 1, at = c(-1, 16), labels = F, line = -0.4)
-mtext(expression(bold("Density")), side = 2, cex = 2.2, line = 2.5)
-mtext(expression(bold("(d) Unweighted BRT")), side = 3, line = 1, at = 16, cex = 2)
-mtext(expression(paste("Pearson's ", italic("r"), " = 0.338")), line = -2, at = 9, cex = 1.75)
+axis(side = 1, at = c(0,5,10,17), cex.axis = 2.1, line = -0.4)
+axis(side = 1, at = seq(0,17, 1), labels = F, line = -0.4)
+axis(side = 2, at = seq(0, 0.7, 0.1), cex.axis = 2.1, line = -0.8, las = 1)
+axis(side = 1, at = c(-1, 17), labels = F, line = -0.4)
+mtext(expression(bold("Density")), side = 2, cex = 2.6, line = 2.8)
+mtext(expression(bold("(e) Unweighted BRT")), side = 3, line = 1, at = 17, cex = 2.4)
+mtext(expression(paste("Pearson's ", italic("r"), " = 0.336")), line = -2, at = 9, cex = 2)
 
 plot(gb_ps, col = rgb(204/255, 204/255, 204/255, 1),
      ylim = c(0,0.02), freq = F, ylab = "", las = 1, yaxt = "n",
-     xlab = expression(bold("Fire frequency")), xlim = c(-1,16), xaxt = "n",
-     border = 'white', main = "", cex.axis = 2, cex.lab = 2.6)
-plot(uwt_ps, col = rgb(42/255, 109/255, 122/255, 0.5),
+     xlab = expression(bold("Fire frequency")), xlim = c(-1,17), xaxt = "n",
+     border = 'white', main = "", cex.axis = 2.4, cex.lab = 2.8)
+plot(uwt_ps, col = rgb(87/255, 156/255, 151/255, 0.5),
      ylim = c(0,0.02), freq = F, ylab = expression(bold("")), las = 1, yaxt = "n",
-     xlab = expression(bold("Fire frequency")), xlim = c(-1,16), xaxt = "n",
-     border = 'white', main = "", cex.lab = 2.6, 
+     xlab = expression(bold("Fire frequency")), xlim = c(-1,17), xaxt = "n",
+     border = 'white', main = "", cex.lab = 2.8, 
      add = T)
-axis(side = 1, at = c(0,5,10,16), cex.axis = 1.8, line = -0.4)
-axis(side = 1, at = seq(0,16, 1), labels = F, line = -0.4)
-axis(side = 1, at = c(-1, 16), labels = F, line = -0.4)
-axis(side = 2, at = seq(0, 0.02, 0.01), cex.axis = 1.8, line = -0.8, las = 1)
+axis(side = 1, at = c(0,5,10,17), cex.axis = 2.1, line = -0.4)
+axis(side = 1, at = seq(0,17, 1), labels = F, line = -0.4)
+axis(side = 1, at = c(-1, 17), labels = F, line = -0.4)
+axis(side = 2, at = seq(0, 0.02, 0.01), cex.axis = 2.1, line = -0.8, las = 1)
 #mtext(expression(bold("Density")), side = 2, cex = 2.2, line = 3)
 
-
-
-# DWT
-plot(gb_p, col = rgb(204/255, 204/255, 204/255, 1), 
-     ylab = "", las = 1,  ylim = c(0,0.7), freq = F,yaxt = "n",
-     xlab = expression(bold("Fire frequency")), xlim = c(-1,16),  xaxt = "n",
-     border = 'white',bty= 'l', main = "", cex.axis = 2, cex.lab = 2.6)
-plot(dwt_p, col = rgb(87/255, 156/255, 151/255, 0.5), 
-     ylab = expression(bold("Density")),  las = 1, ylim = c(0,0.7), freq = F,yaxt = "n",
-     xlab = expression(bold("Fire frequency")), xlim = c(-1,16),  xaxt = "n",
-     border = 'white', main = "", cex.axis = 2, cex.lab = 2.6,
-     add = T)
-axis(side = 1, at = c(0,5,10,16), cex.axis = 1.8, line = -0.4)
-axis(side = 1, at = seq(0,16, 1), labels = F, line = -0.4)
-axis(side = 2, at = seq(0, 0.7, 0.1), cex.axis = 1.8, line = -0.8, las = 1)
-axis(side = 1, at = c(-1, 16), labels = F, line = -0.4)
-mtext(expression(bold("Density")), side = 2, cex = 2.2, line = 2.5)
-mtext(expression(bold("(e) Down-weighted BRT")), side = 3, line = 1, at = 16, cex = 2)
-mtext(expression(paste("Pearson's ", italic("r"), " = 0.337")), line = -2, at = 9, cex = 1.75)
-
-plot(gb_ps, col = rgb(204/255, 204/255, 204/255, 1),
-     ylim = c(0,0.02), freq = F, ylab = "", las = 1, yaxt = "n",
-     xlab = expression(bold("Fire frequency")), xlim = c(-1,16), xaxt = "n",
-     border = 'white', main = "", cex.axis = 2, cex.lab = 2.6)
-plot(dwt_ps, col = rgb(87/255, 156/255, 151/255, 0.5),
-     ylim = c(0,0.02), freq = F, ylab = expression(bold("")), las = 1, yaxt = "n",
-     xlab = expression(bold("Fire frequency")), xlim = c(-1,16), xaxt = "n",
-     border = 'white', main = "", cex.lab = 2.6, 
-     add = T)
-axis(side = 1, at = c(0,5,10,16), cex.axis = 1.8, line = -0.4)
-axis(side = 1, at = seq(0,16, 1), labels = F, line = -0.4)
-axis(side = 1, at = c(-1, 16), labels = F, line = -0.4)
-axis(side = 2, at = seq(0, 0.02, 0.01), cex.axis = 1.8, line = -0.8, las = 1)
-#mtext(expression(bold("Density")), side = 2, cex = 2.2, line = 3)
 
 
 
 # IWLR
 plot(gb_p, col = rgb(204/255, 204/255, 204/255, 1), 
      ylab = "", las = 1,  ylim = c(0,0.7), freq = F,yaxt = "n",
-     xlab = expression(bold("Fire frequency")), xlim = c(-1,16),  xaxt = "n",
-     border = 'white',bty= 'l', main = "", cex.axis = 2, cex.lab = 2.6)
+     xlab = expression(bold("Fire frequency")), xlim = c(-1,17),  xaxt = "n",
+     border = 'white',bty= 'l', main = "", cex.axis = 2.4, cex.lab = 2.8)
 plot(iwlr_p, col = rgb(143/255, 204/255, 180/255, 0.5),
      ylab = expression(bold("Density")),  las = 1, ylim = c(0,0.7), freq = F,yaxt = "n",
-     xlab = expression(bold("Fire frequency")), xlim = c(-1,16),  xaxt = "n",
-     border = 'white', main = "", cex.axis = 2, cex.lab = 2.6,
+     xlab = expression(bold("Fire frequency")), xlim = c(-1,17),  xaxt = "n",
+     border = 'white', main = "", cex.axis = 2.4, cex.lab = 2.8,
      add = T)
-axis(side = 1, at = c(0,5,10,16), cex.axis = 1.8, line = -0.4)
-axis(side = 1, at = seq(0,16, 1), labels = F, line = -0.4)
-axis(side = 2, at = seq(0, 0.7, 0.1), cex.axis = 1.8, line = -0.8, las = 1)
-axis(side = 1, at = c(-1, 16), labels = F, line = -0.4)
-mtext(expression(bold("Density")), side = 2, cex = 2.2, line = 2.5)
-mtext(expression(bold("(f) IWLR BRT")), side = 3, line = 1, at = 16, cex = 2)
-mtext(expression(paste("Pearson's ", italic("r"), " = 0.038")), line = -2, at = 9, cex = 1.75)
+axis(side = 1, at = c(0,5,10,17), cex.axis = 2.1, line = -0.4)
+axis(side = 1, at = seq(0,17, 1), labels = F, line = -0.4)
+axis(side = 2, at = seq(0, 0.7, 0.1), cex.axis = 2.1, line = -0.8, las = 1)
+axis(side = 1, at = c(-1, 17), labels = F, line = -0.4)
+mtext(expression(bold("Density")), side = 2, cex = 2.6, line = 2.8)
+mtext(expression(bold("(f) IWLR BRT")), side = 3, line = 1, at = 17, cex = 2.4)
+mtext(expression(paste("Pearson's ", italic("r"), " = 0.033")), line = -2, at = 9, cex = 2)
 
 plot(gb_ps, col = rgb(204/255, 204/255, 204/255, 1),
      ylim = c(0,0.02), freq = F, ylab = "", las = 1, yaxt = "n",
-     xlab = expression(bold("Fire frequency")), xlim = c(-1,16), xaxt = "n",
-     border = 'white', main = "", cex.axis = 2, cex.lab = 2.6)
+     xlab = expression(bold("Fire frequency")), xlim = c(-1,17), xaxt = "n",
+     border = 'white', main = "", cex.axis = 2.4, cex.lab = 2.8)
 plot(iwlr_ps, col = rgb(143/255, 204/255, 180/255, 0.5),
      ylim = c(0,0.02), freq = F, ylab = expression(bold("")), las = 1, yaxt = "n",
-     xlab = expression(bold("Fire frequency")), xlim = c(-1,16), xaxt = "n",
-     border = 'white', main = "", cex.lab = 2.6, 
+     xlab = expression(bold("Fire frequency")), xlim = c(-1,17), xaxt = "n",
+     border = 'white', main = "", cex.lab = 2.8, 
      add = T)
-axis(side = 1, at = c(0,5,10,16), cex.axis = 1.8, line = -0.4)
-axis(side = 1, at = seq(0,16, 1), labels = F, line = -0.4)
-axis(side = 1, at = c(-1, 16), labels = F, line = -0.4)
-axis(side = 2, at = seq(0, 0.02, 0.01), cex.axis = 1.8, line = -0.8, las = 1)
+axis(side = 1, at = c(0,5,10,17), cex.axis = 2.1, line = -0.4)
+axis(side = 1, at = seq(0,17, 1), labels = F, line = -0.4)
+axis(side = 1, at = c(-1, 17), labels = F, line = -0.4)
+axis(side = 2, at = seq(0, 0.02, 0.01), cex.axis = 2.1, line = -0.8, las = 1)
 #mtext(expression(bold("Density")), side = 2, cex = 2.2, line = 3)
 
 save.image('./02_Workspaces/005_predictive_model_validations.RData')
@@ -691,9 +657,9 @@ cells(Sentinel_ff) # Total number of cells = 69976534
 (32945/69976534)*100 # 0.04708007% of cells with Fire freq >16
 
 cells(unweighted_pred) # Total cells =  70535296. Number unchanged by adding round
-cells(round(unweighted_pred), c(17:64)) # 2012 cells. Needed to add round due to the decimals in predictions
-(2021/70535296)*100 # 0.002865232% of cells with fire freq >16
+cells(round(unweighted_pred), c(17:64)) # 177 cells. Needed to add round due to the decimals in predictions
+(177/70535296)*100 # 0.002865232% of cells with fire freq >16
 
 cells(down_wt_pred) # Total cells = 70535296
-cells(round(down_wt_pred), c(17:72)) # 1413 cells
-(1413/70535296)*100 # 0.002003252% of cells with fire freq >16
+cells(round(down_wt_pred), c(17:72)) # 136 cells
+(136/70535296)*100 # 0.002003252% of cells with fire freq >16

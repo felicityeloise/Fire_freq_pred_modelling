@@ -41,7 +41,6 @@ TWI <- rast('./00_Data/Environmental_data/Outputs/TWI/SEQ_TWI_cropped_focal.tif'
 tempseason <- rast('./00_Data/Environmental_data/Outputs/BioClim/Tempseason_SEQ_cropped_focal.tif')
 precipseason <- rast('./00_Data/Environmental_data/Outputs/BioClim/precipseason_SEQ_cropped_focal.tif')
 diurnal_temp <- rast('./00_Data/Environmental_data/Outputs/BioClim/Diurnal_temp_meanSEQ_cropped_focal.tif')
-solar_radiation <- rast('./00_Data/Environmental_data/Outputs/Solar_radiation/Solar_radiation_seq_cropped_focal.tif')
 FPC <- rast('./00_Data/Environmental_data/Outputs/FPC/FPC_all_cropped_focal.tif')
 soil_clay <- rast('./00_Data/Environmental_data/Outputs/Soil_clay/SEQ_soilclay_cropped_focal.tif')
 slope <- rast('./00_Data/Environmental_data/Outputs/DEM/SEQ_slope_cropped_focal.tif')
@@ -71,10 +70,6 @@ diurnal_temprand <- terra::extract(diurnal_temp, QPWS_rand)# Getting some NA val
 colnames(diurnal_temprand) <- c("ID", "diurnal_temp")
 
 
-solar_rad_rand <- terra::extract(solar_radiation, QPWS_rand)
-colnames(solar_rad_rand) <- c("ID", "solar_radiation")
-
-
 FPC_rand <- terra::extract(FPC, QPWS_rand) 
 colnames(FPC_rand) <- c("ID", "FPC")
 
@@ -102,7 +97,6 @@ Rand_fire$TWI <- TWI_rand$TWI
 Rand_fire$tempseason <- tempseason_rand$tempseason
 Rand_fire$precipseason <- precipseason_rand$precipseason
 Rand_fire$diurnal_temp <- diurnal_temprand$diurnal_temp
-Rand_fire$solar_radiation <- solar_rad_rand$solar_radiation
 Rand_fire$FPC <- FPC_rand$FPC
 Rand_fire$soil_clay <- soil_clay_rand$soil_clay
 Rand_fire$slope <- slope_rand$slope
@@ -129,7 +123,7 @@ View(Rand_fire)
 
 # Lets have a look at where the NA values may be falling
 Rand_fire <- read.csv('./00_Data/Fire_data/Outputs/Random_points_data/Fire_frequency_random_environmental_pres.csv', header = T)
-Rand_fire <- Rand_fire[, c(2:17)]
+Rand_fire <- Rand_fire[, c(2:16)]
 head(Rand_fire)
 pt_precip <- Rand_fire[is.na(Rand_fire$precipseason), c(4:5)]
 pt_precip_sf <- st_as_sf(pt_precip, coords = c(1:2), crs = 'EPSG:3577')
@@ -185,7 +179,6 @@ twi <- raster('./00_Data/Environmental_data/Outputs/TWI/SEQ_TWI_cropped_focal.ti
 temp <- raster('./00_Data/Environmental_data/Outputs/BioClim/Tempseason_SEQ_cropped_focal.tif')
 precip <- raster('./00_Data/Environmental_data/Outputs/BioClim/precipseason_SEQ_cropped_focal.tif')
 diurnal <- raster('./00_Data/Environmental_data/Outputs/BioClim/Diurnal_temp_meanSEQ_cropped_focal.tif')
-solar <- raster('./00_Data/Environmental_data/Outputs/Solar_radiation/Solar_radiation_seq_cropped_focal.tif')
 fpc <- raster('./00_Data/Environmental_data/Outputs/FPC/FPC_all_cropped_focal.tif')
 soil <- raster('./00_Data/Environmental_data/Outputs/Soil_clay/SEQ_soilclay_cropped_focal.tif')
 slp <- raster('./00_Data/Environmental_data/Outputs/DEM/SEQ_slope_cropped_focal.tif')
@@ -201,8 +194,6 @@ pt_precip <- Rand_fire[is.na(Rand_fire$precipseason), c(4:5)]
 colnames(pt_precip) <- c('x', 'y')
 pt_diurnal <- Rand_fire[is.na(Rand_fire$diurnal_temp), c(4:5)]
 colnames(pt_diurnal) <- c('x', 'y')
-pt_solar <- Rand_fire[is.na(Rand_fire$solar_radiation), c(4:5)]
-colnames(pt_solar) <- c('x', 'y')
 pt_FPC <- Rand_fire[is.na(Rand_fire$FPC), c(4:5)]
 colnames(pt_FPC) <- c('x', 'y')
 pt_soil <- Rand_fire[is.na(Rand_fire$soil_clay), c(4:5)]
@@ -214,15 +205,13 @@ colnames(pt_soil) <- c('x', 'y')
 nearest.temp <- nearestLand(pt_temp, temp, 558)
 nearest.precip <- nearestLand(pt_precip, precip, 558)
 nearest.diurnal <- nearestLand(pt_diurnal, diurnal, 558)
-nearest.solar <- nearestLand(pt_solar, solar, 1857) # This is quite far as there are a couple of islands off the coast that have no solar radiation data, the nearest raster value is quite a distance from the furthest point
-nearest.fpc <- nearestLand(pt_FPC, fpc, 88)
+nearest.fpc <- nearestLand(pt_FPC, fpc, 540)
 nearest.soil <- nearestLand(pt_soil, soil, 996)
 
 # 4.2.4 Extract the values for these data points ----
 temp.na <- terra::extract(tempseason, nearest.temp)
 precip.na <- terra::extract(precipseason, nearest.precip)
 diurnal.na <- terra::extract(diurnal_temp, nearest.diurnal)
-solar.na <- terra::extract(solar_radiation, nearest.solar)
 fpc.na <- terra::extract(FPC, nearest.fpc)
 soil.na <- terra::extract(soil_clay, nearest.soil)
 
@@ -231,7 +220,6 @@ soil.na <- terra::extract(soil_clay, nearest.soil)
 temp.na <- cbind(temp.na, nearest.temp)
 precip.na <- cbind(precip.na, nearest.precip)
 diurnal.na <- cbind(diurnal.na, nearest.diurnal)
-solar.na <- cbind(solar.na, nearest.solar)
 fpc.na <- cbind(fpc.na, nearest.fpc)
 soil.na <- cbind(soil.na, nearest.soil)
 
@@ -239,7 +227,6 @@ soil.na <- cbind(soil.na, nearest.soil)
 Rand_fire$tempseason <- ifelse(is.na(Rand_fire$tempseason), temp.na$temperature_seasonality, Rand_fire$tempseason)
 Rand_fire$precipseason <- ifelse(is.na(Rand_fire$precipseason), precip.na$precipitation_seasonality, Rand_fire$precipseason)
 Rand_fire$diurnal_temp <- ifelse(is.na(Rand_fire$diurnal_temp), diurnal.na$diurnal_temp_seasonality, Rand_fire$diurnal_temp)
-Rand_fire$solar_radiation <- ifelse(is.na(Rand_fire$solar_radiation), solar.na$Avg_solar_radiation, Rand_fire$solar_radiation)
 Rand_fire$FPC <- ifelse(is.na(Rand_fire$FPC), fpc.na$Foliage_proj_cover, Rand_fire$FPC)
 Rand_fire$soil_clay <- ifelse(is.na(Rand_fire$soil_clay), soil.na$percent_soil_clay, Rand_fire$soil_clay)
 unique(is.na(Rand_fire))
@@ -351,10 +338,6 @@ diurnal_tempran <- terra::extract(diurnal_temp, bg_rand)
 colnames(diurnal_tempran) <- c("ID", "diurnal_temp")
 
 
-solar_radran <- terra::extract(solar_radiation, bg_rand)
-colnames(solar_radran) <- c("ID", "solar_radiation")
-
-
 FPC_rand <- terra::extract(FPC, bg_rand) 
 colnames(FPC_rand) <- c("ID", "FPC")
 
@@ -389,7 +372,6 @@ Background_data$TWI <- TWI_rand$TWI
 Background_data$tempseason <- tempseason_rand$tempseason
 Background_data$precipseason <- precipseason_rand$precipseason
 Background_data$diurnal_temp <- diurnal_tempran$diurnal_temp
-Background_data$solar_radiation <- solar_radran$solar_radiation
 Background_data$FPC <- FPC_rand$FPC
 Background_data$soil_clay <- soil_rand$soil_clay
 Background_data$slope <- sloperan$slope
@@ -416,8 +398,6 @@ pt_precip <- Background_data[is.na(Background_data$precipseason), c(4:5)]
 colnames(pt_precip) <- c('x', 'y')
 pt_diurnal <- Background_data[is.na(Background_data$diurnal_temp), c(4:5)]
 colnames(pt_diurnal) <- c('x', 'y')
-pt_solar <- Background_data[is.na(Background_data$solar_radiation), c(4:5)]
-colnames(pt_solar) <- c('x', 'y')
 pt_FPC <- Background_data[is.na(Background_data$FPC), c(4:5)]
 colnames(pt_FPC) <- c('x', 'y')
 pt_soil <- Background_data[is.na(Background_data$soil_clay), c(4:5)]
@@ -439,9 +419,7 @@ nearest.precip <- nearestLand(pt_precip, precip, 830)
 unique(is.na(nearest.precip))
 nearest.diurnal <- nearestLand(pt_diurnal, diurnal, 830)
 unique(is.na(nearest.diurnal))
-nearest.solar <- nearestLand(pt_solar, solar, 9000) # This is quite far as there are a couple of islands off the coast that have no solar radiation data, the nearest raster value is quite a distance from the furthest point
-unique(is.na(nearest.solar))
-nearest.fpc <- nearestLand(pt_FPC, fpc, 400)
+nearest.fpc <- nearestLand(pt_FPC, fpc, 1215)
 unique(is.na(nearest.fpc))
 nearest.soil <- nearestLand(pt_soil, soil, 5000)
 unique(is.na(nearest.soil))
@@ -458,7 +436,6 @@ twi.na <- terra::extract(TWI, nearest.twi)
 temp.na <- terra::extract(tempseason, nearest.temp)
 precip.na <- terra::extract(precipseason, nearest.precip)
 diurnal.na <- terra::extract(diurnal_temp, nearest.diurnal)
-solar.na <- terra::extract(solar_radiation, nearest.solar)
 fpc.na <- terra::extract(FPC, nearest.fpc)
 soil.na <- terra::extract(soil_clay, nearest.soil)
 slope.na <- terra::extract(slope, nearest.slope)
@@ -473,7 +450,6 @@ colnames(twi.na) <- c('TWI', 'Lon','Lat')
 temp.na <- cbind(temp.na, nearest.temp)
 precip.na <- cbind(precip.na, nearest.precip)
 diurnal.na <- cbind(diurnal.na, nearest.diurnal)
-solar.na <- cbind(solar.na, nearest.solar)
 fpc.na <- cbind(fpc.na, nearest.fpc)
 soil.na <- cbind(soil.na, nearest.soil)
 slope.na <- cbind(slope.na, nearest.slope)
@@ -486,7 +462,6 @@ Background_data$TWI <- ifelse(is.na(Background_data$TWI), twi.na$TWI, Background
 Background_data$tempseason <- ifelse(is.na(Background_data$tempseason), temp.na$temperature_seasonality, Background_data$tempseason)
 Background_data$precipseason <- ifelse(is.na(Background_data$precipseason), precip.na$precipitation_seasonality, Background_data$precipseason)
 Background_data$diurnal_temp <- ifelse(is.na(Background_data$diurnal_temp), diurnal.na$diurnal_temp_seasonality, Background_data$diurnal_temp)
-Background_data$solar_radiation <- ifelse(is.na(Background_data$solar_radiation), solar.na$Avg_solar_radiation, Background_data$solar_radiation)
 Background_data$FPC <- ifelse(is.na(Background_data$FPC), fpc.na$Foliage_proj_cover, Background_data$FPC)
 Background_data$soil_clay <- ifelse(is.na(Background_data$soil_clay), soil.na$percent_soil_clay, Background_data$soil_clay)
 Background_data$slope <- ifelse(is.na(Background_data$slope), slope.na$slope, Background_data$slope)
