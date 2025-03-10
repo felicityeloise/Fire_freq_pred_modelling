@@ -307,13 +307,13 @@ ggplot(data = RE_randpt_fire, aes(x = Fire_freq, fill = Dataset))+
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
         strip.text = element_text(face = 'bold', size = 20),
-        axis.text = element_text(size = 14),
+        axis.text = element_text(size = 18),
         axis.title = element_text(size = 20),
         legend.title = element_blank(),
         legend.text = element_text(size = 18),
         legend.position = "bottom")
 
-
+# 1100 x 1000
 save.image('./02_Workspaces/005_predictive_model_validations_vegetation.RData')
 
 table(RE_randpt_fire$Dataset, RE_randpt_fire$Fire_freq)
