@@ -726,7 +726,6 @@ gam.check(fire_gam)
 summary(fire_gam)
 
 
-
 # 10.2.1 GLM with down-weighting
 for(k in seq_len(length(folds))){
   trainSet <- unlist(folds[[k]][1]) # Training set indices are the first element
@@ -744,6 +743,8 @@ for(k in seq_len(length(folds))){
                   family = "poisson",
                   weights = ifelse(Pres_back[trainSet, 12] == 1, 1, prNum/bgNum))
 }
+summary(fire_glm)
+summary.glm(fire_glm)
 
 
 

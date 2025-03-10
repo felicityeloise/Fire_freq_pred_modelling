@@ -314,5 +314,6 @@ ggplot(data = RE_randpt_fire, aes(x = Fire_freq, fill = Dataset))+
         legend.position = "bottom")
 
 
+save.image('./02_Workspaces/005_predictive_model_validations_vegetation.RData')
 
 table(RE_randpt_fire$Dataset, RE_randpt_fire$Fire_freq)
