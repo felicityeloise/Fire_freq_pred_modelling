@@ -5,32 +5,32 @@ Predictors = Temp_season
 Predictors = Precip_season
 Predictors = Diurnal_temp
 Predictors = FPC
-Predictors = Soil_clay
 Predictors = Slope
 Predictors = Aspect
+Predictors = TPI
 Response = Sentinel_ff
 Family = poisson
 Tree complexity = 8
 Learning rate = 0.1
 CV folds = 10
-Best number of trees = 7100
+Best number of trees = 7250
 Time taken = 0.02 minutes
-Mean total deviance = 2.015
-Mean residual deviance = 0.506
-Estimated cv deviance = 0.933 and standard error = 0.006
-training data correlation = 0.932
-CV correlation = 0.733 and standard error = 0.004
+Mean total deviance = 1.979
+Mean residual deviance = 0.525
+Estimated cv deviance = 0.942 and standard error = 0.006
+training data correlation = 0.927
+CV correlation = 0.73 and standard error = 0.003
 The following model evaluation measures were calculated using precrec::evalmod(), by including mode = 'basic' this returns further measures beyond AUC ROC and precision-recall curves.
-Area Under the Reciever Operating Characteristic Curve (AUC ROC)  =  0.708
-Precision-Recall curve (PRC) =  0.704
+Area Under the Reciever Operating Characteristic Curve (AUC ROC)  =  0.748
+Precision-Recall curve (PRC) =  0.685
 Basic performance evaluation measures averages
-Classification error rate =  0.396
-Accuracy =  0.604
-Precision =  0.667
-Specificity (TNR) =  0.605
-Sensitivity (TPR) =  0.603
-F-score, a balanced measure of model performance based on precision and recall  =  0.562
-Matthews correlation coefficient =  0.245
-Mean squared error = 1.767
-R-squared = -0.285
-Deviance of observed and predicted values for QPWS data = 1.668
+Classification error rate =  0.377
+Accuracy =  0.623
+Precision =  0.632
+Specificity (TNR) =  0.611
+Sensitivity (TPR) =  0.637
+F-score, a balanced measure of model performance based on precision and recall  =  0.563
+Matthews correlation coefficient =  0.291
+Mean squared error = 1.922
+R-squared = -0.348
+Deviance of observed and predicted values for QPWS data = 1.725
