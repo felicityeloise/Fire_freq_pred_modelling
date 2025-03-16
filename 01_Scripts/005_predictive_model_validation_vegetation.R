@@ -176,7 +176,7 @@ glm_pred[is.na(glm_pred)] <- 0
 
 # Extract information
 QPWS_pts <- extract(QPWS_ff, RE_pts)
-QPWS_pts$Dataset <- "Public"
+QPWS_pts$Dataset <- "Public land"
 Sent_pts <- extract(Sentinel_ff, RE_pts)
 Sent_pts$Dataset <- "Satellite"
 glm_pts <- extract(glm_pred, RE_pts)
@@ -217,8 +217,8 @@ RE_randpt_fire$Fire_freq[is.na(RE_randpt_fire$Fire_freq)] <- 0
 unique(is.na(RE_randpt_fire))
 str(RE_randpt_fire)
 
-RE_randpt_fire$Dataset <- factor(RE_randpt_fire$Dataset, levels = c("GLM", "Public", "Satellite"))
-RE_randpt_fire$Dataset <- factor(RE_randpt_fire$Dataset, levels = c("Public", "Satellite", "GLM"))
+RE_randpt_fire$Dataset <- factor(RE_randpt_fire$Dataset, levels = c("GLM", "Public land", "Satellite"))
+RE_randpt_fire$Dataset <- factor(RE_randpt_fire$Dataset, levels = c("Public land", "Satellite", "GLM"))
 
 str(RE_randpt_fire)
 unique(RE_randpt_fire$Fire_freq)
@@ -283,8 +283,8 @@ RE_randpt_fire$Fire_freq[is.na(RE_randpt_fire$Fire_freq)] <- 0
 unique(is.na(RE_randpt_fire))
 str(RE_randpt_fire)
 
-RE_randpt_fire$Dataset <- factor(RE_randpt_fire$Dataset, levels = c("GAM", "GLM", "Public", "Satellite"))
-RE_randpt_fire$Dataset <- factor(RE_randpt_fire$Dataset, levels = c("Public", "Satellite", "GLM", "GAM"))
+RE_randpt_fire$Dataset <- factor(RE_randpt_fire$Dataset, levels = c("GAM", "GLM", "Public land", "Satellite"))
+RE_randpt_fire$Dataset <- factor(RE_randpt_fire$Dataset, levels = c("Public land", "Satellite", "GLM", "GAM"))
 
 str(RE_randpt_fire)
 unique(RE_randpt_fire$Fire_freq)

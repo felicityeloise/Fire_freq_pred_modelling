@@ -461,7 +461,7 @@ mtext(expression(bold("Fire frequency")), side = 1, line = 4, cex = 2)
 #mtext(expression(bold("Density")), side = 2, cex = 2.2, line = 3)
 
 par(xpd = NA)
-legend('topright', inset = c(-0.35, -0.25), fill = c('gray80', 'steelblue', "#492050", '#AAA970', '#2A6D7A','#579C97','#8FCCB4'), legend = c("Public", "Satellite", "GLM", "GAM", "Down-weigthed BRT", "Unweighted BRT", "IWLR BRT"), cex = 2.5, bty = 'n', border = 'transparent')
+legend('topright', inset = c(-0.35, -0.25), fill = c('gray80', 'steelblue', "#492050", '#AAA970', '#2A6D7A','#579C97','#8FCCB4'), legend = c("Public land", "Satellite", "GLM", "GAM", "Down-weigthed BRT", "Unweighted BRT", "Infinite BRT"), cex = 2.5, bty = 'n', border = 'transparent')
 par(xpd = F)
 
 
@@ -635,7 +635,7 @@ axis(side = 2, at = seq(0, 7000, 1000), cex.axis = 1.8, line = -0.8, las = 1)
 axis(side = 1, at = c(-1, 17), labels = F, line = -0.4, lwd.ticks = 0)
 mtext(expression(bold("Count of cells")), side = 2, cex = 2, line = 4.5)
 mtext(expression(bold("Fire frequency")), side = 1, line = 3.5, cex = 2)
-mtext(expression(bold("(f) IWLR BRT")), side = 3, line = 1, at = 17, cex = 2.4)
+mtext(expression(bold("(f) Infinite BRT")), side = 3, line = 1, at = 17, cex = 2.4)
 mtext(expression(paste("Pearson's ", italic("r"), " = 0.033")), line = -2, at = 9, cex = 2)
 
 plot(gb_ps, col = rgb(204/255, 204/255, 204/255, 1),

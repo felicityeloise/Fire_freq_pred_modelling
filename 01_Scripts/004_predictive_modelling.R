@@ -341,6 +341,7 @@ write(paste("CV correlation = ", round(fire_tc8lr.1$cv.statistics$correlation.me
 
 
 
+
 # Mean total deviance fire_tc8lr.1$self.statistics$mean.null
 # Mean residual deviance fire_tc8lr.1$self.statistics$mean.resid
 # Estimated cv deviance accessed by fire_tc8lr.1$cv.statistics$deviance.mean and its standard error fire_tc8lr.1$cv.statistics$deviance.se
@@ -748,6 +749,8 @@ summary.glm(fire_glm)
 
 
 
+
+
 # 10.3 How does GLM and GAM compare to the BRT models? ----
 # 10.3.1 Produce spatial predictions for GAM and GLM
 # If we were to decide that a GAM implementation is the best we need to produce these predictions on a map, this will also assist with comparisons to other models spatial predictions
@@ -798,6 +801,66 @@ write(paste("Specificity (TNR) = ", round(attr(gam_eval_basic, "eval_summary")[6
 write(paste("Sensitivity (TPR) = ", round(attr(gam_eval_basic, "eval_summary")[7,7], digits = 3)), file = param_file_m4, append = T)
 write(paste("F-score, a balanced measure of model performance based on precision and recall = ", round(attr(gam_eval_basic, "eval_summary")[10,7], digits = 3)), file = param_file_m4, append = T)
 write(paste("Matthews correlation coefficient = ", round(attr(gam_eval_basic, "eval_summary")[9, 7], digits = 3)), file = param_file_m4, append = T)
+
+
+
+# Plot effect sizes from GLM and GAM
+glm_coef <- summary(fire_glm)$coefficients
+gam_coef <- summary.gam(fire_gam)$s.table
+gam_int <- summary.gam(fire_gam)$p.table
+
+dev.new(height=4,width=8,dpi=80,pointsize=12,noRStudioGD = T)
+par(mfrow=c(1,2),mar=c(5,6,2,1),mgp=c(2.7,1,0))
+
+# GLM
+GLM.coef <- data.frame(
+  Estimate = glm_coef[,1],
+  SE = glm_coef[,2], 
+  lci = glm_coef[,1] - (glm_coef[,2] * 1.96),
+  uci = glm_coef[,1] + (glm_coef[,2] * 1.96),
+  Term = c("Intercept", "Public land fire freq.", "TWI", "Temperature seasonality", "Precipitation seasonality", "Mean Diurnal temperature", "FPC", "Slope", "Aspect", "TPI", "Elevation")
+)
+rownames(GLM.coef) <- GLM.coef$Term # Set row names
+
+
+plot(GLM.coef$Estimate, rev(1:nrow(GLM.coef)), xlim = c(min(GLM.coef$lci), max(GLM.coef$uci)), las = 1, cex = 1.8, ylab = '', xlab = 'Effect size', pch = 20, yaxt = 'n', type = 'p', col = 'black')
+axis(side = 2, at = rev(1:nrow(GLM.coef)), labels = rownames(GLM.coef), las = 1)
+arrows(0, 0, 0, 12, code = 0, lwd = 0.8)
+arrows(GLM.coef$uci, rev(1:nrow(GLM.coef)), GLM.coef$lci, rev(1:nrow(GLM.coef)), code = 0, lwd = 0.8)
+
+
+# GAM
+GAM.coef1 <- data.frame(
+  Estimate = gam_int[,1],
+  SE = gam_int[,2], 
+  lci = gam_int[,1] - (gam_int[,2] * 1.96),
+  uci = gam_int[,1] + (gam_int[,2] * 1.96),
+  Term = c("Intercept")
+)
+rownames(GAM.coef1) <- GAM.coef1$Term
+
+GAM.coef2 <- data.frame(
+  Estimate = gam_coef[,1],
+  SE = gam_coef[,2], 
+  lci = gam_coef[,1] - (gam_coef[,2] * 1.96),
+  uci = gam_coef[,1] + (gam_coef[,2] * 1.96),
+  Term = c("Public land fire freq.", "TWI", "Temperature seasonality", "Precipitation seasonality", "Mean Diurnal temperature", "FPC", "Slope", "Aspect", "TPI", "Elevation")
+)
+rownames(GAM.coef2) <- GAM.coef2$Term
+GAM.coef <- rbind(GAM.coef1, GAM.coef2)
+
+
+plot(GAM.coef$Estimate, rev(1:nrow(GAM.coef)), xlim = c(min(GAM.coef$lci), max(GAM.coef$uci)), las = 1, cex = 1.8, ylab = '', xlab = 'Effect size', pch = 20, yaxt = 'n', type = 'p', col = 'black')
+axis(side = 2, at = rev(1:nrow(GAM.coef)), labels = rownames(GAM.coef), las = 1)
+arrows(0, 0, 0, 12, code = 0, lwd = 0.8)
+arrows(GAM.coef$uci, rev(1:nrow(GAM.coef)), GAM.coef$lci, rev(1:nrow(GAM.coef)), code = 0, lwd = 0.8)
+
+
+# For BRT we do not have coefficients, we are however provided with relative influence for each variable. We do not have an intercept for BRT and this also does not provide us with the standard error.
+unwt_coef <- summary(fire_tc8lr.1)
+unwt.coef <- data.frame(
+  Estimate = unwt_coef[, 2]
+)
 
 
 # Calculating mean-squared error initially returns NULL for gam, so compare the predictions for the GAM to a BRT model
