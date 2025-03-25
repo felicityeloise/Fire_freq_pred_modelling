@@ -6,7 +6,7 @@ Model = Pres_back[trainSet, ]
 Model = ifelse(Pres_back[trainSet, 12] == 1, 1, prNum/bgNum)
 The following model evaluation measures were calculated using precrec::evalmod(), by including mode = 'basic' this returns further measures beyond AUC ROC and precision-recall curves.
 Area Under the Reciever Operating Characteristic Curve (AUC ROC)  =  0.722
-Precision-Recall curve (PRC) =  0.722
+Precision-Recall curve (PRC) =  0.703
 Classification error rate =  0.39
 Accuracy =  0.61
 Precision =  0.639

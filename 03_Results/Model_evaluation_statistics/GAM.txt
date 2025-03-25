@@ -1,19 +1,19 @@
 Generalised additve model for predicting fire frequency in South east Queensland. The following information provides details on model parameters and evluation metrics.
 Model = bam
-Model = Sentinel_ff ~ te(QPWS_ff, k = 6) + te(TWI) + te(Temp_season, bs = "cc", k = 6) + te(Precip_season, bs = "cc", k = 6) + te(Diurnal_temp, bs = "cc", k = 6) + te(FPC, k = 9) + +te(Slope) + te(Aspect, k = 8) + te(TPI) + te(Elevation, k = 12)
+Model = Sentinel_ff ~ te(QPWS_ff, k = 6) + te(TWI) + te(Temp_season, bs = "cc", k = 6) + te(Precip_season, bs = "cc", k = 6) + te(Diurnal_temp, bs = "cc", k = 6) + te(FPC, k = 9) + te(Slope) + te(Aspect, k = 8) + te(TPI) + te(Elevation, k = 12)
 Model = poisson
 Model = Pres_back[trainSet, ]
 Model = ifelse(Pres_back[trainSet, 12] == 1, 1, prNum/bgNum)
 The following model evaluation measures were calculated using precrec::evalmod(), by including mode = 'basic' this returns further measures beyond AUC ROC and precision-recall curves.
-Area Under the Reciever Operating Characteristic Curve (AUC ROC)  =  0.744
-Precision-Recall curve (PRC) =  0.721
+Area Under the Reciever Operating Characteristic Curve (AUC ROC)  =  0.742
+Precision-Recall curve (PRC) =  0.707
 Classification error rate =  0.38
 Accuracy =  0.62
-Precision =  0.65
-Specificity (TNR) =  0.609
-Sensitivity (TPR) =  0.635
-F-score, a balanced measure of model performance based on precision and recall =  0.566
-Matthews correlation coefficient =  0.28
-Mean squared error = 1.862
-R-squared = -0.325
-Deviance of observed and predicted values = 1.592
+Precision =  0.643
+Specificity (TNR) =  0.608
+Sensitivity (TPR) =  0.634
+F-score, a balanced measure of model performance based on precision and recall =  0.564
+Matthews correlation coefficient =  0.279
+Mean squared error = 1.831
+R-squared = -0.313
+Deviance of observed and predicted values = 1.725

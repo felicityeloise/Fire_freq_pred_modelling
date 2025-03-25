@@ -8,29 +8,30 @@ Predictors = FPC
 Predictors = Slope
 Predictors = Aspect
 Predictors = TPI
+Predictors = Elevation
 Response = Sentinel_ff
 Family = poisson
 Tree complexity = 8
 Learning rate = 0.1
 CV folds = 10
-Best number of trees = 7250
-Time taken = 0.02 minutes
+Best number of trees = 7450
+Time taken = 0.03 minutes
 Mean total deviance = 1.979
-Mean residual deviance = 0.525
-Estimated cv deviance = 0.942 and standard error = 0.006
-training data correlation = 0.927
-CV correlation = 0.73 and standard error = 0.003
+Mean residual deviance = 0.498
+Estimated cv deviance = 0.929 and standard error = 0.008
+training data correlation = 0.935
+CV correlation = 0.739 and standard error = 0.003
 The following model evaluation measures were calculated using precrec::evalmod(), by including mode = 'basic' this returns further measures beyond AUC ROC and precision-recall curves.
-Area Under the Reciever Operating Characteristic Curve (AUC ROC)  =  0.748
-Precision-Recall curve (PRC) =  0.685
+Area Under the Reciever Operating Characteristic Curve (AUC ROC)  =  0.755
+Precision-Recall curve (PRC) =  0.707
 Basic performance evaluation measures averages
-Classification error rate =  0.377
-Accuracy =  0.623
-Precision =  0.632
-Specificity (TNR) =  0.611
-Sensitivity (TPR) =  0.637
-F-score, a balanced measure of model performance based on precision and recall  =  0.563
-Matthews correlation coefficient =  0.291
-Mean squared error = 1.922
-R-squared = -0.348
-Deviance of observed and predicted values for QPWS data = 1.725
+Classification error rate =  0.374
+Accuracy =  0.626
+Precision =  0.645
+Specificity (TNR) =  0.614
+Sensitivity (TPR) =  0.641
+F-score, a balanced measure of model performance based on precision and recall  =  0.568
+Matthews correlation coefficient =  0.301
+Mean squared error = 1.9
+R-squared = -0.339
+Deviance of observed and predicted values for QPWS data = 1.74

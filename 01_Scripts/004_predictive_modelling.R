@@ -24,7 +24,8 @@ library(ggspatial) # ggspatial_1.1.9
 library(caret) # caret_6.0-94
 library(gbm) # gbm_2.1.9
 library(doParallel) # doParallel_1.0.17
-
+library(glmm.hp) # 0.1-7
+library(gam.hp) # 0.0-3
 
 # Other attached packages not called directly
 # iterators_1.0.14    
@@ -32,7 +33,10 @@ library(doParallel) # doParallel_1.0.17
 # lattice_0.21-8      
 # nlme_3.1-162             
 # raster_3.6-23        
-# sp_2.0-0            
+# sp_2.0-0   
+# vegan_2.6-4
+# permute_0.9-7
+# MuMIn_1.47.5
 
 
 
@@ -115,7 +119,7 @@ plot(sac$variograms[[1]])
 
 # Experimental variogram
 vario1 <- variogram(Sentinel_ff ~ QPWS_ff + TWI + Temp_season + Precip_season + Diurnal_temp + FPC + Slope + Aspect + TPI + Elevation, data = Pres_back_sf)
-plot(vario1)
+plot(vario1)f youi
 summary(vario1)
 
 # Fit the empirical variogram using the parameters suggested from the blockCV variogram.
@@ -284,7 +288,7 @@ p1 <- plot(gbm_tune, metric = 'RMSE')
 # The method that has been accepted for presence only data would be an infinitely weighted logistic regression. The Valavi paper does not run IWLR BRT, so referring to the GAM and GLM implementations. The BRT method uses a method that they note is naive. We will compare both these methods. 
 
 #load('./02_Workspaces/004_predictive_model_hyperparameter_tuning.RData')
-load('./02_Workspaces/004_predictive_modelling_pre_hypertune.RData')
+#load('./02_Workspaces/004_predictive_modelling_pre_hypertune.RData')
 
 
 environmental_preds <- rast('./00_Data/SDM_data/predictors.tif')
@@ -312,7 +316,7 @@ for(k in seq_len(length(folds))){
   # Model with no weights 
   set.seed(480)
   fire_tc8lr.1<- gbm.step(Pres_back[trainSet,],
-                          gbm.x = 2:10,
+                          gbm.x = 2:11,
                           gbm.y = 1,
                           family = "poisson",
                           tree.complexity = 8,
@@ -351,9 +355,6 @@ write(paste("CV correlation = ", round(fire_tc8lr.1$cv.statistics$correlation.me
 # cv AUC score fire_tc8lr.1$cv.statistics$discrimination.mean and se fire_tc8lr.1$cv.statistics$discrimination.se
 
 
-save.image('./02_Workspaces/004_predictive_modelling_post_hypertune.RData')
-
-
 
 
 
@@ -369,7 +370,7 @@ for(k in seq_len(length(folds))){
   # Model with down-weighted background points 
   set.seed(480)
   fire_tc8lr.1_wt <- gbm.step(Pres_back[trainSet,],
-                              gbm.x = 2:10,
+                              gbm.x = 2:11,
                               gbm.y = 1,
                               family = "poisson",
                               tree.complexity = 8,
@@ -408,7 +409,7 @@ for(k in seq_len(length(folds))){
   # Model with IWLR weights 
   set.seed(480)
   fire_tc8lr.1_IWLR <- gbm.step(Pres_back[trainSet,],
-                              gbm.x = 2:10,
+                              gbm.x = 2:11,
                               gbm.y = 1,
                               family = "poisson",
                               tree.complexity = 8,
@@ -435,7 +436,6 @@ write(paste("Estimated cv deviance = ", round(fire_tc8lr.1_IWLR$cv.statistics$de
 write(paste("training data correlation = ", round(fire_tc8lr.1_IWLR$self.statistics$correlation, digit = 3), sep = ""), file = param_file_m3, append = T)
 write(paste("CV correlation = ", round(fire_tc8lr.1_IWLR$cv.statistics$correlation.mean, digit = 3), " and standard error = ", round(fire_tc8lr.1_IWLR$cv.statistics$correlation.se, digit = 3), sep = ""), file = param_file_m3, append = T)
 
-save.image('./02_Workspaces/004_predictive_modelling_post_hypertune.RData')
 
 
 
@@ -457,7 +457,7 @@ p_fits_m3 <- gbm.plot.fits(fire_tc8lr.1_IWLR)
 # All models have similar fitted values
 
 
-# 7.2 Partial dependence plots ----
+# 7.2 Marginal effects plots ----
 # Plot the partial dependence of the response on the predictors
 dev.new(width = 15, height = 7, noRStudioGD = T)
 p_fun_m1 <- gbm.plot(fire_tc8lr.1, plot.layout = c(2,5))
@@ -467,6 +467,17 @@ p_fun_m2 <- gbm.plot(fire_tc8lr.1_wt, plot.layout = c(2,5))
 
 dev.new(width = 15, height = 7, noRStudioGD = T)
 pr_fun_m3 <- gbm.plot(fire_tc8lr.1_IWLR, plot.layout = c(2,5))
+
+# 7.3 Relative influence data frames
+unwt_rel_inf <- as.data.frame(fire_tc8lr.1$contributions[2])
+unwt_rel_inf$Variable <- as.factor(row.names(unwt_rel_inf))
+
+dwt_rel_inf <- as.data.frame(fire_tc8lr.1_wt$contributions[2])
+dwt_rel_inf$Variable <- as.factor(rownames(dwt_rel_inf))
+
+iwlr_rel_inf <- as.data.frame(fire_tc8lr.1_IWLR$contributions[2])
+iwlr_rel_inf$Variable <- as.factor(row.names(iwlr_rel_inf))
+
 
 # The IWLR model had very minimal influence of aspect and TWI, with no influence of QPWS fire frequency. Temperature seasonality was the most influential predictor variable in all models, followed by diurnal temperature. All models ranked TWI and aspect among the lowest influential variables.
 
@@ -706,25 +717,37 @@ for(k in seq_len(length(folds))){
   testSet <- unlist(folds[[k]][2]) # Testing set indices are the second element
   
   
-  prNum <- as.numeric(table(Pres_back[trainSet, 13])["1"]) # Number of presences
-  bgNum <- as.numeric(table(Pres_back[trainSet, 13])["0"]) # Number of backgrounds
+  prNum <- as.numeric(table(Pres_back[trainSet, 12])["1"]) # Number of presences
+  bgNum <- as.numeric(table(Pres_back[trainSet, 12])["0"]) # Number of backgrounds
   
   
   # Model with down-weighted background points 
   set.seed(480)
-  fire_gam <- bam(Sentinel_ff ~ te(QPWS_ff, k = 6) + te(TWI) + te(Temp_season, bs = 'cc', k = 6) + te(Precip_season, bs = 'cc', k = 6) + te(Diurnal_temp, bs = 'cc', k = 6) + te(FPC, k = 9) + + te(Slope) + te(Aspect, k = 8) + te(TPI) + te(Elevation, k = 12),
+  fire_gam <- bam(Sentinel_ff ~ te(QPWS_ff, k = 6) + te(TWI) + te(Temp_season, bs = "cc", k = 6) + te(Precip_season, bs = "cc", k = 6) + te(Diurnal_temp, bs = "cc", k = 6) + te(FPC, k = 9) + te(Slope) + te(Aspect, k = 8) + te(TPI) + te(Elevation, k = 12),
                   data = Pres_back[trainSet,],
                   family = "poisson",
                   weights = ifelse(Pres_back[trainSet, 12] == 1, 1, prNum/bgNum))
 }
 
-
 # Check how the gam looks
 gam.check(fire_gam)
 plot(fire_gam)
 plot.gam(fire_gam, residuals = T)
-gam.check(fire_gam)
 summary(fire_gam)
+
+# gam.hp() should work to find the relative influence of each variable on the model but we are returned an error message. We instead investigated the base code for this function, the issue arises on Line 39 as the model is unable to be updated to run a null model. I think this may have something to do with using a bam(). So we've updated the code to explicitly specify the null model using a gam(), so any subsequent uses will need to double check that this code is correct. 
+# Run script 004.1_GAM_relative_influence
+load('./02_Workspaces/004.1_GAM_relative_influence.RData')
+outputList
+fire_gam_inf <- data.frame(outputList[[2]])
+
+fire_gam_rel_inf <- as.data.frame(fire_gam_inf$I.perc...)
+colnames(fire_gam_rel_inf) <-  "I.perc"
+fire_gam_rel_inf$Variable <- c("QPWS_ff", "TWI", "Temp_season", "Precip_season", "Diurnal_temp", "FPC", "Slope", "Aspect", "TPI", "Elevation")
+fire_gam_rel_inf
+str(fire_gam_rel_inf)
+fire_gam_rel_inf$Variable <- factor(fire_gam_rel_inf$Variable, levels = c("Aspect","Diurnal_temp","Elevation", "FPC", "Precip_season",  "QPWS_ff", "Slope","Temp_season","TPI", "TWI"))
+
 
 
 # 10.2.1 GLM with down-weighting
@@ -748,7 +771,14 @@ summary(fire_glm)
 summary.glm(fire_glm)
 
 
+# Calculate relative influence of variables for the glm
+fire_glm_inf <- glmm.hp(fire_glm)
 
+# We want the values for I.perc(%) as this is comparable to the gbm.name$contributions table. 
+fire_glm_rel_inf <- as.data.frame(fire_glm_inf$delta[,4])
+colnames(fire_glm_rel_inf) <-  "I.perc"
+fire_glm_rel_inf$Variable <- as.factor(rownames(fire_glm_rel_inf))
+str(fire_glm_rel_inf)
 
 
 # 10.3 How does GLM and GAM compare to the BRT models? ----
@@ -760,7 +790,6 @@ gam_pred <- terra::predict(object = environmental_preds,
                            na.rm = F,
                            filename = './04_Results/Prediction_rasters/GAM_pred.tif', overwrite = T)
 plot(gam_pred)
-
 
 
 glm_pred <- terra::predict(object = environmental_preds,
@@ -804,64 +833,6 @@ write(paste("Matthews correlation coefficient = ", round(attr(gam_eval_basic, "e
 
 
 
-# Plot effect sizes from GLM and GAM
-glm_coef <- summary(fire_glm)$coefficients
-gam_coef <- summary.gam(fire_gam)$s.table
-gam_int <- summary.gam(fire_gam)$p.table
-
-dev.new(height=4,width=8,dpi=80,pointsize=12,noRStudioGD = T)
-par(mfrow=c(1,2),mar=c(5,6,2,1),mgp=c(2.7,1,0))
-
-# GLM
-GLM.coef <- data.frame(
-  Estimate = glm_coef[,1],
-  SE = glm_coef[,2], 
-  lci = glm_coef[,1] - (glm_coef[,2] * 1.96),
-  uci = glm_coef[,1] + (glm_coef[,2] * 1.96),
-  Term = c("Intercept", "Public land fire freq.", "TWI", "Temperature seasonality", "Precipitation seasonality", "Mean Diurnal temperature", "FPC", "Slope", "Aspect", "TPI", "Elevation")
-)
-rownames(GLM.coef) <- GLM.coef$Term # Set row names
-
-
-plot(GLM.coef$Estimate, rev(1:nrow(GLM.coef)), xlim = c(min(GLM.coef$lci), max(GLM.coef$uci)), las = 1, cex = 1.8, ylab = '', xlab = 'Effect size', pch = 20, yaxt = 'n', type = 'p', col = 'black')
-axis(side = 2, at = rev(1:nrow(GLM.coef)), labels = rownames(GLM.coef), las = 1)
-arrows(0, 0, 0, 12, code = 0, lwd = 0.8)
-arrows(GLM.coef$uci, rev(1:nrow(GLM.coef)), GLM.coef$lci, rev(1:nrow(GLM.coef)), code = 0, lwd = 0.8)
-
-
-# GAM
-GAM.coef1 <- data.frame(
-  Estimate = gam_int[,1],
-  SE = gam_int[,2], 
-  lci = gam_int[,1] - (gam_int[,2] * 1.96),
-  uci = gam_int[,1] + (gam_int[,2] * 1.96),
-  Term = c("Intercept")
-)
-rownames(GAM.coef1) <- GAM.coef1$Term
-
-GAM.coef2 <- data.frame(
-  Estimate = gam_coef[,1],
-  SE = gam_coef[,2], 
-  lci = gam_coef[,1] - (gam_coef[,2] * 1.96),
-  uci = gam_coef[,1] + (gam_coef[,2] * 1.96),
-  Term = c("Public land fire freq.", "TWI", "Temperature seasonality", "Precipitation seasonality", "Mean Diurnal temperature", "FPC", "Slope", "Aspect", "TPI", "Elevation")
-)
-rownames(GAM.coef2) <- GAM.coef2$Term
-GAM.coef <- rbind(GAM.coef1, GAM.coef2)
-
-
-plot(GAM.coef$Estimate, rev(1:nrow(GAM.coef)), xlim = c(min(GAM.coef$lci), max(GAM.coef$uci)), las = 1, cex = 1.8, ylab = '', xlab = 'Effect size', pch = 20, yaxt = 'n', type = 'p', col = 'black')
-axis(side = 2, at = rev(1:nrow(GAM.coef)), labels = rownames(GAM.coef), las = 1)
-arrows(0, 0, 0, 12, code = 0, lwd = 0.8)
-arrows(GAM.coef$uci, rev(1:nrow(GAM.coef)), GAM.coef$lci, rev(1:nrow(GAM.coef)), code = 0, lwd = 0.8)
-
-
-# For BRT we do not have coefficients, we are however provided with relative influence for each variable. We do not have an intercept for BRT and this also does not provide us with the standard error.
-unwt_coef <- summary(fire_tc8lr.1)
-unwt.coef <- data.frame(
-  Estimate = unwt_coef[, 2]
-)
-
 
 # Calculating mean-squared error initially returns NULL for gam, so compare the predictions for the GAM to a BRT model
 unique(is.na(preds_gam))
@@ -893,7 +864,7 @@ write("Generalised linear model for predicting fire frequency in South east Quee
 write(paste("Model = ", fire_glm$call, sep = ""), file = param_file_m5, append = T)
 write(paste("The following model evaluation measures were calculated using precrec::evalmod(), by including mode = 'basic' this returns further measures beyond AUC ROC and precision-recall curves."), file = param_file_m5, append = T)
 write(paste("Area Under the Reciever Operating Characteristic Curve (AUC ROC)  = ", round(attr(glm_eval, "aucs")[1,4], digits = 3)), file = param_file_m5, append = T)
-write(paste("Precision-Recall curve (PRC) = ", round(attr(glm_eval, "aucs")[1,4], digits = 3)), file = param_file_m5, append = T)
+write(paste("Precision-Recall curve (PRC) = ", round(attr(glm_eval, "aucs")[2,4], digits = 3)), file = param_file_m5, append = T)
 write(paste("Basic performance evaluation measures averages", file = param_file_m5, append = T))
 write(paste("Classification error rate = ", round(attr(glm_eval_basic, "eval_summary")[4,7], digits = 3)), file = param_file_m5, append = T)
 write(paste("Accuracy = ", round(attr(glm_eval_basic, "eval_summary")[5,7], digits = 3)), file = param_file_m5, append = T)
@@ -944,6 +915,68 @@ plot(all_models_eval)
 
 
 save.image('./02_Workspaces/004_predictive_modelling_predictions.RData')
+
+
+
+# Compare the relative influence of variables for all models. 
+# GLM, GAM, down-weighted BRT, unweighted BRT, Infinite BRT
+
+fire_glm_rel_inf
+str(fire_glm_rel_inf)
+
+
+dev.new(width =15, height = 8, res = 300, dpi = 80, noRStudioGD = T)
+par(mfrow = c(1, 2), mar = c(9,4,3.5,1))
+
+barplot(fire_glm_rel_inf$I.perc ~ fire_glm_rel_inf$Variable, ylim = c(0,100), ylab = "", xlab = "", las = 2, names.arg = c("Aspect", "Mean diurnal \n temperature", "Elevation", "FPC", "Precipitation \n seasonality", "Public land \n fire frequency", "Slope", "Temperature \n seasonality", "TPI", "TWI"), yaxt = "n", cex.names = 1.2)
+mtext(expression(bold("Environmental predictor")), side = 1, line = 8, cex = 1.5)
+axis(side = 2, at = seq(0,100, 10), las = 1, line = -0.5, cex.axis = 1.2)
+axis(side = 2, at = seq(0,100, 5), labels = F, line = -0.5)
+mtext(expression(bold("Relative contribution (%)")), side = 2, line = 1.8, cex = 1.5)
+mtext(expression(bold("(a) GLM")), line = 1, cex = 2)
+
+barplot(fire_gam_rel_inf$I.perc ~ fire_gam_rel_inf$Variable, ylim = c(0,100), ylab = "", xlab = "", las = 2, names.arg = c("Aspect", "Mean diurnal \n temperature", "Elevation", "FPC", "Precipitation \n seasonality", "Public land \n fire frequency", "Slope", "Temperature \n seasonality", "TPI", "TWI"), yaxt = "n", cex.names = 1.2)
+mtext(expression(bold("Environmental predictor")), side = 1, line = 8, cex = 1.5)
+axis(side = 2, at = seq(0,100, 10), las = 1, line = -0.5, cex.axis = 1.2)
+axis(side = 2, at = seq(0,100, 5), labels = F, line = -0.5)
+mtext(expression(bold("Relative contribution (%)")), side = 2, line = 1.8, cex = 1.5)
+mtext(expression(bold("(b) GAM")), line = 1, cex = 2)
+
+
+
+
+
+
+
+
+
+# BRT as subplots
+dev.new(width = 16, height = 6, res = 300, dpi = 80, noRStudioGD = T)
+par(mfrow = c(1, 3), mar = c(11,4,3.5,1))
+
+barplot(dwt_rel_inf$rel.inf ~ dwt_rel_inf$Variable, ylim = c(0,100), ylab = "", xlab = "", las = 2, names.arg = c("Aspect", "Mean diurnal \n temperature", "Elevation", "FPC", "Precipitation \n seasonality", "Public land \n fire frequency", "Slope", "Temperature \n seasonality", "TPI", "TWI"), yaxt = "n", cex.names = 1.5)
+mtext(expression(bold("Environmental predictor")), side = 1, line = 10, cex = 1.5)
+axis(side = 2, at = seq(0,100, 10), las = 1, line = -0.5, cex.axis = 1.5)
+axis(side = 2, at = seq(0,100, 5), labels = F, line = -0.5)
+mtext(expression(bold("Relative contribution (%)")), side = 2, line = 2, cex = 1.5)
+mtext(expression(bold("(c) Down-weighted BRT")), line = 1, cex = 2)
+
+
+
+barplot(unwt_rel_inf$rel.inf ~ unwt_rel_inf$Variable, ylim = c(0,100), ylab = "", xlab = "", las = 2, names.arg = c("Aspect", "Mean diurnal \n temperature", "Elevation", "FPC", "Precipitation \n seasonality", "Public land \n fire frequency", "Slope", "Temperature \n seasonality", "TPI", "TWI"), yaxt = "n", cex.names = 1.5)
+mtext(expression(bold("Environmental predictor")), side = 1, line = 10, cex = 1.5)
+axis(side = 2, at = seq(0,100, 10), las = 1, line = -0.5, cex.axis = 1.5)
+axis(side = 2, at = seq(0,100, 5), labels = F, line = -0.5)
+mtext(expression(bold("Relative contribution (%)")), side = 2, line = 2, cex = 1.5)
+mtext(expression(bold("(d) Unweighted BRT")), line = 1, cex = 2)
+
+
+barplot(iwlr_rel_inf$rel.inf ~ iwlr_rel_inf$Variable, ylim = c(0,100), ylab = "", xlab = "", las = 2, names.arg = c("Aspect", "Mean diurnal \n temperature", "Elevation", "FPC", "Precipitation \n seasonality", "Public land \n fire frequency", "Slope", "Temperature \n seasonality", "TPI", "TWI"), yaxt = "n", cex.names = 1.5)
+mtext(expression(bold("Environmental predictor")), side = 1, line = 10, cex = 1.5)
+axis(side = 2, at = seq(0,100, 10), las = 1, line = -0.5, cex.axis = 1.5)
+axis(side = 2, at = seq(0,100, 5), labels = F, line = -0.5)
+mtext(expression(bold("Relative contribution (%)")), side = 2, line = 2, cex = 1.5)
+mtext(expression(bold("(e) Infinite BRT")), line = 1, cex = 2)
 
 
 

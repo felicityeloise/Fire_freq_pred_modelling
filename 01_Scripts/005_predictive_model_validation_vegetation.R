@@ -298,7 +298,7 @@ RE_randpt_fire$Agg <- factor(RE_randpt_fire$Agg, levels = c("Rainforest", "Scler
 
 ggplot(data = RE_randpt_fire, aes(x = Fire_freq, fill = Dataset))+
   geom_histogram(bins = 11, position = position_dodge(0.7))+
-  scale_fill_manual(values = c("gray80", "steelblue", "#492050", "#AAA970"), labels = c("Public", "Satellite", "GLM", "GAM"))+
+  scale_fill_manual(values = c("gray80", "steelblue", "#492050", "#AAA970"), labels = c("Public land", "Satellite", "GLM", "GAM"))+
   theme_bw()+
   scale_y_continuous(expression(bold("Count of cells")), limits = c(0,900), breaks = seq(0,900,100)) +
   scale_x_continuous(expression(bold("Fire frequency")), breaks = seq(0,10,1)) +
