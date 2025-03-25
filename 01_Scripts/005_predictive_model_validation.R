@@ -347,7 +347,7 @@ axis(side = 1, at = c(10,12,14,16), cex.axis = 2.1, line = -0.4)
 axis(side = 2, at = seq(0, 7000, 1000), cex.axis = 2.1, line = 0.3, las = 1)
 mtext(expression(bold("Count of cells")), side = 2, cex = 2, line = 6.5)
 mtext(expression(bold("Fire frequency")), side = 1, line = 4, cex = 2)
-mtext(expression(bold("(a) Observed")), side = 3, line = 0.8, at = 16, cex = 3.4)
+mtext(expression(bold("(a) Observed")), side = 3, line = 0.7, at = 16, cex = 3.4)
 mtext(expression(paste("Pearson's ", italic("r"), " = 0.252")), line = -2, at = 12, cex = 2)
 
 
@@ -460,14 +460,14 @@ plot(dwt_p, col = rgb(42/255, 109/255, 122/255, 0.5),
      xlab = "", xlim = c(-1,16),  xaxt = "n",
      border = 'white', main = "", cex.axis = 2.4, cex.lab = 2.8,
      add = T)
-axis(side = 1, at = c(0,5,10, 15, 16), cex.axis = 1.8, line = -0.4, tick = F)
+axis(side = 1, at = c(0,5,10, 15, 16), cex.axis = 2.1, line = -0.4, tick = F)
 axis(side = 1, at = seq(0,16, 1), labels = F, line = -0.4)
-axis(side = 2, at = seq(0, 7000, 1000), cex.axis = 1.8, line = -0.8, las = 1)
+axis(side = 2, at = seq(0, 7000, 1000), cex.axis = 2.1, line = -0.8, las = 1)
 axis(side = 1, at = c(-1, 16), labels = F, line = -0.4, lwd.ticks = 0)
 mtext(expression(bold("Count of cells")), side = 2, cex = 2, line = 4.5)
 mtext(expression(bold("Fire frequency")), side = 1, line = 3.5, cex = 2)
 mtext(expression(bold("(d) Down-weighted BRT")), side = 3, line = 1, at = 16, cex = 2.4)
-mtext(expression(paste("Pearson's ", italic("r"), " = 0.340")), line = -2, at = 9, cex = 2)
+mtext(expression(paste("Pearson's ", italic("r"), " = 0.329")), line = -2, at = 9, cex = 2)
 
 plot(gb_ps, col = rgb(204/255, 204/255, 204/255, 1),
      ylab = "", las = 1,  ylim = c(0,100), yaxt = "n",
@@ -505,7 +505,7 @@ axis(side = 1, at = c(-1, 16), labels = F, line = -0.4, lwd.ticks = 0)
 mtext(expression(bold("Count of cells")), side = 2, cex = 2, line = 4.5)
 mtext(expression(bold("Fire frequency")), side = 1, line = 3.5, cex = 2)
 mtext(expression(bold("(e) Unweighted BRT")), side = 3, line = 1, at = 16, cex = 2.4)
-mtext(expression(paste("Pearson's ", italic("r"), " = 0.333")), line = -2, at = 9, cex = 2)
+mtext(expression(paste("Pearson's ", italic("r"), " = 0.332")), line = -2, at = 9, cex = 2)
 
 plot(gb_ps, col = rgb(204/255, 204/255, 204/255, 1),
      ylab = "", las = 1,  ylim = c(0,100), yaxt = "n",
