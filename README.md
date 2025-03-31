@@ -13,5 +13,8 @@ Use of a species distribution modelling workflow to improve accuracy of satellit
 # Code Authors
 Felicity Charles (unless otherwise stated within the script)
 
+# Manuscript
+Charles FE, Reside AE, Moss PT, Smith AL (2025). Improving landscape fire frequency estimates by integrating public land fire data and satellite imagery. Submitted 03/04/2025.
+
 # License
 The Fire_freq_pred_modelling project by Felicity Charles and Annabel Smith is licensed under a Create Commons Attribution-NonCommercial 4.0 Internation License.
