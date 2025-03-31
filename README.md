@@ -1,7 +1,7 @@
 # Fire frequency predictive modelling
 Use of a species distribution modelling workflow to improve accuracy of satellite derived fire products by incorporating governmentally produced fire history data and environmental covariates.
 
-Based on work at https://github.com/felicityeloise/Fire_freq_pred_modelling
+Based on work at https://github.com/felicityeloise/Fire_freq_pred_modelling.
 
 # Content description
 00_Data: Original data files and outputs from code for data required in modelling
