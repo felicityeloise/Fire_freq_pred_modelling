@@ -1,7 +1,5 @@
-# Fire_freq_pred_modelling 
-Use of a species distribution modelling workflow to produce a predictive model for fire frequency from satellite derived fire products and governmentally produced fire history data. 
-
-This project aimed to determine whether we could produce a predictive model of fire frequency for satellite derived fire products using a species distribution modelling workflow with governmentally produced fire data and gridded environmental data as predictor variables. 
+# Fire frequency predictive modelling
+Use of a species distribution modelling workflow to improve accuracy of satellite derived fire products by incorporating governmentally produced fire history data and environmental covariates.
 
 # Content description
 00_Data: Original data files and outputs from code for data required in modelling
