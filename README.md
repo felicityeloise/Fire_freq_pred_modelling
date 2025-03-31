@@ -3,8 +3,11 @@ Use of a species distribution modelling workflow to improve accuracy of satellit
 
 # Content description
 00_Data: Original data files and outputs from code for data required in modelling
+
 01_Scripts: Scripts for processing and analysis
+
 02_Workspaces: Saved workspaces
+
 03_Results: Final predictive model outputs and evaluation statistics
 
 # Code Authors
