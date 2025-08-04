@@ -12,7 +12,7 @@ library(terra) # terra_1.7-78
 library(ggplot2) # ggplot2_3.5.1
 library(dplyr) # dplyr_1.1.4
 library(sf) # sf_1.0-14
-
+remotes::install_version("raster", version = "3.5-15") # Install older version of raster which works with this version of terra
 
 # 1. Read in QPWS fire history data ----
 # This data can be downloaded from the QLD spatial catalogue
@@ -51,16 +51,28 @@ plot(QPWS_fire_1987)
 
 
 # 1.3 Rasterize QPWS fire data using fasterize for SEQ only ----
+# Download Interim Biogeographic Regionalisation for Australia (IBRA) Version 7.1 (Regions) from DCCEEW 
+IBRA <- vect('./00_Data/Environmental_data/IBRA/Interim_Biogeographic_Regionalisation_for_Australia_(IBRA)_Version_7.1_(Regions).shp') %>% 
+  project('EPSG:3577') # SEQ Bioregion extends into northern NSW, need to crop at Queensland border as TERN fire history mapping does not extend to northern NSW
+Aus <- vect('./00_Data/Australia_shapefile/STE11aAust.shp') %>% 
+  project('EPSG:3577')
+QLD <- Aus[Aus$STATE_NAME == "Queensland"]
+SEQ <- IBRA[IBRA$REG_NAME_7 == "South Eastern Queensland"] %>% 
+  crop(QLD)
+
+writeVector(SEQ, './00_Data/SEQ_bound/SEQ_IBRA.gpkg')
+
+SEQ <- vect('./00_Data/SEQ_bound/SEQ_IBRA.gpkg')
+
 # Get bounding box from SEQ
-SEQ <- vect('./00_Data/SEQ_bound/SEQ.gpkg')
 SEQ
-rtemp <- raster::raster(xmn = 1902033, xmx = 2111776, ymn = -3257627, ymx = -2954985, res = 5, crs = 'EPSG:3577')
+rtemp <- raster::raster(xmn = 1881028, xmx = 2121562, ymn = -3247627, ymx = -2660998, res = 5, crs = 'EPSG:3577')
 QPWS_SEQ_freq_rast <- fasterize(QPWS_fire_1987, rtemp, field = 'OUTYEAR', fun = 'count')
 
 plot(QPWS_SEQ_freq_rast)
-raster::writeRaster(QPWS_SEQ_freq_rast, './00_Data/Fire_data/Outputs/SEQ/QPWS_SEQ_freq_raster.tif')
+raster::writeRaster(QPWS_SEQ_freq_rast, './00_Data/Fire_data/Outputs/SEQ/QPWS_SEQ_IBRA_freq_raster.tif')
 
-QPWS <- rast('./00_Data/Fire_data/Outputs/SEQ/QPWS_SEQ_freq_raster.tif')
+QPWS <- rast('./00_Data/Fire_data/Outputs/SEQ/QPWS_SEQ_IBRA_freq_raster.tif')
 plot(QPWS)
 
 
@@ -71,30 +83,30 @@ plot(QPWS)
 canal <- vect('./00_Data/Environmental_data/Hydrographic_features/Canal_areas.shp') %>% 
   project('EPSG:3577') %>% 
   crop(SEQ)
-writeVector(canal, './00_Data/Environmental_data/Outputs/Hydrographic_features/Canal_SEQ.gpkg')
+writeVector(canal, './00_Data/Environmental_data/Outputs/Hydrographic_features/Canal_SEQ_IBRA.gpkg')
 
 lake <- vect('./00_Data/Environmental_data/Hydrographic_features/Lakes.shp') %>% 
   project('EPSG:3577') %>% 
   crop(SEQ)
-writeVector(lake, './00_Data/Environmental_data/Outputs/Hydrographic_features/Lakes_SEQ.gpkg')
+writeVector(lake, './00_Data/Environmental_data/Outputs/Hydrographic_features/Lakes_SEQ_IBRA.gpkg')
 
 
 pond <- vect('./00_Data/Environmental_data/Hydrographic_features/Pondage.shp') %>% 
   project('EPSG:3577') %>% 
   crop(SEQ)
-writeVector(pond, './00_Data/Environmental_data/Outputs/Hydrographic_features/Ponds_SEQ.gpkg')
+writeVector(pond, './00_Data/Environmental_data/Outputs/Hydrographic_features/Ponds_SEQ_IBRA.gpkg')
 
 
 reservoir <- vect('./00_Data/Environmental_data/Hydrographic_features/Reservoirs.shp') %>% 
   project('EPSG:3577') %>% 
   crop(SEQ)
-writeVector(reservoir, './00_Data/Environmental_data/Outputs/Hydrographic_features/Reservoirs_SEQ.gpkg')
+writeVector(reservoir, './00_Data/Environmental_data/Outputs/Hydrographic_features/Reservoirs_SEQ_IBRA.gpkg')
 
 
 watercourse <- vect('./00_Data/Environmental_data/Hydrographic_features/Watercourse_areas.shp') %>% 
   project('EPSG:3577') %>% 
   crop(SEQ)
-writeVector(watercourse, './00_Data/Environmental_data/Outputs/Hydrographic_features/Watercourses_SEQ.gpkg')
+writeVector(watercourse, './00_Data/Environmental_data/Outputs/Hydrographic_features/Watercourses_SEQ_IBRA.gpkg')
 
 # Mask the hydrological features 
 QPWS_ff1 <- mask(QPWS_ff, canal, inverse = T)
@@ -107,7 +119,7 @@ QPWS_ff4 <- mask(QPWS_ff3, reservoir, inverse = T)
 plot(QPWS_ff4)
 QPWS_ff5 <- mask(QPWS_ff4, watercourse, inverse = T)
 plot(QPWS_ff5)
-writeRaster(QPWS_ff5, './00_Data/Fire_data/Outputs/SEQ/QPWS_SEQ_freq_hydrographical_mask.tif')
+writeRaster(QPWS_ff5, './00_Data/Fire_data/Outputs/SEQ/QPWS_SEQ_IBRA_freq_hydrographical_mask.tif')
 
 
 
@@ -162,7 +174,7 @@ Y1987 <- rast("/vsicurl/https://data.tern.org.au/rs/public/data/landsat/burnt_ar
   classify(cbind(11,1)) %>% 
   classify(cbind(12,1)) %>% 
   classify(cbind(254,0))
-  
+
 
 Y1988 <- rast("/vsicurl/https://data.tern.org.au/rs/public/data/landsat/burnt_area/qld_annual/lztmre_qld_1988_dkaa2.tif") %>% 
   crop(extent7) %>% 
@@ -315,7 +327,7 @@ Y1995 <- rast("/vsicurl/https://data.tern.org.au/rs/public/data/landsat/burnt_ar
   classify(cbind(11,1)) %>% 
   classify(cbind(12,1)) %>% 
   classify(cbind(254, 0))
- 
+
 
 
 Y1996 <- rast("/vsicurl/https://data.tern.org.au/rs/public/data/landsat/burnt_area/qld_annual/lztmre_qld_1996_dkaa2.tif") %>% 
@@ -643,7 +655,7 @@ Y2012 <- rast("/vsicurl/https://data.tern.org.au/rs/public/data/landsat/burnt_ar
   classify(cbind(11,1)) %>% 
   classify(cbind(12,1)) %>% 
   classify(cbind(254,0))
-  
+
 
 
 Y2013 <- rast("/vsicurl/https://data.tern.org.au/rs/public/data/landsat/burnt_area/qld_annual/lztmre_qld_2013_dkda2.tif") %>%
@@ -862,7 +874,7 @@ writeRaster(Sentinel1, './00_Data/Fire_data/Outputs/Sentinel/Extent7/Sentinel1_f
 # 4. Calculate the fire frequency of Sentinel 2 and aggregate the Sentinel 2 data so that it matches Sentinel 1 data resolution ----
 
 Sentinel2 <- sum(Y2017, Y2018, Y2019, Y2020, Y2021, Y2022, Y2023) %>% 
-  terra::aggregate(fact = 3)
+  terra::aggregate(fact = 3) # What type of aggregation here! Maybe max??
 writeRaster(Sentinel2, './00_Data/Fire_data/Outputs/Sentinel/Extent8/Sentinel2_ff_ext8.tif', overwrite = T)
 
 # Clean the workspace before continuing
@@ -960,7 +972,7 @@ plot(Sentinel_ff5)
 
 unique(Sentinel_ff5$lztmre_qld_1987_dkaa2)
 
-writeRaster(Sentinel_ff5, './00_Data/Fire_data/Outputs/Sentinel/Sentinel_ff_hydrographical_mask_SEQ.tif')
+writeRaster(Sentinel_ff5, './00_Data/Fire_data/Outputs/Sentinel/Sentinel_ff_hydrographical_mask_SEQ_IBRA.tif')
 
 # Use focal to fill in any areas of Sentinel data that have NA values
 
@@ -968,15 +980,15 @@ Sent_foc <- terra::focal(Sentinel_ff5, fun = "mean", na.policy = "only", na.rm =
 Sent_foc # The same range of values
 names(Sent_foc) <- "Sentinel_fire_freq"
 Sent_foc <- round(Sent_foc)
-writeRaster(Sent_foc, './00_Data/Fire_data/Outputs/Sentinel/Sentinel_ff_hydrographical_mask_SEQ_focal.tif')
+writeRaster(Sent_foc, './00_Data/Fire_data/Outputs/Sentinel/Sentinel_ff_hydrographical_mask_SEQ_IBRA_focal.tif')
 
 plot(Sent_foc)
 
 
 # 7. Compare the two fire frequency datasets ----
 # Now that we have fire frequency calculate for both datasets and they are both raster files, we want to compare these datasets to see how well correlated they are.
-Sentinel_ff <- rast("./00_Data/Fire_data/Outputs/Sentinel/Sentinel_ff_hydrographical_mask_SEQ_focal.tif")
-QPWS_SEQ_ff <- rast("./00_Data/Fire_data/Outputs/SEQ/QPWS_SEQ_freq_hydrographical_mask.tif")
+Sentinel_ff <- rast("./00_Data/Fire_data/Outputs/Sentinel/Sentinel_ff_hydrographical_mask_SEQ_IBRA_focal.tif")
+QPWS_SEQ_IBRA_ff <- rast("./00_Data/Fire_data/Outputs/SEQ/QPWS_SEQ_IBRA_freq_hydrographical_mask.tif")
 
 # 7.1 Limit QPWS data to QPWS estates
 protected_land <- vect('./00_Data/Protected_areas/Protected_areas.shp')
@@ -1063,11 +1075,11 @@ Fire_transect_cor # Vary in the same direction, but a weak correlation between t
 SEQ <- vect('./00_Data/SEQ_bound/SEQ.gpkg')
 Aus <- vect('./00_Data/Australia_shapefile/STE11aAust.shp') %>% 
   project("EPSG:3577")
-canal <- vect('./00_Data/Environmental_data/Outputs/Hydrographic_features/Canal_SEQ.gpkg')
-lake <- vect('./00_Data/Environmental_data/Outputs/Hydrographic_features/Lakes_SEQ.gpkg')
-pond <- vect('./00_Data/Environmental_data/Outputs/Hydrographic_features/Ponds_SEQ.gpkg')
-reservoir <- vect('./00_Data/Environmental_data/Outputs/Hydrographic_features/Reservoirs_SEQ.gpkg')
-watercourse <- vect('./00_Data/Environmental_data/Outputs/Hydrographic_features/Watercourses_SEQ.gpkg')
+canal <- vect('./00_Data/Environmental_data/Outputs/Hydrographic_features/Canal_SEQ_.gpkg')
+lake <- vect('./00_Data/Environmental_data/Outputs/Hydrographic_features/Lakes_SEQ_.gpkg')
+pond <- vect('./00_Data/Environmental_data/Outputs/Hydrographic_features/Ponds_SEQ_.gpkg')
+reservoir <- vect('./00_Data/Environmental_data/Outputs/Hydrographic_features/Reservoirs_SEQ_.gpkg')
+watercourse <- vect('./00_Data/Environmental_data/Outputs/Hydrographic_features/Watercourses_SEQ_.gpkg')
 
 
 protected_land <-  vect('./00_Data/Protected_areas/Protected_areas.shp') %>% 
