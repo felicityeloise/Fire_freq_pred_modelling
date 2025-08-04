@@ -1,6 +1,9 @@
 # Written by Felicity Charles
 # Date: 26/02/2025
 
+
+
+#####UPDATE WITH IBRA CROPPED IF REQUIRED
 ##### Fire frequency analysis ----
 # General study area map showing the extent of remnant vegetation cover, protected areas, and landmarks in SEQ with inset map of Queensland
 

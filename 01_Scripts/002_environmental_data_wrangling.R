@@ -19,7 +19,6 @@ library(landform) # landform_0.2
 library(gdalUtilities) # gdalUtilities_1.2.5
 
 
-# To improve our predictive accuracy for QPWS based fire frequency outside QPWS estates lets include environmental data
 # 1. Read in, crop and aggregate environmental data ----
 # Create an SEQ vector 
 e <- ext(1902033, 2111776, -3257627, -2954985)
