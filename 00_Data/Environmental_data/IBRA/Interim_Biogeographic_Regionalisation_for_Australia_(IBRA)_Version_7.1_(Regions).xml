@@ -1,0 +1,827 @@
+<?xml version="1.0" encoding="UTF-8"?><MD_Metadata xmlns:gts="http://www.isotc211.org/2005/gts" xmlns:gco="http://www.isotc211.org/2005/gco" xmlns:xalan="http://xml.apache.org/xalan" xmlns:srv="http://www.isotc211.org/2005/srv" xmlns:gmx="http://www.isotc211.org/2005/gmx" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:gml="http://www.opengis.net/gml" xmlns="http://www.isotc211.org/2005/gmd">
+    <fileIdentifier>
+        <gco:CharacterString>8FEED98F-D491-49CD-B3BD-34F0E95B2DE7</gco:CharacterString>
+    </fileIdentifier>
+    <language>
+        <LanguageCode codeList="http://www.loc.gov/standards/iso639-2/php/code_list.php" codeListValue="eng" codeSpace="ISO639-2">eng</LanguageCode>
+    </language>
+    <characterSet>
+        <MD_CharacterSetCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_CharacterSetCode" codeListValue="utf8" codeSpace="ISOTC211/19115">utf8</MD_CharacterSetCode>
+    </characterSet>
+    <hierarchyLevel>
+        <MD_ScopeCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_ScopeCode" codeListValue="dataset" codeSpace="ISOTC211/19115">dataset</MD_ScopeCode>
+    </hierarchyLevel>
+    <hierarchyLevelName>
+        <gco:CharacterString>dataset</gco:CharacterString>
+    </hierarchyLevelName>
+    <contact>
+        <CI_ResponsibleParty>
+            <organisationName>
+                <gco:CharacterString>Australian Government Department of Climate Change, Energy, the Environment and Water</gco:CharacterString>
+            </organisationName>
+            <positionName>
+                <gco:CharacterString>Parks Data Manager</gco:CharacterString>
+            </positionName>
+            <contactInfo>
+                <CI_Contact>
+                    <phone>
+                        <CI_Telephone>
+                            <voice>
+                                <gco:CharacterString>02 6274 1111</gco:CharacterString>
+                            </voice>
+                            <facsimile>
+                                <gco:CharacterString>02 6274 1666</gco:CharacterString>
+                            </facsimile>
+                        </CI_Telephone>
+                    </phone>
+                    <address>
+                        <CI_Address>
+                            <deliveryPoint>
+                                <gco:CharacterString>GPO Box 3090</gco:CharacterString>
+                            </deliveryPoint>
+                            <city>
+                                <gco:CharacterString>Canberra</gco:CharacterString>
+                            </city>
+                            <administrativeArea>
+                                <gco:CharacterString>ACT</gco:CharacterString>
+                            </administrativeArea>
+                            <postalCode>
+                                <gco:CharacterString>2601</gco:CharacterString>
+                            </postalCode>
+                            <country>
+                                <Country codeList="http://www.iso.org/iso/country_codes/iso_3166_code_lists.htm" codeListValue="AU" codeSpace="ISO3166-1">AU</Country>
+                            </country>
+                            <electronicMailAddress>
+                                <gco:CharacterString>geospatial@dcceew.gov.au</gco:CharacterString>
+                            </electronicMailAddress>
+                        </CI_Address>
+                    </address>
+                    <onlineResource>
+                        <CI_OnlineResource>
+                            <linkage>
+                                <URL>https://www.dcceew.gov.au</URL>
+                            </linkage>
+                        </CI_OnlineResource>
+                    </onlineResource>
+                </CI_Contact>
+            </contactInfo>
+            <role>
+                <CI_RoleCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_RoleCode" codeListValue="pointOfContact" codeSpace="ISOTC211/19115">pointOfContact</CI_RoleCode>
+            </role>
+        </CI_ResponsibleParty>
+    </contact>
+    <dateStamp>
+        <gco:Date>2025-03-18</gco:Date>
+    </dateStamp>
+    <metadataStandardName>
+        <gco:CharacterString>ISO 19139 Geographic Information - Metadata - Implementation Specification</gco:CharacterString>
+    </metadataStandardName>
+    <metadataStandardVersion>
+        <gco:CharacterString>2007</gco:CharacterString>
+    </metadataStandardVersion>
+    <spatialRepresentationInfo>
+        <MD_VectorSpatialRepresentation>
+            <topologyLevel>
+                <MD_TopologyLevelCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_TopologyLevelCode" codeListValue="geometryOnly" codeSpace="ISOTC211/19115">geometryOnly</MD_TopologyLevelCode>
+            </topologyLevel>
+            <geometricObjects>
+                <MD_GeometricObjects>
+                    <geometricObjectType>
+                        <MD_GeometricObjectTypeCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_GeometricObjectTypeCode" codeListValue="composite" codeSpace="ISOTC211/19115">composite</MD_GeometricObjectTypeCode>
+                    </geometricObjectType>
+                    <geometricObjectCount>
+                        <gco:Integer>89</gco:Integer>
+                    </geometricObjectCount>
+                </MD_GeometricObjects>
+            </geometricObjects>
+        </MD_VectorSpatialRepresentation>
+    </spatialRepresentationInfo>
+    <referenceSystemInfo>
+        <MD_ReferenceSystem>
+            <referenceSystemIdentifier>
+                <RS_Identifier>
+                    <code>
+                        <gco:CharacterString>4283</gco:CharacterString>
+                    </code>
+                    <codeSpace>
+                        <gco:CharacterString>EPSG</gco:CharacterString>
+                    </codeSpace>
+                    <version>
+                        <gco:CharacterString>6.5(3.0.1)</gco:CharacterString>
+                    </version>
+                </RS_Identifier>
+            </referenceSystemIdentifier>
+        </MD_ReferenceSystem>
+    </referenceSystemInfo>
+    <identificationInfo>
+        <MD_DataIdentification>
+            <citation>
+                <CI_Citation>
+                    <title>
+                        <gco:CharacterString>Interim Biogeographic Regionalisation for Australia (IBRA), Version 7.1 (Regions)</gco:CharacterString>
+                    </title>
+                    <alternateTitle>
+                        <gco:CharacterString>PARKS_SDE.IBRA71_regions</gco:CharacterString>
+                    </alternateTitle>
+                    <date>
+                        <CI_Date>
+                            <date>
+                                <gco:Date>2012-04-18</gco:Date>
+                            </date>
+                            <dateType>
+                                <CI_DateTypeCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_DateTypeCode" codeListValue="creation" codeSpace="ISOTC211/19115">creation</CI_DateTypeCode>
+                            </dateType>
+                        </CI_Date>
+                    </date>
+                    <date>
+                        <CI_Date>
+                            <date>
+                                <gco:Date>2025-01-07</gco:Date>
+                            </date>
+                            <dateType>
+                                <CI_DateTypeCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_DateTypeCode" codeListValue="revision" codeSpace="ISOTC211/19115">revision</CI_DateTypeCode>
+                            </dateType>
+                        </CI_Date>
+                    </date>
+                    <citedResponsibleParty>
+                        <CI_ResponsibleParty>
+                            <organisationName>
+                                <gco:CharacterString>Australian Government Department of Climate Change, Energy, the Environment and Water</gco:CharacterString>
+                            </organisationName>
+                            <positionName>
+                                <gco:CharacterString>Metadata Publisher</gco:CharacterString>
+                            </positionName>
+                            <contactInfo>
+                                <CI_Contact>
+                                    <phone>
+                                        <CI_Telephone>
+                                            <voice>
+                                                <gco:CharacterString>(02) 6274 1111</gco:CharacterString>
+                                            </voice>
+                                            <facsimile>
+                                                <gco:CharacterString>(02) 6274 1333</gco:CharacterString>
+                                            </facsimile>
+                                        </CI_Telephone>
+                                    </phone>
+                                    <address>
+                                        <CI_Address>
+                                            <deliveryPoint>
+                                                <gco:CharacterString>GPO Box 3090</gco:CharacterString>
+                                            </deliveryPoint>
+                                            <city>
+                                                <gco:CharacterString>CANBERRA</gco:CharacterString>
+                                            </city>
+                                            <administrativeArea>
+                                                <gco:CharacterString>ACT</gco:CharacterString>
+                                            </administrativeArea>
+                                            <postalCode>
+                                                <gco:CharacterString>2601</gco:CharacterString>
+                                            </postalCode>
+                                            <country>
+                                                <Country codeList="http://www.iso.org/iso/country_codes/iso_3166_code_lists.htm" codeListValue="AU" codeSpace="ISO3166-1">AU</Country>
+                                            </country>
+                                            <electronicMailAddress>
+                                                <gco:CharacterString>geospatial@dcceew.gov.au</gco:CharacterString>
+                                            </electronicMailAddress>
+                                        </CI_Address>
+                                    </address>
+                                    <onlineResource>
+                                        <CI_OnlineResource>
+                                            <linkage>
+                                                <URL>https://www.dcceew.gov.au</URL>
+                                            </linkage>
+                                        </CI_OnlineResource>
+                                    </onlineResource>
+                                </CI_Contact>
+                            </contactInfo>
+                            <role>
+                                <CI_RoleCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_RoleCode" codeListValue="custodian" codeSpace="ISOTC211/19115">custodian</CI_RoleCode>
+                            </role>
+                        </CI_ResponsibleParty>
+                    </citedResponsibleParty>
+                    <citedResponsibleParty>
+                        <CI_ResponsibleParty>
+                            <organisationName>
+                                <gco:CharacterString>Australian Government Department of Climate Change, Energy, the Environment and Water</gco:CharacterString>
+                            </organisationName>
+                            <positionName>
+                                <gco:CharacterString>Metadata Publisher</gco:CharacterString>
+                            </positionName>
+                            <contactInfo>
+                                <CI_Contact>
+                                    <phone>
+                                        <CI_Telephone>
+                                            <voice>
+                                                <gco:CharacterString>(02) 6274 1111</gco:CharacterString>
+                                            </voice>
+                                            <facsimile>
+                                                <gco:CharacterString>(02) 6274 1333</gco:CharacterString>
+                                            </facsimile>
+                                        </CI_Telephone>
+                                    </phone>
+                                    <address>
+                                        <CI_Address>
+                                            <deliveryPoint>
+                                                <gco:CharacterString>GPO Box 3090</gco:CharacterString>
+                                            </deliveryPoint>
+                                            <city>
+                                                <gco:CharacterString>CANBERRA</gco:CharacterString>
+                                            </city>
+                                            <administrativeArea>
+                                                <gco:CharacterString>ACT</gco:CharacterString>
+                                            </administrativeArea>
+                                            <postalCode>
+                                                <gco:CharacterString>2601</gco:CharacterString>
+                                            </postalCode>
+                                            <country>
+                                                <Country codeList="http://www.iso.org/iso/country_codes/iso_3166_code_lists.htm" codeListValue="AU" codeSpace="ISO3166-1">AU</Country>
+                                            </country>
+                                            <electronicMailAddress>
+                                                <gco:CharacterString>geospatial@dcceew.gov.au</gco:CharacterString>
+                                            </electronicMailAddress>
+                                        </CI_Address>
+                                    </address>
+                                    <onlineResource>
+                                        <CI_OnlineResource>
+                                            <linkage>
+                                                <URL>https://www.dcceew.gov.au</URL>
+                                            </linkage>
+                                        </CI_OnlineResource>
+                                    </onlineResource>
+                                </CI_Contact>
+                            </contactInfo>
+                            <role>
+                                <CI_RoleCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_RoleCode" codeListValue="publisher" codeSpace="ISOTC211/19115">publisher</CI_RoleCode>
+                            </role>
+                        </CI_ResponsibleParty>
+                    </citedResponsibleParty>
+                    <presentationForm>
+                        <CI_PresentationFormCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_PresentationFormCode" codeListValue="mapDigital" codeSpace="ISOTC211/19115">mapDigital</CI_PresentationFormCode>
+                    </presentationForm>
+                    <otherCitationDetails>
+                        <gco:CharacterString>Department of Climate Change, Energy, the Environment and Water (2025), Interim Biogeographic Regionalisation for Australia v. 7.1 (IBRA) [ESRI shapefile]</gco:CharacterString>
+                    </otherCitationDetails>
+                </CI_Citation>
+            </citation>
+            <abstract>
+                <gco:CharacterString>Interim Biogeographic Regionalisation for Australia (IBRA) version 7.1 represents a landscape based approach to classifying the land surface of Australia. 89 biogeographic regions and 419 sub regions have been delineated, each reflecting a unifying set of major environmental influences which shape the occurrence of flora and fauna and their interaction with the physical environment across Australia and its external territories (excluding Antarctica). IBRA Version 7.1 data consists of two datasets. IBRA regions, which is a larger scale regional classification of homogeneous ecosystems, and sub regions, which are more localised. IBRA Version 7.1 is a minor update to IBRA Version 7.0 to coincide with the release of the CAPAD 2024 dataset to more closely conform to the Geoscience Australia (GA) Australia’s Land Borders (see https://pid.geoscience.gov.au/dataset/ga/140044). IBRA Version 7.0 regions and sub regions are realigned to the updated GA jurisdiction borders in some locations. For example, the Victorian Riverina sub region runs along the NSW-Vic border, the border in this area is updated to better align with the river. IBRA Version 7.1 restores the South Bruny land mass portion of Bruny Island (Tas) back to the Southern Ranges region Southern Ranges sub region to which it was assigned in IBRA Version 6.1. The whole of Bruny Island was incorrectly assigned to the South East region and Tasmanian South East sub region in IBRA Version 7. IBRA Version 7.1, aligns Ball’s Pyramid (south of Lord Howe Island) to other coastal data sources.</gco:CharacterString>
+            </abstract>
+            <purpose>
+                <gco:CharacterString>Interim Biogeographic Regionalisation for Australia (IBRA), Version 7.1 (Regions) </gco:CharacterString>
+            </purpose>
+            <credit>
+                <gco:CharacterString>SA: Department of Environment and Natural Resources (DENR); WA: Department of Environment and Conservation (DEC); NT: Department of Natural Resources, Environment, The Arts and Sport (NRETAS); NSW: Office of Environment and Heritage (OEH); Vic: Department of Sustainability and Environment (DSE); Tas: Department of Primary Industries, Parks, Water and Environment (DPIPWE); QLD: On 30 March 2012 the Queensland Government announced machinery-of-government changes for departments. The functions of the former Department of Environment and Resource Management will now be delivered by the following departments: Department of Environment and Heritage Protection, Department of Natural Resources and Mines, Department of National Parks, Recreation, Sport and Racing, Department of Energy and Water Supply, Department of Science, Information Technology, Innovation and the Arts</gco:CharacterString>
+            </credit>
+            <status>
+                <MD_ProgressCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_ProgressCode" codeListValue="completed" codeSpace="ISOTC211/19115">completed</MD_ProgressCode>
+            </status>
+            <pointOfContact>
+                <CI_ResponsibleParty>
+                    <organisationName>
+                        <gco:CharacterString>Australian Government Department of Climate Change, Energy, the Environment and Water</gco:CharacterString>
+                    </organisationName>
+                    <positionName>
+                        <gco:CharacterString>Parks Data Manager</gco:CharacterString>
+                    </positionName>
+                    <contactInfo>
+                        <CI_Contact>
+                            <phone>
+                                <CI_Telephone>
+                                    <voice>
+                                        <gco:CharacterString>02 6274 1111</gco:CharacterString>
+                                    </voice>
+                                    <facsimile>
+                                        <gco:CharacterString>02 6274 1666</gco:CharacterString>
+                                    </facsimile>
+                                </CI_Telephone>
+                            </phone>
+                            <address>
+                                <CI_Address>
+                                    <deliveryPoint>
+                                        <gco:CharacterString>GPO Box 3090</gco:CharacterString>
+                                    </deliveryPoint>
+                                    <city>
+                                        <gco:CharacterString>Canberra</gco:CharacterString>
+                                    </city>
+                                    <administrativeArea>
+                                        <gco:CharacterString>ACT</gco:CharacterString>
+                                    </administrativeArea>
+                                    <postalCode>
+                                        <gco:CharacterString>2601</gco:CharacterString>
+                                    </postalCode>
+                                    <country>
+                                        <Country codeList="http://www.iso.org/iso/country_codes/iso_3166_code_lists.htm" codeListValue="AU" codeSpace="ISO3166-1">AU</Country>
+                                    </country>
+                                    <electronicMailAddress>
+                                        <gco:CharacterString>geospatial@dcceew.gov.au</gco:CharacterString>
+                                    </electronicMailAddress>
+                                </CI_Address>
+                            </address>
+                            <onlineResource>
+                                <CI_OnlineResource>
+                                    <linkage>
+                                        <URL>https://www.dcceew.gov.au</URL>
+                                    </linkage>
+                                </CI_OnlineResource>
+                            </onlineResource>
+                        </CI_Contact>
+                    </contactInfo>
+                    <role>
+                        <CI_RoleCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_RoleCode" codeListValue="pointOfContact" codeSpace="ISOTC211/19115">pointOfContact</CI_RoleCode>
+                    </role>
+                </CI_ResponsibleParty>
+            </pointOfContact>
+            <resourceMaintenance>
+                <MD_MaintenanceInformation>
+                    <maintenanceAndUpdateFrequency>
+                        <MD_MaintenanceFrequencyCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_MaintenanceFrequencyCode" codeListValue="asNeeded" codeSpace="ISOTC211/19115">asNeeded</MD_MaintenanceFrequencyCode>
+                    </maintenanceAndUpdateFrequency>
+                </MD_MaintenanceInformation>
+            </resourceMaintenance>
+            <graphicOverview>
+                <MD_BrowseGraphic>
+                    <fileName>
+                        <gco:CharacterString>https://www.environment.gov.au/metadata_ext/images/48a3e64e-970b-442b-81bd-93d586780953.jpg</gco:CharacterString>
+                    </fileName>
+                </MD_BrowseGraphic>
+            </graphicOverview>
+            <resourceFormat>
+                <MD_Format>
+                    <name>
+                        <gco:CharacterString>Shapefile</gco:CharacterString>
+                    </name>
+                    <version>
+                        <gco:CharacterString>1</gco:CharacterString>
+                    </version>
+                </MD_Format>
+            </resourceFormat>
+            <descriptiveKeywords>
+                <MD_Keywords>
+                    <keyword>
+                        <gco:CharacterString>ECOLOGY Landscape</gco:CharacterString>
+                    </keyword>
+                    <keyword>
+                        <gco:CharacterString>BOUNDARIES Biophysical</gco:CharacterString>
+                    </keyword>
+                    <type>
+                        <MD_KeywordTypeCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_KeywordTypeCode" codeListValue="theme" codeSpace="ISOTC211/19115">theme</MD_KeywordTypeCode>
+                    </type>
+                    <thesaurusName>
+                        <CI_Citation>
+                            <title>
+                                <gco:CharacterString>ANZLIC Search Words</gco:CharacterString>
+                            </title>
+                            <date>
+                                <CI_Date>
+                                    <date>
+                                        <gco:Date>2008-05-15</gco:Date>
+                                    </date>
+                                    <dateType>
+                                        <CI_DateTypeCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_DateTypeCode" codeListValue="revision" codeSpace="ISOTC211/19115">revision</CI_DateTypeCode>
+                                    </dateType>
+                                </CI_Date>
+                            </date>
+                            <edition>
+                                <gco:CharacterString>Version 2.1</gco:CharacterString>
+                            </edition>
+                            <editionDate>
+                                <gco:Date>2008-05-15</gco:Date>
+                            </editionDate>
+                        </CI_Citation>
+                    </thesaurusName>
+                </MD_Keywords>
+            </descriptiveKeywords>
+            <descriptiveKeywords>
+                <MD_Keywords>
+                    <keyword>
+                        <gco:CharacterString>Downloadable Data</gco:CharacterString>
+                    </keyword>
+                </MD_Keywords>
+            </descriptiveKeywords>
+            <descriptiveKeywords>
+                <MD_Keywords>
+                    <keyword>
+                        <gco:CharacterString>Downloadable Data</gco:CharacterString>
+                    </keyword>
+                    <thesaurusName uuidref="723f6998-058e-11dc-8314-0800200c9a66"/>
+                </MD_Keywords>
+            </descriptiveKeywords>
+            <resourceConstraints>
+                <MD_Constraints>
+                    <useLimitation>
+                        <gco:CharacterString>Licence:Attribution 3.0 Australia (CC BY 3.0 AU)This data has been licensed under the Creative Commons Attribution 3.0 Australia Licence. More information can be found at: https://creativecommons.org/licenses/by/3.0/au/deed.enThis dataset is available under the CC BY data licensing model and users are required to acknowledge the Australian Government as the source of the data in any of their uses.Copyright:© Commonwealth of Australia (Department of Climate Change, Energy, the Environment and Water) Data Citation:Department of Agriculture, Water and the Environment (2020), Interim Biogeographic Regionalisation for Australia (Subregions) v. 7.1 (IBRA)Use Constraints:None specifiedDisclaimer:The user waives and releases the Commonwealth of Australia to the full extent permitted by law from all liability for loss or damage arising from the use of, or reliance on, material or information made available through the system, whether caused by negligence on the part of the Commonwealth of Australia or its agents. In no event shall the Commonwealth of Australia be liable for any incidental or consequential damages resulting from the use of or reliance on the material.Information provided in publications by the Australian Government are considered to be true and correct at the time of publication. Changes in circumstances after time of publication may impact on the accuracy of this information and the Australian Government gives no assurance as to the accuracy of any information or advice contained.</gco:CharacterString>
+                    </useLimitation>
+                </MD_Constraints>
+            </resourceConstraints>
+            <resourceConstraints>
+                <MD_LegalConstraints>
+                    <accessConstraints>
+                        <MD_RestrictionCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_RestrictionCode" codeListValue="license" codeSpace="ISOTC211/19115">license</MD_RestrictionCode>
+                    </accessConstraints>
+                    <otherConstraints>
+                        <gco:CharacterString>CC - Attribution (CC BY)</gco:CharacterString>
+                    </otherConstraints>
+                </MD_LegalConstraints>
+            </resourceConstraints>
+            <resourceConstraints>
+                <MD_LegalConstraints>
+                    <accessConstraints>
+                        <MD_RestrictionCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_RestrictionCode" codeListValue="license" codeSpace="ISOTC211/19115">license</MD_RestrictionCode>
+                    </accessConstraints>
+                    <otherConstraints>
+                        <gco:CharacterString>Data to be available in the Public Domain under Creative Commons by Attribution Licensing Agreement. 
+More information can be found here: http://creativecommons.org/licenses/by/3.0/au/deed.en</gco:CharacterString>
+                    </otherConstraints>
+                </MD_LegalConstraints>
+            </resourceConstraints>
+            <resourceConstraints>
+                <MD_LegalConstraints>
+                    <useConstraints>
+                        <MD_RestrictionCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_RestrictionCode" codeListValue="license" codeSpace="ISOTC211/19115">license</MD_RestrictionCode>
+                    </useConstraints>
+                    <otherConstraints>
+                        <gco:CharacterString>Users must attribute the Australian Government Department of Climate Change, Energy, the Environment and Water as the data provider.</gco:CharacterString>
+                    </otherConstraints>
+                </MD_LegalConstraints>
+            </resourceConstraints>
+            <resourceConstraints>
+                <MD_LegalConstraints>
+                    <useConstraints>
+                        <MD_RestrictionCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_RestrictionCode" codeListValue="restricted" codeSpace="ISOTC211/19115">restricted</MD_RestrictionCode>
+                    </useConstraints>
+                    <otherConstraints>
+                        <gco:CharacterString>Display - No</gco:CharacterString>
+                    </otherConstraints>
+                    <otherConstraints>
+                        <gco:CharacterString>Attributes - No</gco:CharacterString>
+                    </otherConstraints>
+                    <otherConstraints>
+                        <gco:CharacterString>Geometry - No</gco:CharacterString>
+                    </otherConstraints>
+                    <otherConstraints>
+                        <gco:CharacterString>Other - No</gco:CharacterString>
+                    </otherConstraints>
+                </MD_LegalConstraints>
+            </resourceConstraints>
+            <resourceConstraints>
+                <MD_LegalConstraints>
+                    <accessConstraints>
+                        <MD_RestrictionCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_RestrictionCode" codeListValue="copyright" codeSpace="ISOTC211/19115">copyright</MD_RestrictionCode>
+                    </accessConstraints>
+                    <otherConstraints>
+                        <gco:CharacterString>© Commonwealth of Australia, Department of Climate Change, Energy, the Environment and Water (2025)</gco:CharacterString>
+                    </otherConstraints>
+                </MD_LegalConstraints>
+            </resourceConstraints>
+            <spatialRepresentationType>
+                <MD_SpatialRepresentationTypeCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_SpatialRepresentationTypeCode" codeListValue="vector" codeSpace="ISOTC211/19115">vector</MD_SpatialRepresentationTypeCode>
+            </spatialRepresentationType>
+            <spatialResolution>
+                <MD_Resolution>
+                    <equivalentScale>
+                        <MD_RepresentativeFraction>
+                            <denominator>
+                                <gco:Integer>250000</gco:Integer>
+                            </denominator>
+                        </MD_RepresentativeFraction>
+                    </equivalentScale>
+                </MD_Resolution>
+            </spatialResolution>
+            <language>
+                <LanguageCode codeList="http://www.loc.gov/standards/iso639-2/php/code_list.php" codeListValue="eng" codeSpace="ISO639-2">eng</LanguageCode>
+            </language>
+            <characterSet>
+                <MD_CharacterSetCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_CharacterSetCode" codeListValue="utf8" codeSpace="ISOTC211/19115">utf8</MD_CharacterSetCode>
+            </characterSet>
+            <topicCategory>
+                <MD_TopicCategoryCode>environment</MD_TopicCategoryCode>
+            </topicCategory>
+            <environmentDescription>
+                <gco:CharacterString>Esri ArcGIS Pro 3.3.0</gco:CharacterString>
+            </environmentDescription>
+            <extent>
+                <EX_Extent>
+                    <geographicElement>
+                        <EX_GeographicBoundingBox>
+                            <extentTypeCode>
+                                <gco:Boolean>true</gco:Boolean>
+                            </extentTypeCode>
+                            <westBoundLongitude>
+                                <gco:Decimal>72.577376</gco:Decimal>
+                            </westBoundLongitude>
+                            <eastBoundLongitude>
+                                <gco:Decimal>167.99814</gco:Decimal>
+                            </eastBoundLongitude>
+                            <southBoundLatitude>
+                                <gco:Decimal>-54.776993</gco:Decimal>
+                            </southBoundLatitude>
+                            <northBoundLatitude>
+                                <gco:Decimal>-9.14129</gco:Decimal>
+                            </northBoundLatitude>
+                        </EX_GeographicBoundingBox>
+                    </geographicElement>
+                </EX_Extent>
+            </extent>
+            <extent>
+                <EX_Extent>
+                    <geographicElement>
+                        <EX_GeographicBoundingBox>
+                            <extentTypeCode>
+                                <gco:Boolean>true</gco:Boolean>
+                            </extentTypeCode>
+                            <westBoundLongitude>
+                                <gco:Decimal>72.577376</gco:Decimal>
+                            </westBoundLongitude>
+                            <eastBoundLongitude>
+                                <gco:Decimal>167.99814</gco:Decimal>
+                            </eastBoundLongitude>
+                            <southBoundLatitude>
+                                <gco:Decimal>-54.776993</gco:Decimal>
+                            </southBoundLatitude>
+                            <northBoundLatitude>
+                                <gco:Decimal>-9.14129</gco:Decimal>
+                            </northBoundLatitude>
+                        </EX_GeographicBoundingBox>
+                    </geographicElement>
+                </EX_Extent>
+            </extent>
+            <supplementalInformation>
+                <gco:CharacterString>published externally</gco:CharacterString>
+            </supplementalInformation>
+        </MD_DataIdentification>
+    </identificationInfo>
+    <distributionInfo>
+        <MD_Distribution>
+            <distributionFormat>
+                <MD_Format>
+                    <name>
+                        <gco:CharacterString>Feature Class</gco:CharacterString>
+                    </name>
+                    <version>
+                        <gco:CharacterString>1</gco:CharacterString>
+                    </version>
+                </MD_Format>
+            </distributionFormat>
+            <distributor>
+                <MD_Distributor>
+                    <distributorContact>
+                        <CI_ResponsibleParty>
+                            <organisationName>
+                                <gco:CharacterString>Australian Government Department of Climate Change, Energy, the Environment and Water</gco:CharacterString>
+                            </organisationName>
+                            <positionName>
+                                <gco:CharacterString>Parks Data Manager</gco:CharacterString>
+                            </positionName>
+                            <contactInfo>
+                                <CI_Contact>
+                                    <phone>
+                                        <CI_Telephone>
+                                            <voice>
+                                                <gco:CharacterString>02 6274 1111</gco:CharacterString>
+                                            </voice>
+                                            <facsimile>
+                                                <gco:CharacterString>02 6274 1666</gco:CharacterString>
+                                            </facsimile>
+                                        </CI_Telephone>
+                                    </phone>
+                                    <address>
+                                        <CI_Address>
+                                            <deliveryPoint>
+                                                <gco:CharacterString>GPO Box 3090</gco:CharacterString>
+                                            </deliveryPoint>
+                                            <city>
+                                                <gco:CharacterString>Canberra</gco:CharacterString>
+                                            </city>
+                                            <administrativeArea>
+                                                <gco:CharacterString>ACT</gco:CharacterString>
+                                            </administrativeArea>
+                                            <postalCode>
+                                                <gco:CharacterString>2601</gco:CharacterString>
+                                            </postalCode>
+                                            <country>
+                                                <Country codeList="http://www.iso.org/iso/country_codes/iso_3166_code_lists.htm" codeListValue="AU" codeSpace="ISO3166-1">AU</Country>
+                                            </country>
+                                            <electronicMailAddress>
+                                                <gco:CharacterString>geospatial@dcceew.gov.au</gco:CharacterString>
+                                            </electronicMailAddress>
+                                        </CI_Address>
+                                    </address>
+                                    <onlineResource>
+                                        <CI_OnlineResource>
+                                            <linkage>
+                                                <URL>https://www.dcceew.gov.au</URL>
+                                            </linkage>
+                                            <description>
+                                                <gco:CharacterString>002</gco:CharacterString>
+                                            </description>
+                                            <function>
+                                                <CI_OnLineFunctionCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_OnLineFunctionCode" codeListValue="download" codeSpace="ISOTC211/19115">download</CI_OnLineFunctionCode>
+                                            </function>
+                                        </CI_OnlineResource>
+                                    </onlineResource>
+                                </CI_Contact>
+                            </contactInfo>
+                            <role>
+                                <CI_RoleCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_RoleCode" codeListValue="distributor" codeSpace="ISOTC211/19115">distributor</CI_RoleCode>
+                            </role>
+                        </CI_ResponsibleParty>
+                    </distributorContact>
+                    <distributorFormat>
+                        <MD_Format>
+                            <name>
+                                <gco:CharacterString>Shapefile</gco:CharacterString>
+                            </name>
+                            <version>
+                                <gco:CharacterString>1</gco:CharacterString>
+                            </version>
+                        </MD_Format>
+                    </distributorFormat>
+                    <distributorTransferOptions>
+                        <MD_DigitalTransferOptions>
+                            <onLine>
+                                <CI_OnlineResource>
+                                    <linkage>
+                                        <URL>https://www.dcceew.gov.au</URL>
+                                    </linkage>
+                                    <function>
+                                        <CI_OnLineFunctionCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_OnLineFunctionCode" codeListValue="information" codeSpace="ISOTC211/19115">information</CI_OnLineFunctionCode>
+                                    </function>
+                                </CI_OnlineResource>
+                            </onLine>
+                            <onLine>
+                                <CI_OnlineResource>
+                                    <linkage>
+                                        <URL>https://www.dcceew.gov.au</URL>
+                                    </linkage>
+                                    <description>
+                                        <gco:CharacterString>002</gco:CharacterString>
+                                    </description>
+                                    <function>
+                                        <CI_OnLineFunctionCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_OnLineFunctionCode" codeListValue="download" codeSpace="ISOTC211/19115">download</CI_OnLineFunctionCode>
+                                    </function>
+                                </CI_OnlineResource>
+                            </onLine>
+                        </MD_DigitalTransferOptions>
+                    </distributorTransferOptions>
+                </MD_Distributor>
+            </distributor>
+            <transferOptions>
+                <MD_DigitalTransferOptions>
+                    <transferSize>
+                        <gco:Real>63.215</gco:Real>
+                    </transferSize>
+                </MD_DigitalTransferOptions>
+            </transferOptions>
+        </MD_Distribution>
+    </distributionInfo>
+    <dataQualityInfo>
+        <DQ_DataQuality>
+            <scope>
+                <DQ_Scope>
+                    <level>
+                        <MD_ScopeCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_ScopeCode" codeListValue="dataset" codeSpace="ISOTC211/19115">dataset</MD_ScopeCode>
+                    </level>
+                </DQ_Scope>
+            </scope>
+            <report>
+                <DQ_AbsoluteExternalPositionalAccuracy>
+                    <result>
+                        <DQ_ConformanceResult>
+                            <specification>
+                                <CI_Citation>
+                                    <title>
+                                        <gco:CharacterString>Absolute External Positional Accuracy Check</gco:CharacterString>
+                                    </title>
+                                    <date>
+                                        <CI_Date>
+                                            <date>
+                                                <gco:Date>2017-09-14</gco:Date>
+                                            </date>
+                                            <dateType>
+                                                <CI_DateTypeCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_DateTypeCode" codeListValue="revision" codeSpace="ISOTC211/19115">revision</CI_DateTypeCode>
+                                            </dateType>
+                                        </CI_Date>
+                                    </date>
+                                </CI_Citation>
+                            </specification>
+                            <explanation>
+                                <gco:CharacterString>Less than two kilometres in most areas of Australia. Generally, the data is accurate to at least 1:250,000</gco:CharacterString>
+                            </explanation>
+                            <pass>
+                                <gco:Boolean>true</gco:Boolean>
+                            </pass>
+                        </DQ_ConformanceResult>
+                    </result>
+                </DQ_AbsoluteExternalPositionalAccuracy>
+            </report>
+            <report>
+                <DQ_NonQuantitativeAttributeAccuracy>
+                    <result>
+                        <DQ_ConformanceResult>
+                            <specification>
+                                <CI_Citation>
+                                    <title>
+                                        <gco:CharacterString>Non Quantitative Attribute Accuracy Check</gco:CharacterString>
+                                    </title>
+                                    <date>
+                                        <CI_Date>
+                                            <date>
+                                                <gco:Date>2017-09-14</gco:Date>
+                                            </date>
+                                            <dateType>
+                                                <CI_DateTypeCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_DateTypeCode" codeListValue="revision" codeSpace="ISOTC211/19115">revision</CI_DateTypeCode>
+                                            </dateType>
+                                        </CI_Date>
+                                    </date>
+                                </CI_Citation>
+                            </specification>
+                            <explanation>
+                                <gco:CharacterString>The naming of regions is the responsibility of individual jurisdictions. The naming of those regions that cross state/territory boundaries is decided on agreement with those jurisdictions in question. The two IBRA datasets (bioregions and sub-regions) contain the following attributes: 
+
+REG_CODE_7 – Alphabetic identifier for the IBRA region; REG_NAME_7 - The full name of the IBRA region; AREA – Area in Metres; HECTARES – Area in Hectares; SQ_KM – Square Kilometres ; REC_ID – Numeric identifier for the IBRA region; REG_CODE_6 – Alphabetic identifier of the previous IBRA6.1 region; REG_NAME_6 - The full name of the previous IBRA6.1 region; REG_NO_61 – Numeric identifier of the previous IBRA6.1 region; STATE - Abbreviation of State or Territory</gco:CharacterString>
+                            </explanation>
+                            <pass>
+                                <gco:Boolean>true</gco:Boolean>
+                            </pass>
+                        </DQ_ConformanceResult>
+                    </result>
+                </DQ_NonQuantitativeAttributeAccuracy>
+            </report>
+            <report>
+                <DQ_ConceptualConsistency>
+                    <result>
+                        <DQ_ConformanceResult>
+                            <specification>
+                                <CI_Citation>
+                                    <title>
+                                        <gco:CharacterString>Conceptual Consistency Check</gco:CharacterString>
+                                    </title>
+                                    <date>
+                                        <CI_Date>
+                                            <date>
+                                                <gco:Date>2017-09-14</gco:Date>
+                                            </date>
+                                            <dateType>
+                                                <CI_DateTypeCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_DateTypeCode" codeListValue="revision" codeSpace="ISOTC211/19115">revision</CI_DateTypeCode>
+                                            </dateType>
+                                        </CI_Date>
+                                    </date>
+                                </CI_Citation>
+                            </specification>
+                            <explanation>
+                                <gco:CharacterString>ERIN undertook a systematic process to ensure all spatial and non spatial data was correctly compiled. This included checking for label errors and also for removing over-shoots and under-shoots in relation to the state borders.</gco:CharacterString>
+                            </explanation>
+                            <pass>
+                                <gco:Boolean>true</gco:Boolean>
+                            </pass>
+                        </DQ_ConformanceResult>
+                    </result>
+                </DQ_ConceptualConsistency>
+            </report>
+            <report>
+                <DQ_CompletenessOmission>
+                    <result>
+                        <DQ_ConformanceResult>
+                            <specification>
+                                <CI_Citation>
+                                    <title>
+                                        <gco:CharacterString>Completeness Omission Check</gco:CharacterString>
+                                    </title>
+                                    <date>
+                                        <CI_Date>
+                                            <date>
+                                                <gco:Date>2017-09-14</gco:Date>
+                                            </date>
+                                            <dateType>
+                                                <CI_DateTypeCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#CI_DateTypeCode" codeListValue="revision" codeSpace="ISOTC211/19115">revision</CI_DateTypeCode>
+                                            </dateType>
+                                        </CI_Date>
+                                    </date>
+                                </CI_Citation>
+                            </specification>
+                            <explanation>
+                                <gco:CharacterString>The data is complete for IBRA version 7.1 Further refinement will be carried out to improve border regions in time.</gco:CharacterString>
+                            </explanation>
+                            <pass>
+                                <gco:Boolean>true</gco:Boolean>
+                            </pass>
+                        </DQ_ConformanceResult>
+                    </result>
+                </DQ_CompletenessOmission>
+            </report>
+            <lineage>
+                <LI_Lineage>
+                    <statement>
+                        <gco:CharacterString>States and Territories provided the base data for inclusion in IBRA Version 7 Auricht Projects then undertook spatial refinements of the boundaries to ensure that edgematching of boundaries were to the state borders and coastline. The Geoscience Australia 1:100,000 dataset was used to maintain this standard. Draft outputs were provided to State/Territory Agencies for cross-checking. Final checking of topology was undertaken by the Australian Government Department of Climate Change, Energy, the Environment and Water.</gco:CharacterString>
+                    </statement>
+                </LI_Lineage>
+            </lineage>
+        </DQ_DataQuality>
+    </dataQualityInfo>
+    <metadataMaintenance>
+        <MD_MaintenanceInformation>
+            <maintenanceAndUpdateFrequency>
+                <MD_MaintenanceFrequencyCode codeList="http://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_MaintenanceFrequencyCode" codeListValue="asNeeded" codeSpace="ISOTC211/19115">asNeeded</MD_MaintenanceFrequencyCode>
+            </maintenanceAndUpdateFrequency>
+        </MD_MaintenanceInformation>
+    </metadataMainte

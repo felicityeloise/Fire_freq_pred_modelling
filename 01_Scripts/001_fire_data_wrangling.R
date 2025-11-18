@@ -4,15 +4,18 @@
 
 ##### Fire frequency analysis ----
 # This script gathers together data needed for determining the fire frequency from readily available fire history products including the QLD spatial catalogue and TERN.
-# R version 4.3.1
+# R version 4.3.1 # update to 4.5.1
 
 # Load required packages
-library(fasterize) # fasterize_1.0.5
-library(terra) # terra_1.7-78
-library(ggplot2) # ggplot2_3.5.1
+library(fasterize) # fasterize_1.0.5 # updated to 1.1.0
+library(terra) # terra_1.7-78 # updated to 1.8-60
+library(ggplot2) # ggplot2_3.5.1 # updated to 2_3.5.2
 library(dplyr) # dplyr_1.1.4
-library(sf) # sf_1.0-14
-remotes::install_version("raster", version = "3.5-15") # Install older version of raster which works with this version of terra
+library(sf) # sf_1.0-14 # updated to 1.0-21
+#remotes::install_version("raster", version = "3.5-15") # Install older version of raster which works with this version of terra
+library(raster) # updated to 3.6-32
+
+sessionInfo()
 
 # 1. Read in QPWS fire history data ----
 # This data can be downloaded from the QLD spatial catalogue
@@ -45,7 +48,7 @@ writeVector(QPWS_fire_hist_1987, './00_Data/Fire_data/Outputs/QPWS_fire_hist_198
 QPWS_fire_1987 <- st_read('./00_Data/Fire_data/Outputs/QPWS_fire_hist_1987.gpkg')
 QPWS_fire_1987 <- st_transform(QPWS_fire_1987, crs = 'EPSG:3577') # Have to run this transformation again after reading in the data
 
-plot(QPWS_fire_1987)
+#plot(QPWS_fire_1987)
 
 
 
@@ -54,8 +57,13 @@ plot(QPWS_fire_1987)
 # Download Interim Biogeographic Regionalisation for Australia (IBRA) Version 7.1 (Regions) from DCCEEW 
 IBRA <- vect('./00_Data/Environmental_data/IBRA/Interim_Biogeographic_Regionalisation_for_Australia_(IBRA)_Version_7.1_(Regions).shp') %>% 
   project('EPSG:3577') # SEQ Bioregion extends into northern NSW, need to crop at Queensland border as TERN fire history mapping does not extend to northern NSW
-Aus <- vect('./00_Data/Australia_shapefile/STE11aAust.shp') %>% 
-  project('EPSG:3577')
+
+
+Aus <- download.file("https://www.abs.gov.au/statistics/standards/australian-statistical-geography-standard-asgs-edition-3/jul2021-jun2026/access-and-downloads/digital-boundary-files/STE_2021_AUST_SHP_GDA2020.zip", destfile = './00_Data/Spatial_data/Australia.zip', mode = "wb", cacheOK = F)
+unzip(zipfile = './00_Data/Spatial_data/Australia.zip', exdir = './00_Data/Spatial_data/Australia')
+Aus <- vect('./00_Data/Spatial_data/Australia/STE_2021_AUST_GDA2020.shp') %>%
+  project("EPSG:3577")
+
 QLD <- Aus[Aus$STATE_NAME == "Queensland"]
 SEQ <- IBRA[IBRA$REG_NAME_7 == "South Eastern Queensland"] %>% 
   crop(QLD)
@@ -66,10 +74,14 @@ SEQ <- vect('./00_Data/SEQ_bound/SEQ_IBRA.gpkg')
 
 # Get bounding box from SEQ
 SEQ
-rtemp <- raster::raster(xmn = 1881028, xmx = 2121562, ymn = -3247627, ymx = -2660998, res = 5, crs = 'EPSG:3577')
-QPWS_SEQ_freq_rast <- fasterize(QPWS_fire_1987, rtemp, field = 'OUTYEAR', fun = 'count')
+rtemp <- raster(xmn = 1881028, xmx = 2121594, ymn = -3442593, ymx = -2656210, res = 5, crs = 'EPSG:3577')
+
+# Very slow to complete
+QPWS_SEQ_freq_rast <- rasterize(QPWS_fire_1987, rtemp, field = 'OUTYEAR', fun = 'count')
+ # Fails to run with new IBRA bioregion extent as it is too large QPWS_SEQ_freq_rast <- fastrize(QPWS_fire_1987, rtemp, field = 'OUTYEAR', fun = 'count')
 
 plot(QPWS_SEQ_freq_rast)
+QPWS_SEQ_freq_rast
 raster::writeRaster(QPWS_SEQ_freq_rast, './00_Data/Fire_data/Outputs/SEQ/QPWS_SEQ_IBRA_freq_raster.tif')
 
 QPWS <- rast('./00_Data/Fire_data/Outputs/SEQ/QPWS_SEQ_IBRA_freq_raster.tif')
