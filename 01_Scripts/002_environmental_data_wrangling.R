@@ -5,15 +5,18 @@
 ##### Fire frequency analysis ----
 # This script gathers together environmental data needed for predicting  fire frequency
 
-# R version 4.3.1
+# R version 4.5.1
 
 # 1. Load required packages ----
-library(terra) # terra_1.7-78 
+library(terra) # terra_1.7-78 # Updated to 1.8-60
 library(dplyr) # dplyr_1.1.4 
 library(landform) # landform_0.2
+library(httr) # httr_1.4.7
+library(raster) # raster 3.6-23 # Updated to 3.6-32
+library(sf) # s3 1.0-14 # Updated to 1.0-21
+library(httr) # httr 1.4.7
 
-
-# Install gdalUtilities for working with large datasets
+# Instalhttr# Install gdalUtilities for working with large datasets
 #library(devtools)
 #install_github("JoshOBrien/gdalUtilities")
 library(gdalUtilities) # gdalUtilities_1.2.5
@@ -22,6 +25,8 @@ library(gdalUtilities) # gdalUtilities_1.2.5
 # 1. Read in, crop and aggregate environmental data ----
 # Create an SEQ vector 
 SEQ <- vect('./00_Data/SEQ_bound/SEQ_IBRA.gpkg')
+SEQ2 <- project(SEQ, 'EPSG:4326')
+
 
 # Use SEQ to create a template raster for resampling 
 template <- rast(SEQ)
@@ -29,13 +34,7 @@ res(template) <- c(30,30)
 ext(template) <- ext(SEQ)
 
 
-# Investigated alternative FPC data, TERN has same data I already am using. QSpatial also has SLATS but prior to 2017/2018 only mapping land cover change so not able to get yearly data for woody vegetation extent.
-# Also investigated ANUClimate data from TERN for climate data but limited temporal coverage depending on the dataset not covering most recent years of the study period. BOM has gridded climatology data but this is also temporally limited, cost associated with requesting data. May be even coarser than 5km resolution
-
-
-
 # 1.1 Rainfall ----
-#### THIS IS WORSE SPATIAL RESOULTION THAN WORLDCLIM DATA AT 5km BUT BETTER TEMPORAL COVERAGE. NOT SURE IF THIS IS THE BEST WAY TO APPROACH THIS, GOING TO BE SLOW
 # 1.1.1 Load daily rainfall data
 load_SILO_rain <- function(year, dest_dir = './00_Data/Environmental_data/SILO_Rainfall'){
   if(!dir.exists(dest_dir)) dir.create(dest_dir)
@@ -46,36 +45,26 @@ load_SILO_rain <- function(year, dest_dir = './00_Data/Environmental_data/SILO_R
   local_file <- file.path(dest_dir, file_name)
   
   # Download file
-  if(!file.exists(local_file)){
-    message("Downloading: ", year)
-    download.file(url, local_file, mode = 'wb')
-  }
-  else{
-    message("Using cached file: ", year)
-  }
+  download.file(url, local_file, mode = 'wb') # Method = 'wb' preserves the byte content of the original file
   
   # Load raster
   r <- rast(local_file) %>% 
-    project('EPSG:3577') %>% 
-    crop(SEQ)
-  assign(paste0("rain_", year), r, envir = .GlobalEnv)
+    crop(aoi)
+  assign(paste0("rain_", year), r, envir = .GlobalEnv) # Add rasters to the environment as they are processed
 }
-
 # Loop over 1987 to 2023
-years <- 1987:2023
+options(timeout = 400)
+aoi <- SEQ2 
+years <- 1987:2023 # When an error is thrown and the connection fails, just update this code to start from the year which failed and re-run L57-L58
 invisible(lapply(years, load_SILO_rain))
-rain_1987; plot(rain_1987)
+rain_1987; plot(rain_1987); gc()
 
-
-
-# IF using this data we can continue to do the following - will need to rescale but maybe leave the rescaling until after these values are calculated
 # 1.1.2 Calculate rainfall seasonality
-# Calculate mean monthly rainfall
 rain_list <- list(rain_1987, rain_1988, rain_1989, rain_1990, rain_1991, rain_1992, rain_1993, rain_1994, rain_1995, rain_1996, rain_1997, rain_1998, rain_1999, rain_2000, rain_2001, rain_2002, rain_2003, rain_2004, rain_2005, rain_2006, rain_2007, rain_2008, rain_2009, rain_2010, rain_2011, rain_2012, rain_2013, rain_2014, rain_2015, rain_2016, rain_2017, rain_2018, rain_2019, rain_2020, rain_2021, rain_2022, rain_2023)
-years <- 1987:2023
 
-
+years <- 1987:2023 
 for(i in seq_along(rain_list)){
+  
   rain <- rain_list[[i]]
   year <- years[i]
   dates <- time(rain) # Get time vector 
@@ -84,35 +73,46 @@ for(i in seq_along(rain_list)){
   monthly_avg <- tapp(rain, index = month_groups, fun = mean, na.rm = T) # Calculate monthly average rainfall per cell
   assign(paste0('avg_monthly_rain', year), monthly_avg)
 }
-avg_monthly_rain1987 # Check
+avg_monthly_rain1987; gc() # Check
 
-# Caculate the seasonality index
-# The following equation is adapted from Walsh, R. and Lawler, D. (1981). Rainfall seasonality: Description, spatial patterns and change through time (British Isles, Africa). Weather, 36(7), 201-208. doi:10.1002/j.1477-8696.1981.tb05400.x. 
-# This index can theoretically vary from 0 (when all months have the same      #
-# rainfall) to 1.83 (when all the rainfall ocurrs in a single month)           #
-# A qualitative classification of degrees of seasonality is the following:     #
-# -----------------------------------------------------------------------------#
-#  si values   |                    Rainfall regime                            #
-# -----------------------------------------------------------------------------#
-#     <= 0.19  | Very equable                                                  #
-# 0.20 - 0.39  | Equable but with a definite wetter season                     #
-# 0.40 - 0.59  | Rather seasonal with a short drier season                     #
-# 0.60 - 0.79  | Seasonal                                                      #
-# 0.80 - 0.99  | Markedly seasonal with a long drier season                    #
-# 1.00 - 1.19  | Most rain in 3 months or less                                 #
-#     >= 1.20  | Extreme, almost all rain in 1-2 months                        #
-################################################################################
+# Calculate seasonality 
 for(i in years){
   month_rast_name <- paste0("avg_monthly_rain", i)
   month_rast <- get(month_rast_name)
   
-  R <- sum(month_rast) # Calculate mean annual rainfall from mean monthly rainfall
-  
-  si_rain <- (1/R) * sum(abs(month_rast - R/12))
+  # Calculate seasonality in same manner as BioClim BIO4: standard deviation of monthly temps × 100
+  si_rain <- app(month_rast, fun = function(x) sd(x, na.rm = TRUE) * 100)
+  names(si_rain) <- paste0("rain_seasonality_", i)
   assign(paste0("rain_seasonality_", i), si_rain)
 }
-# Would also need to save the output
-rain_seasonality_1987; rain_seasonality_2023 # Check these seem reasonable
+rain_seasonality_1987; rain_seasonality_2023; gc() # Check these seem reasonable
+
+# Combine into a raster stack
+rain_seasonality <- c(rain_seasonality_1987, rain_seasonality_1988, rain_seasonality_1989, rain_seasonality_1990, rain_seasonality_1991, rain_seasonality_1992, rain_seasonality_1993, rain_seasonality_1994, rain_seasonality_1995, rain_seasonality_1996, rain_seasonality_1997, rain_seasonality_1998, rain_seasonality_1999, rain_seasonality_2000, rain_seasonality_2001, rain_seasonality_2002, rain_seasonality_2003, rain_seasonality_2004, rain_seasonality_2005, rain_seasonality_2006, rain_seasonality_2007, rain_seasonality_2008, rain_seasonality_2009, rain_seasonality_2010, rain_seasonality_2011, rain_seasonality_2012, rain_seasonality_2013, rain_seasonality_2014, rain_seasonality_2015, rain_seasonality_2016, rain_seasonality_2017, rain_seasonality_2018, rain_seasonality_2019, rain_seasonality_2020, rain_seasonality_2021, rain_seasonality_2022, rain_seasonality_2023)
+rain_seasonality
+
+# Reproject 
+rain_seasonality[rain_seasonality < 0] <- NA # SILO uses values like -32768 as values for missing data which means these values are not recognised as NAs during reprojection.
+writeRaster(rain_seasonality, './00_Data/Environmental_data/Outputs/SILO_Rainfall/Rainfall_seasonality_SEQ_IBRA.tif', overwrite = T)
+
+# Rescale
+gdalwarp('./00_Data/Environmental_data/Outputs/SILO_Rainfall/Rainfall_seasonality_SEQ_IBRA.tif',
+         './00_Data/Environmental_data/Outputs/SILO_Rainfall/Rainfall_seasonality_SEQ_IBRA_reproj.tif', 
+         t_srs = 'EPSG:3577',
+         tr = c(30,30), 
+         r = 'bilinear')
+# Check
+rain_seasonalityr <- rast('./00_Data/Environmental_data/Outputs/SILO_Rainfall/Rainfall_seasonality_SEQ_IBRA_reproj.tif')
+
+
+# Calculate long-term average
+rain_seasonality_avg <- mean(rain_seasonalityr, na.rm = T)
+rain_seasonality_avg
+plet(rain_seasonality_avg)
+
+writeRaster(rain_seasonality_avg, './00_Data/Environmental_data/Outputs/SILO_Rainfall/Average_Rain_seasonality_SEQ_IBRA.tif', overwrite = T)
+rm(list = setdiff(ls(), c("SEQ", "SEQ2", "template"))); gc()
+
 
 
 # 1.2 Temperature ----
@@ -126,28 +126,19 @@ load_SILO_mintemp <- function(year, dest_dir = './00_Data/Environmental_data/SIL
   local_file <- file.path(dest_dir, file_name)
   
   # Download file
-  if(!file.exists(local_file)){
-    message("Downloading: ", year)
-    download.file(url, local_file, mode = 'wb')
-  }
-  else{
-    message("Using cached file: ", year)
-  }
+  download.file(url, local_file, mode = 'wb') # Method = 'wb' preserves the byte content of the original file
   
   # Load raster
   r <- rast(local_file) %>% 
-    project('EPSG:3577') %>% 
-    crop(SEQ)
-  assign(paste0("mintemp_", year), r, envir = .GlobalEnv)
+    crop(aoi)
+  assign(paste0("mintemp_", year), r, envir = .GlobalEnv) # Add rasters to the environment as they are processed
 }
-
 # Loop over 1987 to 2023
-years <- 1987:2023
+options(timeout = 400)
+aoi <- SEQ2
+years <- 1987:2023 # When an error is thrown and the connection fails, just update this code to start from the year which failed and re-run L124-L125
 invisible(lapply(years, load_SILO_mintemp))
-mintemp_1987; plot(mintemp_1987) # Values are per day
-
-
-
+mintemp_1987; plot(mintemp_1987); gc() # Values are per day
 
 # 1.2.1 Max temperature
 load_SILO_maxtemp <- function(year, dest_dir = './00_Data/Environmental_data/SILO_Max_temp'){
@@ -159,295 +150,369 @@ load_SILO_maxtemp <- function(year, dest_dir = './00_Data/Environmental_data/SIL
   local_file <- file.path(dest_dir, file_name)
   
   # Download file
-  if(!file.exists(local_file)){
-    message("Downloading: ", year)
-    download.file(url, local_file, mode = 'wb')
-  }
-  else{
-    message("Using cached file: ", year)
-  }
+  download.file(url, local_file, mode = 'wb') # Method = 'wb' preserves the byte content of the original file
   
   # Load raster
   r <- rast(local_file) %>% 
-    project('EPSG:3577') %>% 
-    crop(SEQ)
-  assign(paste0("maxtemp_", year), r, envir = .GlobalEnv)
+    crop(aoi)
+  assign(paste0("maxtemp_", year), r, envir = .GlobalEnv) # Add rasters to the environment as they are processed
 }
-
 # Loop over 1987 to 2023
-years <- 1987:2023
+aoi <- SEQ2
+years <- 1987:2023 # When an error is thrown and the connection fails, just update this code to start from the year which failed and re-run L147-L148
 invisible(lapply(years, load_SILO_maxtemp))
 maxtemp_1987; plot(maxtemp_1987) # Values are per day
 
+rm(list = setdiff(ls(), c("SEQ", "template", 'years'))); gc()
+
 # 1.2.2 Calculate mean daily temperature
+years <- 1987:2023
 for (i in years ){
-  cat("Processing year: ", i, "\n")
   
-  tmin <- get(paste0("mintemp_", i)) # Get minimum temperature raster for year i
-  tmax <- get(paste0("maxtemp_", i)) # Get maximum temperature raster for year i
+  tmin_file <- file.path(paste0('./00_Data/Environmental_data/SILO_Min_temp/',i,".min_temp.nc")) # Get the raster file for minimum temperature raster for year i 
+  tmax_file <- file.path(paste0('./00_Data/Environmental_data/SILO_Max_temp/',i,".max_temp.nc")) # Get the raster file for maximum temperature raster for year i file
   
-  tavg <- (tmin + tmax) / 2 # Calculate daily mean temperature
+  # Load rasters
+  tmin <- rast(tmin_file)
+  tmax <- rast(tmax_file)
   
-  dates <- time(tavg) 
-  month_groups <- format(dates, "%Y-%m") # Create month groups
+  # Calculate daily mean temperature
+  tavg <- (tmin + tmax) / 2 
   
-  monthly_avg <- tapp(tavg, index = month_groups, fun = mean, na.rm = T) # Calculate monthly average temperature
-  assign(paste0('avg_monthly_temp', i), monthly_avg)
+  # Create month groups
+  dates <- time(tavg) # Create a time series of times when sampling occurred
+  month_groups <- format(dates, "%Y-%m") # Produce the month groups based on 4-digit year and month
+  
+  # Calculate monthly average temperature
+  monthly_avg <- tapp(tavg, index = month_groups, fun = mean, na.rm = T) 
+  assign(paste0('avg_monthly_temp', i), monthly_avg, envir = .GlobalEnv) # Add rasters to the environment
 }
 
 avg_monthly_temp1987; plot(avg_monthly_temp1987) # Check
 
 # 1.2.3 Calculate temperature seasonality
+# NOTE: to interpret values in terms of °C, divide the value by 100 (e.g., 350/100 = 3.5°C variation in annual temperature range)
+
 for(i in years){
   month_rast_name <- paste0("avg_monthly_temp", i)
   month_rast <- get(month_rast_name)
   
-  R <- sum(month_rast) # Calculate mean annual temperature from mean monthly temperature
-  
-  si_temp <- (1/R) * sum(abs(month_rast - R/12))
-  assign(paste0("temp_seasonality_", i), si_temp)
+  # Calculate seasonality in same manner as BioClim BIO4: standard deviation of monthly temps × 100
+  si_temp <- app(month_rast, fun = function(x) sd(x, na.rm = TRUE) * 100)
+  names(si_temp) <- paste0("temp_seasonality_", i)
+  assign(paste0("temp_seasonality_", i), si_temp, envir = .GlobalEnv)
 }
-# Would also need to save the output
 temp_seasonality_1987; temp_seasonality_2023 # Check these seem reasonable
 plot(temp_seasonality_1987)
 
-#### For rescaling, should actually use bilinear interpolation (method = bilinear) as this is continuous data.
+# Combine into a raster stack - note this will mean that we have a seperate value for each year.
+temp_seasonality <- c(temp_seasonality_1987, temp_seasonality_1988, temp_seasonality_1989, temp_seasonality_1990, temp_seasonality_1991, temp_seasonality_1992, temp_seasonality_1993, temp_seasonality_1994, temp_seasonality_1995, temp_seasonality_1996, temp_seasonality_1997, temp_seasonality_1998, temp_seasonality_1999, temp_seasonality_2000, temp_seasonality_2001, temp_seasonality_2002, temp_seasonality_2003, temp_seasonality_2004, temp_seasonality_2005, temp_seasonality_2006, temp_seasonality_2007, temp_seasonality_2008, temp_seasonality_2009, temp_seasonality_2010, temp_seasonality_2011, temp_seasonality_2012, temp_seasonality_2013, temp_seasonality_2014, temp_seasonality_2015, temp_seasonality_2016, temp_seasonality_2017, temp_seasonality_2018, temp_seasonality_2019, temp_seasonality_2020, temp_seasonality_2021, temp_seasonality_2022, temp_seasonality_2023)
+temp_seasonality
+range(unique(temp_seasonality))
+writeRaster(temp_seasonality, './00_Data/Environmental_data/Outputs/SILO_Temperature/Temp_seasonality_SEQ_IBRA.tif', overwrite = T)
+# Temperature seasonality data is now structured such that we have 36 years of data which allows us to capture year-to-year variations across not just long-term averages (e.g., BioClim BIO4).
 
-rm(list = setdiff(ls(), "SEQ", "template")); gc()
+# Calculate the long-term average
+temp_seasonality[temp_seasonality < 0] <- NA # SILO uses values like -32768 as values for missing data which means these values are not recognised as NAs during reprojection.
+temp_seasonality_avg <- mean(temp_seasonality, na.rm = T)
+temp_seasonality_avg
+
+# Too memory intensive to follow same process as for the rainfall data
+temp_seasonality_avgr <- project(temp_seasonality_avg, 'EPSG:3577', res = 30, method = 'bilinear')
+temp_seasonality_avgr
+plet(temp_seasonality_avgr)
+
+writeRaster(temp_seasonality_avgr, './00_Data/Environmental_data/Outputs/SILO_Temperature/Average_Temp_seasonality_SEQ_IBRA.tif', overwrite = T)
+gc()
+
+# 1.3 Topographic Wetness Index ----
+# Use CSIRO web coverage service for Topographic Wetness Index, no other download methods (e.g., downlaod.file, vsicurl, gdal_translate or wms_url will work on Mac OS)
+
+# Queensland bounding box (xmin, ymin, xmax, ymax)
+qld_bbox <- c(138.0, -29.2, 153.6, -9.0)
+
+# Download TWI data via WCS
+wcs_url <- paste0(
+  "https://www.asris.csiro.au/arcgis/services/TERN/SRTM_attributes_3s_ACLEP_AU/MapServer/WCSServer",
+  "?service=WCS&version=1.0.0&request=GetCoverage&coverage=14&format=GeoTIFF",
+  "&bbox=", paste(qld_bbox, collapse=","),
+  "&crs=EPSG:4326&width=2000&height=1500"
+)
 
 
-# 1.1 Topographic Wetness Index ----
+# Load raster
+TWI <- rast(wcs_url)
+NAflag(TWI) # Check - NaN
 
-TWI <- rast("/vsicurl/https://s3.data.csiro.au/dapprd/000005588v002/data/TopographicWetnessIndex_1_arcsecond_resolution/mosaic/twi_1s.tif?response-content-disposition=attachment%3B%20filename%3D%22twi_1s.tif%22&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20250731T110706Z&X-Amz-SignedHeaders=host&X-Amz-Expires=172800&X-Amz-Credential=GSLZCSPGJ4EIL6KMFTJR%2F20250731%2FCDC%2Fs3%2Faws4_request&X-Amz-Signature=723defc55e80019ed8c3e0ca15045c0bcf13a5b779fa2c6ad2ae336cf9fc249c") # To get this link need to click download on the file from https://data.csiro.au/collection/csiro:5588 and then as it is downloading open up the downloads drop down > right click on the file > copy download link. Need to get a new link each time this line is run otherwise it will not work.
+writeRaster(TWI, './00_Data/Environmental_data/TWI/TWI.tif')
 
-writeRaster(TWI, "./00_Data/Environmental_data/Outputs/TWI/TWI.tif")
-
-gdalwarp(srcfile = './00_Data/Environmental_data/Outputs/TWI/TWI.tif', # Source file
-         dstfile = './00_Data/Environmental_data/Outputs/TWI/TWI_reproj.tif', # Destination file
+gdalwarp(srcfile = './00_Data/Environmental_data/TWI/TWI.tif', # Source file
+         dstfile = './00_Data/Environmental_data/Outputs/TWI/TWI_reproj_v2.tif', # Destination file
          t_srs = 'EPSG:3577', # CRS to be transformed to  
          tr = c(30,30), # Resolution to be transformed to
          r = 'bilinear') # Use bilinear interpolation for continuous data 
 
-TWI <- rast('./00_Data/Environmental_data/Outputs/TWI/TWI_reproj.tif')
-TWI2 <- crop(TWI, SEQ)
-writeRaster(TWI2, "./00_Data/Environmental_data/Outputs/TWI/SEQ_TWI.tif")
+TWI <- rast('./00_Data/Environmental_data/Outputs/TWI/TWI_reproj_v2.tif')
+
+TWI <- crop(TWI, SEQ)
+plot(TWI)
+writeRaster(TWI, './00_Data/Environmental_data/Outputs/TWI/TWI_SEQ_IBRA_reproj.tif')
 
 
-# 1.2 Climate data ----
-# BIO2 - Mean Diurnal range BIO4 - temperature seasonality and BIO15  - precipitation seasonality
+# 1.4 Foliage projective cover ----
+# Download FPC data from Queensland Spatial Catalogue and load into R
+# For the earlier datasets, 2012, 2013, and 2014, we need to do some more adjustments to this data - metadata states that data ranges between 100-200 which is equivalent to 0-100% FPC. Values erroneously predicted above 100% or below 0% have been classed as above 200 and below 100 respectively. Zero values indicate NULL data. The 2014 data actually seems to be ranging between 88-213. Post 2014, values range between 0-100 which would denote the % cover without any further changes being required. 
 
-gdalwarp(srcfile = "./00_Data/Environmental_data/BioClim/wc2.1_30s_bio_2.tif",
-         dstfile = "./00_Data/Environmental_data/Outputs/BioClim/Diurnal_temp_mean.tif",
-         t_srs = 'EPSG:3577')
-
-
-diurnal_temp_mean <- rast("./00_Data/Environmental_data/Outputs/BioClim/Diurnal_temp_mean.tif")
-dtm <- crop(diurnal_temp_mean, SEQ)
-dtm1 <- resample(dtm, template, method = 'bilinear') # More appropriate to use resample for precise resolution changes with continuous data. Disaggregation will just duplicate values which is better for categorical data. Aggregation is still appropriate for other times as we can control how values are upscaled (e.g., mean, max, or sum)
-#dtm1 <- disagg(dtm, fact = 30)
-plot(dtm1) # Check how this looks
-dtm1 # Check crs and resolution
-
-writeRaster(dtm1, './00_Data/Environmental_data/Outputs/BioClim/Diurnal_temp_meanSEQ.tif')
-
-
-gdalwarp(srcfile = './00_Data/Environmental_data/BioClim/wc2.1_30s_bio_4.tif',
-         dstfile = '00_Data/Environmental_data/Outputs/BioClim/Tempseason.tif',
-         t_srs = 'EPSG:3577')
-
-
-tempseason <- rast('./00_Data/Environmental_data/Outputs/BioClim/Tempseason.tif')
-range(unique(tempseason$Tempseason)) 
-
-temp <- crop(tempseason, SEQ)
-plot(temp)
-tempr <- resample(temp, template, method = 'bilinear')
-#tempr <- disagg(temp, fact = 30)
-plot(tempr) # Check to see if this looks right
-tempr # We have the right coordinate reference system and resolution is nearly correct. 
-
-writeRaster(tempr, '00_Data/Environmental_data/Outputs/BioClim/Tempseason_SEQ_IBRA.tif')
-
-
-gdalwarp(srcfile = './00_Data/Environmental_data/BioClim/wc2.1_30s_bio_15.tif',
-         dstfile = '00_Data/Environmental_data/Outputs/BioClim/precipseason.tif',
-         t_srs = 'EPSG:3577')
-
-# Need to crop and change resolution
-precipseason <- rast('00_Data/Environmental_data/Outputs/BioClim/precipseason.tif')
-precip <- crop(precipseason, SEQ)
-precipr <- resample(precip, template, method = 'bilinear')
-#precipr <- disagg(precip, fact = 30)
-plot(precipr)
-precipr
-
-writeRaster(precipr, '00_Data/Environmental_data/Outputs/BioClim/precipseason_SEQ_IBRA.tif')
-
-
-
-
-# 1.3 Foliage projective cover ----
+FPC12 <- rast('./00_Data/Environmental_data/FPC/DP_QLD_FPC2012_WOODED_VEG.tif')
+FPC13 <- rast('./00_Data/Environmental_data/FPC/QLD_FPC2013_WOODED_VEG.tif')
 FPC14 <- rast('./00_Data/Environmental_data/FPC/DP_QLD_FPC2014.tif')
-unique(FPC14$DP_QLD_FPC2014)
-# Need to do some more adjustments to this data - metadata states that data ranges between 100-200 which is equivalent to 0-100% FPC. values erroneously predicted above 100% or below 0% have been classed as above 200 and below 100 respectively. Zero values indicate NULL data. The data actually seems to be ranging between 88-213. Post 2014, values range between 0-100 which would denote the % cover without any further changes being required. Let's take a look at the data in ArcGIS as well to make sure this is true for the 2014 dataset.
 
+unique(FPC12$DP_QLD_FPC2012_WOODED_VEG)
+NAflag(FPC12) # NaN
+unique(FPC13$QLD_FPC2013_WOODED_VEG)
+NAflag(FPC13) #NaN
+unique(FPC14$DP_QLD_FPC2014)
+NAflag(FPC14) #NaN
 
 # Create matrices for reclassification
+# For 2012 and 2013, image values are FPC + 100 such that FPC of 5% has a value of 105. So in these cases a value of 100 = 0% FPC
+# 2012 data
+reclas12 = matrix(
+  c(100:200),
+  nrow = 101,
+  ncol = 1
+) %>% 
+  cbind(0:100)
 
-A = matrix(
+# 2013 data
+reclas13 = matrix(
+  c(100:200),
+  nrow = 101,
+  ncol = 1
+) %>%
+  cbind(0:100)
+
+
+# 2014 data
+A14 = matrix(
   c(88:99, 201:213),
   nrow = 25,
   ncol = 2)
-A[,2] <- 0
+A14[,2] <- 0
 
-B = matrix(
+B14 = matrix(
   c(100:200),
   nrow = 101,
   ncol = 1
 )
-B <- cbind(B, 0:100)
+B14 <- cbind(B14, 0:100)
+
+reclas14 <- rbind(A14, B14)
 
 
-reclas <- rbind(A, B)
-
-# Now reclassify FPC14
-FPC14r <- classify(FPC14, rcl = reclas)
-FPC14r # Check how this looks
-plot(FPC14r)
-
-FPC14_seq <- crop(FPC14r, SEQ)
-FPC14seq <- project(FPC14_seq, 'EPSG:3577')
-FPC14seq
-plot(FPC14seq)
-
-writeRaster(FPC14seq, './00_Data/Environmental_data/Outputs/FPC/FPC2014_SEQ.tif')
+# Now reclassify these datasets
+FPC12r <- classify(FPC12, rcl = reclas12)
+FPC12r; plot(FPC12r)
+FPC13r <- classify(FPC13, rcl = reclas13)
+FPC13r; plot(FPC13r)
+FPC14r <- classify(FPC14, rcl = reclas14)
+FPC14r; plot(FPC14r) # Check how this looks
 
 
-# 1.3.1 Add in the data from more recent years post 2014 ----
+# Crop to SEQ
+FPC12seq <- crop(FPC12r, SEQ) %>% 
+  project('EPSG:3577') %>% 
+  resample(template, method = 'bilinear')
+FPC12seq;plot(FPC12seq)
+writeRaster(FPC12seq, './00_Data/Environmental_data/Outputs/FPC/FPC12_SEQ_IBRA.tif')
 
-# Firstly, look at the new data to see what needs to be changed
+FPC13seq <- crop(FPC13r, SEQ) %>% 
+  project('EPSG:3577')
+writeRaster(FPC13seq, './00_Data/Environmental_data/Outputs/FPC/FPC13_SEQ_IBRA.tif')
+
+FPC14seq <- crop(FPC14r, SEQ) %>% 
+  project('EPSG:3577')
+FPC14seq; plot(FPC14seq)
+
+writeRaster(FPC14seq, './00_Data/Environmental_data/Outputs/FPC/FPC2014_SEQ_IBRA.tif')
+
+
+# Check the data
 FPC18 <- rast('./00_Data/Environmental_data/FPC/DP_QLD_S2_WOODY_FPC_2018.tif')
+NAflag(FPC18) # NaN
 
-# Need to aggregate the data to a coarser resolution, from 10m to 30m, and then we also need to crop the data to SEQ
+FPC18 <- crop(FPC18, SEQ) %>% 
+  aggregate(fact = 3, fun = 'mean') # Calculate average FPC for the cell when aggregating to a coarser resolution
+FPC18; plot(FPC18) # Check how this looks
 
-FPC18_seq <- crop(FPC18, SEQ)
-
-FPC18seq <- terra::aggregate(FPC18_seq, fact = 3, fun = 'mean') # Calculate the average FPC for the cell when aggregating. 
-FPC18seq # Check how this looks
-plot(FPC18seq)
-
-writeRaster(FPC18seq, './00_Data/Environmental_data/Outputs/FPC/FPC18_SEQ.tif')
+writeRaster(FPC18, './00_Data/Environmental_data/Outputs/FPC/FPC18_SEQ_IBRA.tif')
 
 
 FPC19 <- rast('./00_Data/Environmental_data/FPC/DP_QLD_S2_WOODY_FPC_2019.tif')
-FPC19_seq <- crop(FPC19, SEQ)
-FPC19seq <- terra::aggregate(FPC19_seq, fact = 3, fun = 'mean')
-FPC19seq
-plot(FPC19seq)
-writeRaster(FPC19seq, './00_Data/Environmental_data/Outputs/FPC/FPC19_SEQ.tif')
+NAflag(FPC19) # NaN
+FPC19 <- crop(FPC19, SEQ) %>% 
+  aggregate(fact = 3, fun = 'mean')
+FPC19; plot(FPC19)
+writeRaster(FPC19, './00_Data/Environmental_data/Outputs/FPC/FPC19_SEQ_IBRA.tif')
 
 
 FPC20 <- rast('./00_Data/Environmental_data/FPC/DP_QLD_S2_WOODY_FPC_2020.tif')
-FPC20_seq <- crop(FPC20, SEQ)
-FPC20seq <- terra::aggregate(FPC20_seq, fact = 3, fun = 'mean')
-FPC20seq
-plot(FPC20seq)
-writeRaster(FPC20seq, './00_Data/Environmental_data/Outputs/FPC/FPC20_SEQ.tif')
+NAflag(FPC20) # NaN
+FPC20 <- crop(FPC20, SEQ) %>% 
+  aggregate(fact = 3, fun = 'mean')
+FPC20; plot(FPC20)
+writeRaster(FPC20, './00_Data/Environmental_data/Outputs/FPC/FPC20_SEQ_IBRA.tif')
 
 
-FPC21 <- rast('./00_Data/Environmental_data/FPC/DP_QLD_S2_FPC_2021.tif') # The coordinate reference system has not been read in the same manner as the others so we will need to fix this
-
-FPC21_seq <- crop(FPC21, SEQ)
-FPC21seq <- project(FPC21_seq, 'EPSG:3577')
-FPC21seq <- terra::aggregate(FPC21_seq, fact = 3, fun = 'mean')
-FPC21seq
-plot(FPC21seq)
-writeRaster(FPC21seq, './00_Data/Environmental_data/Outputs/FPC/FPC21_SEQ.tif')
-
-
-# 1.3.2 Combine the FPC data into one raster ----
-FPC14seq <- resample(FPC14seq, FPC18seq, method = 'bilinear') # Need the extents to match
-writeRaster(FPC14seq, './00_Data/Environmental_data/Outputs/FPC/FPC14_SEQ_resampled.tif')
-
-#stack <- c(FPC14,FPC18,FPC19,FPC20,FPC21)
-# This produces a raster with each year as a separate raster layer. But what we want, because FPC2014 is from 1988-2014 and the others are separate years, we need an average FPC value across the years.
-
-#FPC <- terra::mean(FPC14seq, FPC18seq, FPC19seq, FPC20seq, FPC21seq)
-#FPC
-#plot(FPC)
+FPC21 <- rast('./00_Data/Environmental_data/FPC/DP_QLD_S2_FPC_2021.tif')
+NAflag(FPC21) # NaN
+FPC21 <- crop(FPC21, SEQ) %>% 
+  aggregate(fact = 3, fun = 'mean') %>% 
+  project('EPSG:3577') # The coordinate reference system has not been read in the same manner as the others so we will need to fix this
+FPC21; plot(FPC21)
+writeRaster(FPC21, './00_Data/Environmental_data/Outputs/FPC/FPC21_SEQ_IBRA.tif')
 
 
-writeRaster(FPC, './00_Data/Environmental_data/Outputs/FPC/FPC_all.tif')
+FPC22 <- rast('./00_Data/Environmental_data/FPC/DP_QLD_S2_FPC_2022.tif')
+NAflag(FPC22) # NaN
+FPC22 <- crop(FPC22, SEQ) %>% 
+  aggregate(fact = 3, fun = 'mean')
+FPC22; plot(FPC22)
+writeRaster(FPC22, './00_Data/Environmental_data/Outputs/FPC/FPC22_SEQ_IBRA.tif')
+
+
+FPC23 <- rast('./00_Data/Environmental_data/FPC/DP_QLD_S2_FPC_2023.tif')
+NAflag(FPC23) # NaN
+FPC23 <- crop(FPC23, SEQ) %>% 
+  aggregate(fact = 3, fun = 'mean')
+FPC23; plot(FPC23)
+writeRaster(FPC23, './00_Data/Environmental_data/Outputs/FPC/FPC23_SEQ_IBRA.tif')
+
+
+# 1.4.2 Combine the FPC data into one raster ----
+FPC12seq <- resample(FPC12seq, FPC18, method = 'bilinear') # Need the extents to match
+FPC13seq <- resample(FPC13seq, FPC18, method = 'bilinear') # Need the extents to match
+FPC14seq <- resample(FPC14seq, FPC18, method = 'bilinear') # Need the extents to match
+# Check
+FPC12seq; FPC13seq; FPC14seq
+
+writeRaster(FPC12seq, './00_Data/Environmental_data/Outputs/FPC/FPC12_SEQ_IBRA_resampled.tif')
+writeRaster(FPC13seq, './00_Data/Environmental_data/Outputs/FPC/FPC13_SEQ_IBRA_resampled.tif')
+writeRaster(FPC14seq, './00_Data/Environmental_data/Outputs/FPC/FPC14_SEQ_IBRA_resampled.tif')
+
+# To conduct a sensitivity analysis, lets create few different FPC datasets. Rather than averaging to get a psuedo-long-term average, lets just create raster stacks. For now as we will compare FPC and NDVI, we will just use the long-term average
+FPC_all <- c(FPC12seq, FPC13seq, FPC14seq, FPC18, FPC19, FPC20, FPC21, FPC22, FPC23)
+FPC_all; plot(FPC_all)
+writeRaster(FPC_all, './00_Data/Environmental_data/Outputs/FPC/FPC_ALL_SEQ_IBRA.tif')
+
+FPC <- mean(FPC_all, na.rm = T)
+writeRaster(FPC, './00_Data/Environmental_data/Outputs/FPC/Average_FPC_SEQ_IBRA.tif')
 
 
 
+# We will test using NDVI data instead of FPC to see which is better. NDVI data is at a much coarser scale, 5km than the intial scale of FPC data which may disadvantage this data but NDVI has a better temporal scale relative to the fire data than FPC.
+# Download BOM NDVI data for May 1992 to December 2018 from https://www.bom.gov.au/jsp/awap/ndvi/index.jsp?colour=colour&map=ndviave&year=2018&month=8&period=month&area=nat
 
-# 1.4 Elevation data ----
-# Download the DEM ad access straight from download folder
+aoi <- SEQ
+years <- 1992:2018
+months <- c("January", "February", "March", "April", "May", "June", 
+            "July", "August", "September", "October", "November", "December")
 
-DEM <- rast('./00_Data/Environmental_data/69816/srtm-1sec-dem-v1-COG.tif') # Work from the original data
+
+terraOptions(memfrac = 0.8, progress = 2)
+for (year in years) {
+  monthly_rasters <- list()
+  
+  for (month in months) {
+    # Skip months before May 1992
+    if (year == 1992 & month %in% c("January", "February", "March", "April")) next 
+    
+    # Create file path
+    file_path <- file.path("./00_Data/Environmental_data/BOM_NDVI", paste0(year, "_", month))
+    
+    # Check if file exists and process
+    if (file.exists(file_path)) {
+      # Load raster from first extracted file and crop
+      r <- rast(file_path)
+      r[r < -100] <- NA # NA values coded as -999 or -9999
+      monthly_rasters[[month]] <- crop(project(r, template, method = 'bilinear'), aoi)
+    } 
+  }
+  # Calculate yearly average from monthly rasters and save to disk
+  if (length(monthly_rasters) > 0) {
+    yearly_mean <- mean(rast(monthly_rasters), na.rm = TRUE)
+    writeRaster(yearly_mean, paste0("./00_Data/Environmental_data/Outputs/BOM_NDVI/NDVI_", year, "_average.tif"), overwrite = TRUE)
+  }
+  
+  tmpFiles(remove = TRUE)
+  gc()
+}
+
+# Create a raster stack of yearly average NDVI rasters
+years <- 1992:2018
+annual_rasters <- rast(paste0("./00_Data/Environmental_data/Outputs/BOM_NDVI/NDVI_", years, "_average.tif"))
+names(annual_rasters) <- paste0("NDVI_", years)
+annual_rasters
+
+# Calcualte long-term average
+NDVI <- mean(annual_rasters, na.rm = T)
+plot(NDVI)
+NDVI
+writeRaster(NDVI, './00_Data/Environmental_data/Outputs/BOM_NDVI/Average_NDVI.tif', overwrite = T)
+
+# The rsi package could be used to access satellite imagery for 2019 onwards, however the below was tested for a singular month and did not finish running in ~24 hours.
+# For 2019 to 2023 data, use the rsi package
+#SEQ_sf <- st_as_sf(SEQ) # Convert our area of interest to a sf object
 
 
-# Need to cut down to smaller area
-Aus <- vect('./00_Data/Australia_shapefile/STE11aAust.shp')
-QLD <- subset(Aus, Aus$STATE_NAME == "Queensland")
-QLD <- project(QLD, 'EPSG:4326')
-DEMqld <- crop(DEM, QLD)
+#sent19 <- get_stac_data(
+#aoi = SEQ_sf,
+#start_date = "2019-01-01",
+#end_date = "2019-01-31", 
+#pixel_x_size = 30,
+#pixel_y_size = 30,
+#stac_source = "https://planetarycomputer.microsoft.com/api/stac/v1",
+#collection = "sentinel-2-l2a",
+#bands = c("B04", "B08"),
+#cloud_mask = FALSE,
+#composite_function = "median")  # Combine scenes into one image with median removing outliers/clouds
 
-SEQ <- project(SEQ, 'EPSG:4326')
-DEMseq <- crop(DEM, SEQ)
 
-writeRaster(DEMseq, './00_Data/Environmental_data/Outputs/DEM/SEQ_DEM.tif')
-gdalwarp(srcfile = './00_Data/Environmental_data/Outputs/DEM/SEQ_DEM.tif',
-         dstfile = './00_Data/Environmental_data/Outputs/DEM/SEQ_DEM_reproj.tif',
+
+# 1.5 Elevation data ----
+# Download the DEM data file from https://data.gov.au/data/dataset/9a9284b6-eb45-4a13-97d0-91bf25f1187b/resource/7653b920-5334-4267-8df3-5d55b21f05ec and unzip the file using an alternative file management software other than that installed as part of computing system such as WinZip.
+# Create the QLD polygon for cropping
+QLD <- vect('./00_Data/Australia_shapefile/STE11aAust.shp')
+QLD <- subset(QLD, QLD$STATE_NAME == "Queensland") %>%
+  project('EPSG:4326')
+# Read in while cropping the DEM data to QLD 
+DEM <- rast('./00_Data/Environmental_data/69816/srtm-1sec-dem-v1-COG.tif') %>% 
+  crop(QLD)
+writeRaster(DEM, './00_Data/Environmental_data/Outputs/DEM/QLD_DEM.tif')
+
+
+gdalwarp(srcfile = './00_Data/Environmental_data/Outputs/DEM/QLD_DEM.tif',
+         dstfile = './00_Data/Environmental_data/Outputs/DEM/QLD_DEM_reproj.tif',
          t_srs = 'EPSG:3577',
          tr = c(30,30),
          r = 'bilinear')
-DEM <- rast('./00_Data/Environmental_data/Outputs/DEM/SEQ_DEM_reproj.tif')
+DEM <- rast('./00_Data/Environmental_data/Outputs/DEM/QLD_DEM_reproj.tif') %>% 
+  crop(SEQ)
+plot(DEM)
+writeRaster(DEM, './00_Data/Environmental_data/Outputs/DEM/SEQ_IBRA_DEM_reproj.tif')
+
+# 1.5.1 Calculate slope, aspect and topographic position index (TPI) ----
+slope <- terrain(DEM, v = "slope", unit = "degrees")
+slope; plot(slope) #Check
+writeRaster(slope, './00_Data/Environmental_data/Outputs/DEM/slope_SEQ_IBRA.tif') # Save output
 
 
-
-# 1.4.1 Calculate slope, aspect and topographic position index (TPI) ----
-
-slope <- terrain(DEMseq, v = "slope", unit = "degrees")
-writeRaster(slope, './00_Data/Environmental_data/Outputs/DEM/slope.tif') # Save output
+aspect <- terrain(DEM, v = "aspect")
+plot(aspect); aspect
+writeRaster(aspect, './00_Data/Environmental_data/Outputs/DEM/aspect_SEQ_IBRA.tif')
 
 
-# Fix projection and change resolution so it can be used with the other data
-gdalwarp(srcfile = './00_Data/Environmental_data/Outputs/DEM/slope.tif',
-         dstfile = './00_Data/Environmental_data/Outputs/DEM/slope_reproj.tif',
-         tr = c(30,30),
-         r = 'bilinear')
-
-slope <- rast('./00_Data/Environmental_data/Outputs/DEM/slope_reproj.tif') %>% 
-  project('EPSG:3577')
-slope #Check
-slope <- crop(slope, SEQ)
-plot(slope)
-slope
-
-writeRaster(slope, './00_Data/Environmental_data/Outputs/DEM/SEQ_slope.tif')
-
-
-aspect <- terrain(DEMseq, v = "aspect")
-writeRaster(aspect, './00_Data/Environmental_data/Outputs/DEM/aspect.tif')
-
-# Fix projection and change resolution so it can be used with the other data
-gdalwarp(srcfile = './00_Data/Environmental_data/Outputs/DEM/aspect.tif',
-         dstfile = './00_Data/Environmental_data/Outputs/DEM/aspect_reproj.tif',
-         tr = c(30,30),
-         r = 'bilinear')
-
-aspect <- rast('./00_Data/Environmental_data/Outputs/DEM/aspect_reproj.tif') %>% 
-  project('EPSG:3577')
-aspect <- crop(aspect, SEQ)
-plot(aspect)
-aspect
-
-writeRaster(aspect, './00_Data/Environmental_data/Outputs/DEM/SEQaspect.tif')
-
-
-TP1 <- landform(DEMqld, class.type = "slope.position")
+TP1 <- landform(DEM, class.type = "slope.position")
 TPI <- TP1$all
 
 # Here TPI values are as follows:
@@ -457,181 +522,150 @@ TPI <- TP1$all
 # 4 = Middle slope
 # 5 = Upper slope
 # 6 = Ridge
-
-writeRaster(TPI, "./00_Data/Environmental_data/Outputs/DEM/TPI.tif")
-
-gdalwarp(srcfile = './00_Data/Environmental_data/Outputs/DEM/TPI.tif',
-         dstfile = './00_Data/Environmental_data/Outputs/DEM/TPI_reproj.tif',
-         t_srs ='EPSG:3577',
-         tr = c(30,30),
-         r = 'near') #TPI is categorical numeric
-
-TPI <- rast('./00_Data/Environmental_data/Outputs/DEM/TPI_reproj.tif')
-TPI <- crop(TPI, SEQ)
-plot(TPI)
-TPI
-
-writeRaster(TPI, './00_Data/Environmental_data/Outputs/DEM/SEQ_TPI.tif')
+plot(TPI);TPI
+writeRaster(TPI, "./00_Data/Environmental_data/Outputs/DEM/TPI_SEQ_IBRA.tif")
 
 
 
 
-
-# 1.5 Soil nutrients using soil % clay ----
-# Download data from https://esoil.io/TERNLandscapes/Public/Pages/SLGA/GetData-COGSDataStore_SLGA.html
+# 1.6 Soil nutrients using soil % clay ----
 # This variable is included as nutrients influence plant growth which would then influence the occurrence of fire
+# Go to https://portal.tern.org.au/ and sign-in then generate API key by clicking on your Profile > TERN ACCOUNT > Create API key on side menu > API key name = 'Soils_access' > Request API Key
+# Also, have to use the httr package to read the file. 
 
-# 0 to 0.05m
-clay0to0.05 <- rast("./00_Data/Environmental_data/Soil_clay/CLY_000_005_EV_N_P_AU_TRN_N_20210902.tif")
-clay0to0.05 <- crop(clay0to0.05, QLD)
-plot(clay0to0.05) # Check this worked correctly
+# API KEY RUk1SGQ5Q2tWYno2NXR4bC49fn1LfFpXcV9BR0orDSFxS0EtY3hxXFcsQFhvSDpLO21GQTFHfTFTbnBAMTpTRFMrSHhAKitYR1p1VHJ7PHJA
 
-writeRaster(clay0to0.05, "./00_Data/Environmental_data/Outputs/Soil_clay/QLD_Clay_0-05m.tif")
+my_api_key <- "paste API key here"
+get_slga_clay <- function(depth_code, aoi, api_key) {
+  url <- paste0("https://data.tern.org.au/model-derived/slga/NationalMaps/SoilAndLandscapeGrid/CLY/v2/CLY_", 
+                depth_code, "_EV_N_P_AU_TRN_N_20210902.tif")
+  
+  temp_file <- tempfile(fileext = ".tif")
+  
+  # Simple download with long timeout
+  GET(url,
+      authenticate("apikey", api_key, type = "basic"),
+      write_disk(temp_file, overwrite = TRUE),
+      timeout(7200),  # 2 hours - plenty of time
+      progress())
+  
+  # Load, crop, and save
+  r <- rast(temp_file)
+  r[r < -100] <- NA # NA values stored as -9999
+  project('EPSG:3577') %>% 
+    crop(aoi)
+  assign(paste0("soil_clay_", depth_code), r, envir = .GlobalEnv)
+}
+depth_codes <- c("000_005", "005_015", "015_030", "030_060", "060_100", "100_200")
+for(i in depth_codes) {
+  get_slga_clay(i, aoi = SEQ, my_api_key)
+}
 
-gdalwarp(srcfile = "./00_Data/Environmental_data/Outputs/Soil_clay/QLD_Clay_0-05m.tif",
-         dstfile = "./00_Data/Environmental_data/Outputs/Soil_clay/QLD_Clay_0-05m_reproj.tif",
-         t_srs = 'EPSG:3577',
-         tr = c(30,30),
-         r = 'bilinear')
+writeRaster(soil_clay_000_005, './00_Data/Environmental_data/Soil_clay/SEQ_IBRA_soil_clay1.tif')
+writeRaster(soil_clay_005_015, './00_Data/Environmental_data/Soil_clay/SEQ_IBRA_soil_clay2.tif')
+writeRaster(soil_clay_015_030, './00_Data/Environmental_data/Soil_clay/SEQ_IBRA_soil_clay3.tif')
+writeRaster(soil_clay_030_060, './00_Data/Environmental_data/Soil_clay/SEQ_IBRA_soil_clay4.tif')
+writeRaster(soil_clay_060_100, './00_Data/Environmental_data/Soil_clay/SEQ_IBRA_soil_clay5.tif')
+writeRaster(soil_clay_100_200, './00_Data/Environmental_data/Soil_clay/SEQ_IBRA_soil_clay6.tif')
 
-clay0to0.05 <- rast("./00_Data/Environmental_data/Outputs/Soil_clay/QLD_Clay_0-05m_reproj.tif")
-clay0to0.05 <- crop(clay0to0.05, SEQ)
-plot(clay0to0.05) # Check this looks right
+# For our purposes, an average of percent soil clay is sufficient as this would give us an idea of the nutrients contained within the soil but we do not need super detailed information of the nutrients at each particular depth 
+soil_clay_000_005 <- rast('./00_Data/Environmental_data/Soil_clay/SEQ_IBRA_soil_clay1.tif')
+NAflag(soil_clay_000_005) # NaN
+soil_clay_005_015 <- rast('./00_Data/Environmental_data/Soil_clay/SEQ_IBRA_soil_clay2.tif')
+soil_clay_015_030 <- rast('./00_Data/Environmental_data/Soil_clay/SEQ_IBRA_soil_clay3.tif')
+soil_clay_030_060 <- rast('./00_Data/Environmental_data/Soil_clay/SEQ_IBRA_soil_clay4.tif')
+soil_clay_060_100 <- rast('./00_Data/Environmental_data/Soil_clay/SEQ_IBRA_soil_clay5.tif')
+soil_clay_100_200 <- rast('./00_Data/Environmental_data/Soil_clay/SEQ_IBRA_soil_clay6.tif')
 
-writeRaster(clay0to0.05, "./00_Data/Environmental_data/Outputs/Soil_clay/SEQ_Clay_0-05m.tif")
+soil_clay <- terra::mean(soil_clay_000_005, soil_clay_005_015, soil_clay_015_030, soil_clay_030_060, soil_clay_060_100, soil_clay_100_200)
+soil_clay; plot(soil_clay) # Check this looks right
 
+soil_clay <- resample(soil_clay, template, method = 'bilinear')
 
+names(soil_clay) <- "%_clay_avg"
 
-# 0.05 to 0.15m
-clay2 <- rast("./00_Data/Environmental_data/Soil_clay/CLY_005_015_EV_N_P_AU_TRN_N_20210902.tif")
-clay2 <- crop(clay2, QLD)
-plot(clay2) # Check this worked correctly
-
-writeRaster(clay2, "./00_Data/Environmental_data/Outputs/Soil_clay/QLD_Clay_0-015m.tif")
-
-gdalwarp(srcfile = "./00_Data/Environmental_data/Outputs/Soil_clay/QLD_Clay_0-015m.tif",
-         dstfile = "./00_Data/Environmental_data/Outputs/Soil_clay/QLD_Clay_0-015m_reproj.tif",
-         t_srs = 'EPSG:3577',
-         tr = c(30,30),
-         r = 'bilinear')
-
-clay2 <- rast("./00_Data/Environmental_data/Outputs/Soil_clay/QLD_Clay_0-015m_reproj.tif")
-clay2 <- crop(clay2, SEQ)
-plot(clay2) # Check this looks right
-
-writeRaster(clay2, "./00_Data/Environmental_data/Outputs/Soil_clay/SEQ_Clay_0-015m.tif")
-
-
-
-# 0.15 to 0.3m
-
-clay3 <- rast("./00_Data/Environmental_data/Soil_clay/CLY_015_030_EV_N_P_AU_TRN_N_20210902.tif")
-clay3 <- crop(clay3, QLD)
-plot(clay3) # Check this worked correctly
-
-writeRaster(clay3, "./00_Data/Environmental_data/Outputs/Soil_clay/QLD_Clay_015-03m.tif")
-
-gdalwarp(srcfile = "./00_Data/Environmental_data/Outputs/Soil_clay/QLD_Clay_015-03.tif",
-         dstfile = "./00_Data/Environmental_data/Outputs/Soil_clay/QLD_Clay_015-03_reproj.tif",
-         t_srs = 'EPSG:3577',
-         tr = c(30,30),
-         r = 'bilinear')
-
-clay3 <- rast("./00_Data/Environmental_data/Outputs/Soil_clay/QLD_Clay_015-03m_reproj.tif")
-clay3 <- crop(clay3, SEQ)
-plot(clay3) # Check this looks right
-
-writeRaster(clay3, "./00_Data/Environmental_data/Outputs/Soil_clay/SEQ_Clay_015-03m.tif")
+writeRaster(soil_clay, "./00_Data/Environmental_data/Outputs/Soil_clay/SEQ_IBRA_soilclay.tif")
 
 
 
+# 1.7 Broad Vegetation groups ----
 
-# 0.3 to 0.6m 
+BVG <- vect('./00_Data/Environmental_data/Remnant_2021_broad_veg_groups/Remnant_broad_vegetation_groups.shp') %>%
+  project('EPSG:3577') %>% 
+  crop(SEQ)
+BVG # Check if there is anything else we need to remove?
 
-clay4 <- rast("./00_Data/Environmental_data/Soil_clay/CLY_030_060_EV_N_P_AU_TRN_N_20210902.tif")
-clay4 <- crop(clay4, QLD)
-plot(clay4) # Check this worked correctly
-
-writeRaster(clay4, "./00_Data/Environmental_data/Outputs/Soil_clay/QLD_Clay_03-06m.tif")
-
-gdalwarp(srcfile = "./00_Data/Environmental_data/Outputs/Soil_clay/QLD_Clay_03-06m.tif",
-         dstfile = "./00_Data/Environmental_data/Outputs/Soil_clay/QLD_Clay_03-06m_reproj.tif",
-         t_srs = 'EPSG:3577',
-         tr = c(30,30),
-         r = 'bilinear')
-
-clay4 <- rast("./00_Data/Environmental_data/Outputs/Soil_clay/QLD_Clay_03-06m_reproj.tif")
-clay4 <- crop(clay4, SEQ)
-plot(clay4) # Check this looks right
-
-writeRaster(clay4, "./00_Data/Environmental_data/Outputs/Soil_clay/SEQ_Clay_03-06m.tif")
+BVG <- BVG[, 5] # Only keep the relevant columns
+unique(BVG$dbvg5m) # We can remove water
+BVG <- BVG[!BVG$dbvg5m == 'water']
 
 
+# We need to rasterise this data for use with the other datasets
+unique(BVG$dbvg5m) # rasterisation will require all dbvg5m codes to be numeric
 
-# 0.6 to 1m
+# Assign numeric codes
+BVG$dbvg5m_coded <- ifelse(BVG$dbvg5m == "non-remnant", 17,
+                           ifelse(BVG$dbvg5m == "plantation", 18,
+                                  as.numeric(BVG$dbvg5m)))
+unique(BVG$dbvg5m_coded)
 
-clay5 <- rast("./00_Data/Environmental_data/Soil_clay/CLY_060_100_EV_N_P_AU_TRN_N_20210902.tif")
-clay5 <- crop(clay5, QLD)
-plot(clay5) # Check this worked correctly
+rtemp <- rast(xmin = 1881028, xmax = 2121594, ymin = -3442593, ymax = -2656210, res = 30, crs = 'EPSG:3577')
 
-writeRaster(clay5, "./00_Data/Environmental_data/Outputs/Soil_clay/QLD_Clay_06-1m.tif")
+BVG_rast <- rasterize(BVG, rtemp, field = 'dbvg5m_coded', fun = 'min') # Rasterize the data
+BVG_rast # Check how this looks
+writeRaster(BVG_rast, './00_Data/Environmental_data/Outputs/BVG/BVG.tif')
 
-gdalwarp(srcfile = "./00_Data/Environmental_data/Outputs/Soil_clay/QLD_Clay_06-1m.tif",
-         dstfile = "./00_Data/Environmental_data/Outputs/Soil_clay/QLD_Clay_06-1m_reproj.tif",
-         t_srs = 'EPSG:3577',
-         tr = c(30,30),
-         r = 'bilinear')
-
-clay5 <- rast("./00_Data/Environmental_data/Outputs/Soil_clay/QLD_Clay_06-1m_reproj.tif")
-clay5 <- crop(clay5, SEQ)
-plot(clay5) # Check this looks right
-
-writeRaster(clay5, "./00_Data/Environmental_data/Outputs/Soil_clay/SEQ_Clay_06-1m.tif")
+BVG_rast <- rast('./00_Data/Environmental_data/Outputs/BVG/BVG.tif')
+unique(BVG_rast$BVG)
 
 
 
-# 1 to 2m
+# 2. Reinforce spatial extent and resolution ----
+# To be able to work with this data all together we need to fix issues with the spatial extents as they are not the same despite all having been cropped by the same spatial extent of SEQ and also resolution.
 
-clay6 <- rast("./00_Data/Environmental_data/Soil_clay/CLY_100_200_EV_N_P_AU_TRN_N_20210902.tif")
-clay6 <- crop(clay6, QLD)
-plot(clay6) # Check this worked correctly
+# Re-load all data
+SEQ
 
-writeRaster(clay6, "./00_Data/Environmental_data/Outputs/Soil_clay/QLD_Clay_1-2m.tif")
+Sentinel_ff <- rast('./00_Data/Fire_data/Outputs/Sentinel/SEQ_IBRA/Sentinel_ff_hydrographical_mask_SEQ_IBRA_focal.tif') %>% 
+  print()
 
-gdalwarp(srcfile = "./00_Data/Environmental_data/Outputs/Soil_clay/QLD_Clay_1-2m.tif",
-         dstfile = "./00_Data/Environmental_data/Outputs/Soil_clay/QLD_Clay_1-2m_reproj.tif",
-         t_srs = 'EPSG:3577',
-         tr = c(30,30),
-         r = 'bilinear')
+QPWS_ff <- rast('./00_Data/Fire_data/Outputs/SEQ/QPWS_SEQ_IBRA_freq_hydrographical_mask.tif') %>% 
+  print()
 
-clay6 <- rast("./00_Data/Environmental_data/Outputs/Soil_clay/QLD_Clay_1-2m_reproj.tif")
-clay6 <- crop(clay6, SEQ)
-plot(clay6) # Check this looks right
+TWI <- rast('./00_Data/Environmental_data/Outputs/TWI/TWI_SEQ_IBRA_reproj.tif') %>% 
+  print()
 
-writeRaster(clay6, "./00_Data/Environmental_data/Outputs/Soil_clay/SEQ_Clay_1-2m.tif")
+temp_season <- rast('./00_Data/Environmental_data/Outputs/SILO_Temperature/Average_Temp_seasonality_SEQ_IBRA.tif') %>% 
+  print()
 
+precip_season <- rast('./00_Data/Environmental_data/Outputs/SILO_Rainfall/Average_Rain_seasonality_SEQ_IBRA.tif') %>% 
+  print()
 
+FPC <- rast('./00_Data/Environmental_data/Outputs/FPC/Average_FPC_SEQ_IBRA.tif') %>% 
+  print()
 
-# For our purposes, an average of percent soil clay is sufficient as this would give us an idea of the nutrients contained within the soil but we do not need super detailed information of the nutrients at the particular depth 
-soil_clay <- terra::mean(clay0to0.5, clay2, clay3, clay4, clay5, clay6)
-soil_clay # Check
-plot(soil_clay) # Check this looks right
-names(soil_clay) <- "%_clay"
+NDVI <- rast('./00_Data/Environmental_data/Outputs/BOM_NDVI/Average_NDVI.tif') %>% 
+  print()
 
-writeRaster(soil_clay, "./00_Data/Environmental_data/Outputs/Soil_clay/SEQ_soilclay.tif")
+elevation <- rast('./00_Data/Environmental_data/Outputs/DEM/SEQ_IBRA_DEM_reproj.tif') %>% 
+  print()
 
+slope <- rast('./00_Data/Environmental_data/Outputs/DEM/slope_SEQ_IBRA.tif') %>% 
+  print()
 
+aspect <- rast('./00_Data/Environmental_data/Outputs/DEM/aspect_SEQ_IBRA.tif') %>% 
+  print()
 
+TPI <- rast('./00_Data/Environmental_data/Outputs/DEM/TPI_SEQ_IBRA.tif') %>% 
+  print()
 
-# 2. Crop data to the same extent and resolve resolution issues for BioClim data ----
-# To be able to work with this data all together we need to fix the extents as they are not the same despite all having been cropped by the same spatial extent of SEQ. 
-# When viewing these layers overlayed in ArcGIS we can see that  slope top extent is smallest, FPC bottom extent is smallest, and the BioClim variables have the smallest x extents
+soil_clay <- rast('./00_Data/Environmental_data/Outputs/Soil_clay/SEQ_IBRA_soilclay.tif') %>% 
+  print()
 
+BVG_rast <- rast('./00_Data/Environmental_data/Outputs/BVG/BVG.tif') %>% 
+  print()
 
-ext(SEQ) #1881028, 2121562, -3247627, -2660998
-
-
-# Using terra::crop() is not cropping these layers correctly so use gdalwarp instead
+# While all the datasets were cropped using terra::crop(), extents do not match which is required for being able to run models in subsequent steps
 
 gdalwarp(srcfile = './00_Data/Fire_data/Outputs/SEQ/QPWS_SEQ_IBRA_freq_hydrographical_mask.tif',
          './00_Data/Fire_data/Outputs/SEQ/QPWS_SEQ_IBRA_freq_hydrographical_mask_cropped.tif',
@@ -640,104 +674,104 @@ gdalwarp(srcfile = './00_Data/Fire_data/Outputs/SEQ/QPWS_SEQ_IBRA_freq_hydrograp
          r = 'bilinear')
 
 
-
-gdalwarp(srcfile = './00_Data/Fire_data/Outputs/Sentinel/Sentinel_ff_hydrographical_mask_SEQ_IBRA_focal.tif',
+gdalwarp(srcfile = './00_Data/Fire_data/Outputs/Sentinel/SEQ_IBRA/Sentinel_ff_hydrographical_mask_SEQ_IBRA_focal.tif',
          './00_Data/Fire_data/Outputs/Sentinel/Sentinel_ff_hydrographical_mask_SEQ_IBRA_focal_cropped.tif',
          te = c(1881028, -3247627, 2121562, -2660998))
 
 
-gdalwarp(src = './00_Data/Environmental_data/Outputs/FPC/FPC_all.tif',
-         './00_Data/Environmental_data/Outputs/FPC/FPC_all_cropped.tif',
-         te = c(1881028, -3247627, 2121562, -2660998))
-
-
-gdalwarp(srcfile = './00_Data/Environmental_data/Outputs/BioClim/Diurnal_temp_meanSEQ.tif',
-         './00_Data/Environmental_data/Outputs/BioClim/Diurnal_temp_meanSEQ_cropped.tif',
-         te = c(1881028, -3247627, 2121562, -2660998),
-         tr = c(30,30),
-         r = 'bilinear') # Also fix the resolution issue we know occurs for this data
-
-
-gdalwarp(srcfile = './00_Data/Environmental_data/Outputs/BioClim/precipseason_SEQ_IBRA.tif',
-         './00_Data/Environmental_data/Outputs/BioClim/precipseason_SEQ_IBRA_cropped.tif',
-         te = c(1881028, -3247627, 2121562, -2660998),
-         tr = c(30,30),
-         r = 'bilinear') # Also fix the resolution issue we know occurs for this data
-
-
-gdalwarp(srcfile = './00_Data/Environmental_data/Outputs/BioClim/tempseason_SEQ_IBRA.tif',
-         './00_Data/Environmental_data/Outputs/BioClim/tempseason_SEQ_IBRA_cropped.tif',
-         te = c(1881028, -3247627, 2121562, -2660998),
-         tr = c(30,30),
-         r = 'bilinear') # Also fix the resolution issue we know occurs for this data
-
-
-gdalwarp(srcfile = './00_Data/Environmental_data/Outputs/TWI/SEQ_TWI.tif',
-         './00_Data/Environmental_data/Outputs/TWI/SEQ_TWI_cropped.tif',
+gdalwarp(src = './00_Data/Environmental_data/Outputs/FPC/Average_FPC_SEQ_IBRA.tif',
+         './00_Data/Environmental_data/Outputs/FPC/Average_FPC_SEQ_IBRA_cropped.tif',
          te = c(1881028, -3247627, 2121562, -2660998))
 
 
 
-gdalwarp(srcfile = './00_Data/Environmental_data/Outputs/Soil_clay/SEQ_soilclay.tif',
-         './00_Data/Environmental_data/Outputs/Soil_clay/SEQ_soilclay_cropped.tif',
+gdalwarp(srcfile = './00_Data/Environmental_data/Outputs/SILO_Rainfall/Average_Rain_seasonality_SEQ_IBRA.tif',
+         './00_Data/Environmental_data/Outputs/SILO_Rainfall/Average_Rain_seasonality_SEQ_IBRA_reproj_cropped.tif',
+         te = c(1881028, -3247627, 2121562, -2660998)) 
+
+gdalwarp(srcfile = './00_Data/Environmental_data/Outputs/SILO_Temperature/Average_Temp_seasonality_SEQ_IBRA.tif',
+         './00_Data/Environmental_data/Outputs/SILO_Temperature/Average_Temp_seasonality_SEQ_IBRA_reproj_cropped.tif',
+         te = c(1881028, -3247627, 2121562, -2660998)) 
+
+
+
+gdalwarp(srcfile = './00_Data/Environmental_data/Outputs/TWI/TWI_SEQ_IBRA_reproj.tif',
+         './00_Data/Environmental_data/Outputs/TWI/TWI_SEQ_IBRA_reproj_cropped.tif',
          te = c(1881028, -3247627, 2121562, -2660998))
 
-gdalwarp(srcfile = './00_Data/Environmental_data/Outputs/DEM/SEQ_DEM_reproj.tif',
-         './00_Data/Environmental_data/Outputs/DEM/SEQ_DEM_reproj_cropped.tif',
+
+
+gdalwarp(srcfile = './00_Data/Environmental_data/Outputs/Soil_clay/SEQ_IBRA_soilclay.tif',
+         './00_Data/Environmental_data/Outputs/Soil_clay/SEQ_IBRA_soilclay_cropped.tif',
+         te = c(1881028, -3247627, 2121562, -2660998))
+
+
+gdalwarp(srcfile = './00_Data/Environmental_data/Outputs/BOM_NDVI/Average_NDVI.tif',
+         './00_Data/Environmental_data/Outputs/BOM_NDVI/Average_NDVI_reproj_cropped.tif',
+         te = c(1881028, -3247627, 2121562, -2660998))
+
+
+gdalwarp(srcfile = './00_Data/Environmental_data/Outputs/DEM/SEQ_IBRA_DEM_reproj.tif',
+         './00_Data/Environmental_data/Outputs/DEM/SEQ_IBRA_DEM_reproj_cropped.tif',
          te = c(1881028, -3247627, 2121562, -2660998),
          tr = c(30,30),
          r = 'bilinear')
 
-gdalwarp(srcfile = './00_Data/Environmental_data/Outputs/DEM/SEQ_slope.tif',
-         './00_Data/Environmental_data/Outputs/DEM/SEQ_slope_cropped.tif',
+gdalwarp(srcfile = './00_Data/Environmental_data/Outputs/DEM/slope_SEQ_IBRA.tif',
+         './00_Data/Environmental_data/Outputs/DEM/slope_SEQ_IBRA_cropped.tif',
          te = c(1881028, -3247627, 2121562, -2660998))
 
 
-gdalwarp(srcfile = './00_Data/Environmental_data/Outputs/DEM/SEQaspect.tif',
-         './00_Data/Environmental_data/Outputs/DEM/SEQaspect_cropped.tif',
+gdalwarp(srcfile = './00_Data/Environmental_data/Outputs/DEM/aspect_SEQ_IBRA.tif',
+         './00_Data/Environmental_data/Outputs/DEM/aspect_SEQ_IBRA_cropped.tif',
          te = c(1881028, -3247627, 2121562, -2660998))
 
 
-gdalwarp(srcfile = './00_Data/Environmental_data/Outputs/DEM/SEQ_TPI.tif',
-         './00_Data/Environmental_data/Outputs/DEM/SEQ_TPI_cropped.tif',
+gdalwarp(srcfile = './00_Data/Environmental_data/Outputs/DEM/TPI_SEQ_IBRA.tif',
+         './00_Data/Environmental_data/Outputs/DEM/TPI_SEQ_IBRA_cropped.tif',
          te = c(1881028, -3247627, 2121562, -2660998))
 
 
+gdalwarp(srcfile = './00_Data/Environmental_data/Outputs/BVG/BVG.tif',
+         './00_Data/Environmental_data/Outputs/BVG/BVG_cropped.tif',
+         te = c(1881028, -3247627, 2121562, -2660998))
 
 
 # 3. Interpolate missing data
-# Each raster has missing data, we would like to fill these gaps for any spatial layers where these gaps are small. Basically this means every layer but FPC as there are very large gaps. We could do FPC but would nee to have a good look at what is produced
+# Each raster has missing data, we would like to fill these gaps for any spatial layers where these gaps are small. Basically this means every layer but FPC as there are very large gaps. We could do FPC but would need to have a good look at what is produced
 
 
 # Read in the newly cropped environmental predictors data and give each raster a meaningful name
+QPWS_ff <- rast('./00_Data/Fire_data/Outputs/SEQ/QPWS_SEQ_IBRA_freq_hydrographical_mask_cropped.tif') %>% 
+  print()
 
-TWI <- rast('./00_Data/Environmental_data/Outputs/TWI/SEQ_TWI_cropped.tif')
+TWI <- rast('./00_Data/Environmental_data/Outputs/TWI/TWI_SEQ_IBRA_reproj_cropped.tif')
 names(TWI) <- "Topo_wetness_index"
 
-tempseason <- rast('./00_Data/Environmental_data/Outputs/BioClim/Tempseason_SEQ_IBRA_cropped.tif')
-names(tempseason) <- "temp_seasonality"
-
-precipseason <- rast('./00_Data/Environmental_data/Outputs/BioClim/precipseason_SEQ_IBRA_cropped.tif')
-names(precipseason) <- "precip_seasonality"
-
-diurnal_temp <- rast('./00_Data/Environmental_data/Outputs/BioClim/Diurnal_temp_meanSEQ_cropped.tif')
-names(diurnal_temp) <- "diurnal_temp_seasonality"
+tempseason <- rast('./00_Data/Environmental_data/Outputs/SILO_Temperature/Average_Temp_seasonality_SEQ_IBRA_reproj_cropped.tif')
+names(tempseason) <- "Avg_Temperature_seasonality"
 
 
-FPC <- rast('./00_Data/Environmental_data/Outputs/FPC/FPC_all_cropped.tif')
-names(FPC) <- "average_foliage_proj_cover"
+precipseason <- rast('./00_Data/Environmental_data/Outputs/SILO_Rainfall/Average_Rain_seasonality_SEQ_IBRA_reproj_cropped.tif')
+names(precipseason) <- "Avg_Precipitation_seasonality"
 
-soil_clay <- rast('./00_Data/Environmental_data/Outputs/Soil_clay/SEQ_soilclay_cropped.tif')
+FPC <- rast('./00_Data/Environmental_data/Outputs/FPC/Average_FPC_SEQ_IBRA_cropped.tif')
+names(FPC) <- "Avg_FPC"
+
+NDVI <- rast('./00_Data/Environmental_data/Outputs/BOM_NDVI/Average_NDVI_reproj_cropped.tif')
+names(NDVI) <- "Avg_NDVI"
+
+soil_clay <- rast('./00_Data/Environmental_data/Outputs/Soil_clay/SEQ_IBRA_soilclay_cropped.tif')
 names(soil_clay) <- "percent_clay"
 
-slope <- rast('./00_Data/Environmental_data/Outputs/DEM/SEQ_slope_cropped.tif')
+slope <- rast('./00_Data/Environmental_data/Outputs/DEM/slope_SEQ_IBRA_cropped.tif')
 
-aspect <- rast('./00_Data/Environmental_data/Outputs/DEM/SEQaspect_cropped.tif')
+aspect <- rast('./00_Data/Environmental_data/Outputs/DEM/aspect_SEQ_IBRA_cropped.tif')
 
-topo_position <- rast('00_Data/Environmental_data/Outputs/DEM/SEQ_TPI_cropped.tif')
+topo_position <- rast('00_Data/Environmental_data/Outputs/DEM/TPI_SEQ_IBRA_cropped.tif')
 names(topo_position) <- "topo_position"
 
-elev <- rast('./00_Data/Environmental_data/Outputs/DEM/SEQ_DEM_reproj_cropped.tif')
+elev <- rast('./00_Data/Environmental_data/Outputs/DEM/SEQ_IBRA_DEM_reproj_cropped.tif')
 names(elev) <- "elevation"
 
 # Use focal to fill in only the NA values
@@ -746,75 +780,54 @@ TWI_foc <- focal(TWI, fun = "mean", na.policy = "only", na.rm = T)
 range(unique(TWI$Topo_wetness_index))
 TWI_foc # The same range of values
 names(TWI_foc) <- "Topo_wetness_index"
-writeRaster(TWI_foc, './00_Data/Environmental_data/Outputs/TWI/SEQ_TWI_cropped_focal.tif')
+writeRaster(TWI_foc, './00_Data/Environmental_data/Outputs/TWI/SEQ_IBRA_TWI_cropped_focal.tif')
 
 
 soil_cl_foc <- focal(soil_clay, fun = "mean", na.poly = "only", na.rm = T)
-range(unique(soil_clay$percent_clay))
-unique(is.na(soil_clay$percent_clay))
-soil_cl_foc # The minimum has increased. 
-plet(soil_cl_foc)
+range(unique(soil_clay$percent_clay)); unique(is.na(soil_clay$percent_clay)); soil_cl_foc 
 names(soil_cl_foc) <- "percent_soil_clay"
-writeRaster(soil_cl_foc, './00_Data/Environmental_data/Outputs/Soil_clay/SEQ_soilclay_cropped_focal.tif')
+writeRaster(soil_cl_foc, './00_Data/Environmental_data/Outputs/Soil_clay/SEQ_IBRA_soilclay_cropped_focal.tif')
 
 slop_foc <- focal(slope, fun = "mean", na.policy = "only", na.rm = T)
-range(unique(slope$slope))
-slop_foc
+range(unique(slope$slope)); slop_foc
 names(slop_foc) <- "slope"
-writeRaster(slop_foc, './00_Data/Environmental_data/Outputs/DEM/SEQ_slope_cropped_focal.tif')
+writeRaster(slop_foc, './00_Data/Environmental_data/Outputs/DEM/SEQ_IBRA_slope_cropped_focal.tif')
 
 aspect_foc <- focal(aspect, fun = "mean", na.policy = "only", na.rm = T)
-range(unique(aspect$aspect))
-aspect_foc
+range(unique(aspect$aspect)); aspect_foc
 names(aspect_foc) <- "aspect"
-writeRaster(aspect_foc, './00_Data/Environmental_data/Outputs/DEM/SEQaspect_cropped_focal.tif')
+writeRaster(aspect_foc, './00_Data/Environmental_data/Outputs/DEM/SEQ_IBRA_aspect_cropped_focal.tif')
 
 topo_foc <- focal(topo_position, fun = "modal", na.policy = "only", na.rm = T) # This is the only case where we will not use the average of nearby cells, we will instead use the modal 
-range(unique(topo_position$topo_position))
-topo_foc
+range(unique(topo_position$topo_position)); topo_foc
 names(topo_foc) <- "Topo_position_index"
-writeRaster(topo_foc, './00_Data/Environmental_data/Outputs/DEM/SEQ_TPI_cropped_focal.tif')
+writeRaster(topo_foc, './00_Data/Environmental_data/Outputs/DEM/SEQ_IBRA_TPI_cropped_focal.tif')
 
 
 elev_foc <- focal(elev, fun = "mean", na.policy = "only", na.rm = T)
-range(unique(elev_foc$focal_mean))
-elev_foc
+range(unique(elev_foc$focal_mean)); elev_foc
 names(elev_foc) <- "elevation"
-writeRaster(elev_foc, './00_Data/Environmental_data/Outputs/DEM/SEQ_DEM_reproj_cropped_focal.tif')
+writeRaster(elev_foc, './00_Data/Environmental_data/Outputs/DEM/SEQ_IBRA_DEM_reproj_cropped_focal.tif')
 
 temp_foc <- focal(tempseason, fun = "mean", na.policy = "only", na.rm = T)
-range(unique(tempseason$temp_seasonality))
 temp_foc
-names(temp_foc) <- "temperature_seasonality"
-writeRaster(temp_foc, './00_Data/Environmental_data/Outputs/BioClim/tempseason_SEQ_IBRA_cropped_focal.tif')
+writeRaster(temp_foc, './00_Data/Environmental_data/Outputs/SILO_Temperature/Average_tempseason_SEQ_IBRA_reproj_cropped_focal.tif')
 
 precip_foc <- focal(precipseason, fun = "mean", na.policy = "only", na.rm = T)
-range(unique(precipseason$precip_seasonality))
-precip_foc
-names(precip_foc) <- "precipitation_seasonality"
-writeRaster(precip_foc, './00_Data/Environmental_data/Outputs/BioClim/precipseason_SEQ_IBRA_cropped_focal.tif')
-
-diurnal_foc <- focal(diurnal_temp, fun = "mean", na.policy = "only", na.rm = T)
-range(unique(diurnal_temp$diurnal_temp_seasonality))
-diurnal_foc
-names(diurnal_foc) <- "diurnal_temp_seasonality"
-writeRaster(diurnal_foc, './00_Data/Environmental_data/Outputs/BioClim/Diurnal_temp_meanSEQ_cropped_focal.tif')
+writeRaster(precip_foc, './00_Data/Environmental_data/Outputs/SILO_Rainfall/Average_precipseason_SEQ_IBRA_reproj_cropped_focal.tif')
 
 
-FPC_foc <- focal(FPC, fun = 'mean', na.policy = 'only', na.rm = T)
-range(unique(FPC$average_foliage_proj_cover))
-FPC_foc
-plot(FPC_foc)
-plot(FPC)
-names(FPC_foc) <- "Foliage_proj_cover"
-writeRaster(FPC_foc, './00_Data/Environmental_data/Outputs/FPC/FPC_all_cropped_focal.tif')
+NDVI_foc <- focal(NDVI, fun = "mean", na.policy = "only", na.rm = T)
+writeRaster(NDVI_foc, './00_Data/Environmental_data/Outputs/BOM_NDVI/Average_NDVI_SEQ_IBRA_cropped_focal.tif', overwrite = T)
 
 # While FPC does appear to have large areas of no data, using focal is not replacing all these areas but just expanding to fill in some of these regions with data. White patches could be related to water bodies or some other land cover 
+FPC_foc <- focal(FPC, fun = 'mean', na.policy = 'only', na.rm = T)
+FPC; FPC_foc
+names(FPC_foc) <- "Avg_FPC"
+writeRaster(FPC_foc, './00_Data/Environmental_data/Outputs/FPC/Average_FPC_IBRA_cropped_focal.tif')
 
 
-
-
-# 4. Mask raster environmental data by hydrological features, we do not want predictions or to train the model using data where we know a fire would not burn
+# 4. Mask environmental raster data by hydrological features, we do not want predictions or to train the model using data where we know a fire would not burn
 canal <- vect('./00_Data/Environmental_data/Outputs/Hydrographic_features/Canal_SEQ_IBRA.gpkg')
 lake <- vect('./00_Data/Environmental_data/Outputs/Hydrographic_features/Lakes_SEQ_IBRA.gpkg')
 pond <- vect('./00_Data/Environmental_data/Outputs/Hydrographic_features/Ponds_SEQ_IBRA.gpkg')
@@ -823,34 +836,44 @@ watercourse <- vect('./00_Data/Environmental_data/Outputs/Hydrographic_features/
 
 # Also in some cases will need to mask by the coastline
 Aus <- vect('./00_Data/Australia_shapefile/STE11aAust.shp')
-coast <- subset(Aus, Aus$STATE_NAME == "Queensland")
-coast <- project(coast, 'EPSG:3577')
-coast <- crop(coast, e)
+coast <- subset(Aus, Aus$STATE_NAME == "Queensland") %>% 
+  project("EPSG:3577") %>% 
+  crop(SEQ)
 
-TWI <- rast('./00_Data/Environmental_data/Outputs/TWI/SEQ_TWI_cropped_focal.tif')
-tempseason <- rast('./00_Data/Environmental_data/Outputs/BioClim/tempseason_SEQ_IBRA_cropped_focal.tif')    
-precipseason <- rast('./00_Data/Environmental_data/Outputs/BioClim/precipseason_SEQ_IBRA_cropped_focal.tif')  
-diurnal_temp <- rast('./00_Data/Environmental_data/Outputs/BioClim/Diurnal_temp_meanSEQ_cropped_focal.tif')  
-FPC <- rast('./00_Data/Environmental_data/Outputs/FPC/FPC_all_cropped_focal.tif')  
-soil_clay <- rast('./00_Data/Environmental_data/Outputs/Soil_clay/SEQ_soilclay_cropped_focal.tif')  
-slope <- rast('./00_Data/Environmental_data/Outputs/DEM/SEQ_slope_cropped_focal.tif')  
-aspect <- rast('./00_Data/Environmental_data/Outputs/DEM/SEQaspect_cropped_focal.tif')  
-topo_position <- rast('./00_Data/Environmental_data/Outputs/DEM/SEQ_TPI_cropped_focal.tif') 
-elev <- rast('./00_Data/Environmental_data/Outputs/DEM/SEQ_DEM_reproj_cropped_focal.tif')
+TWI <- rast('./00_Data/Environmental_data/Outputs/TWI/SEQ_IBRA_TWI_cropped_focal.tif')
+tempseason <- rast('./00_Data/Environmental_data/Outputs/SILO_Temperature/Average_tempseason_SEQ_IBRA_reproj_cropped_focal.tif')
+precipseason <- rast('./00_Data/Environmental_data/Outputs/SILO_Rainfall/Average_precipseason_SEQ_IBRA_reproj_cropped_focal.tif')
+FPC <- rast('./00_Data/Environmental_data/Outputs/FPC/FPC_ALL_IBRA_cropped_focal.tif')  
+NDVI <- rast('./00_Data/Environmental_data/Outputs/BOM_NDVI/Average_NDVI_SEQ_IBRA_cropped_focal.tif')
+soil_clay <- rast('./00_Data/Environmental_data/Outputs/Soil_clay/SEQ_IBRA_soilclay_cropped_focal.tif')  
+slope <- rast('./00_Data/Environmental_data/Outputs/DEM/SEQ_IBRA_slope_cropped_focal.tif')  
+aspect <- rast('./00_Data/Environmental_data/Outputs/DEM/SEQ_IBRA_aspect_cropped_focal.tif')  
+topo_position <- rast('./00_Data/Environmental_data/Outputs/DEM/SEQ_IBRA_TPI_cropped_focal.tif') 
+elev <- rast('./00_Data/Environmental_data/Outputs/DEM/SEQ_IBRA_DEM_reproj_cropped_focal.tif')
+BVG <- rast('./00_Data/Environmental_data/Outputs/BVG/BVG_cropped.tif')
 
 TWI <- mask(TWI, canal, inverse = T)
 TWI <- mask(TWI, lake, inverse = T)
 TWI <- mask(TWI, pond, inverse = T)
 TWI <- mask(TWI, reservoir, inverse = T)
 TWI <- mask(TWI, watercourse, inverse = T)
+TWI <- mask(TWI, coast)
 plot(TWI)
-
+names(TWI) <- "Topo_wetness_index"
+writeRaster(TWI, './00_Data/Environmental_data/Outputs/TWI/SEQ_IBRA_TWI_cropped_focal_masked.tif', overwrite = T)
 
 tempseason <- mask(tempseason, canal, inverse = T)
 tempseason <- mask(tempseason, lake, inverse = T)
 tempseason <- mask(tempseason, pond, inverse = T)
 tempseason <- mask(tempseason, reservoir, inverse = T)
 tempseason <- mask(tempseason, watercourse, inverse = T)
+plot(tempseason)
+tempseason <- resample(tempseason, template, method = 'bilinear') %>% 
+  print()
+tempseason <- mask(tempseason, coast)
+names(tempseason) <- "Avg_Temperature_seasonality"
+writeRaster(tempseason, './00_Data/Environmental_data/Outputs/SILO_Temperature/Average_Temp_seasonality_SEQ_IBRA_reproj_cropped_focal_masked.tif', overwrite = T)
+
 
 
 precipseason <- mask(precipseason, canal, inverse = T)
@@ -858,14 +881,11 @@ precipseason <- mask(precipseason, lake, inverse = T)
 precipseason <- mask(precipseason, pond, inverse = T)
 precipseason <- mask(precipseason, reservoir, inverse = T)
 precipseason <- mask(precipseason, watercourse, inverse = T)
-
-
-diurnal_temp <- mask(diurnal_temp, canal, inverse = T)
-diurnal_temp <- mask(diurnal_temp, lake, inverse = T)
-diurnal_temp <- mask(diurnal_temp, pond, inverse = T)
-diurnal_temp <- mask(diurnal_temp, reservoir, inverse = T)
-diurnal_temp <- mask(diurnal_temp, watercourse, inverse = T)
-
+precipseason <- resample(precipseason, template, method = 'bilinear') %>% 
+  print()
+precipseason <- mask(precipseason, coast)
+names(precipseason) <-  "Avg_Precipitation_seasonality"
+writeRaster(precipseason, './00_Data/Environmental_data/Outputs/SILO_Rainfall/Average_precipseason_SEQ_IBRA_reproj_cropped_focal_masked.tif', overwrite = T)
 
 
 FPC <- mask(FPC, canal, inverse = T)
@@ -873,6 +893,21 @@ FPC <- mask(FPC, lake, inverse = T)
 FPC <- mask(FPC, pond, inverse = T)
 FPC <- mask(FPC, reservoir, inverse = T)
 FPC <- mask(FPC, watercourse, inverse = T)
+FPC <- mask(FPC, coast)
+plot(FPC)
+names(FPC) <- "Avg_FPC"
+writeRaster(FPC, './00_Data/Environmental_data/Outputs/FPC/Average_FPC_SEQ_IBRA_cropped_focal_masked.tif', overwrite = T)
+
+
+NDVI <-  mask(NDVI, canal, inverse = T)
+NDVI <- mask(NDVI, lake, inverse = T)
+NDVI <- mask(NDVI, pond, inverse = T)
+NDVI <- mask(NDVI, reservoir, inverse = T)
+NDVI <- mask(NDVI, watercourse, inverse = T)
+NDVI <- mask(NDVI, coast)
+plot(NDVI)
+names(NDVI) <- "Avg_NDVI"
+writeRaster(NDVI, './00_Data/Environmental_data/Outputs/BOM_NDVI/Average_NDVI_cropped_focal_masked.tif', overwrite = T)
 
 
 soil_clay <- mask(soil_clay, canal, inverse = T)
@@ -880,6 +915,10 @@ soil_clay <- mask(soil_clay, lake, inverse = T)
 soil_clay <- mask(soil_clay, pond, inverse = T)
 soil_clay <- mask(soil_clay, reservoir, inverse = T)
 soil_clay <- mask(soil_clay, watercourse, inverse = T)
+soil_clay <- mask(soil_clay, coast)
+plot(soil_clay)
+names(soil_clay) <- 'Percent_clay'
+writeRaster(soil_clay, './00_Data/Environmental_data/Outputs/Soil_clay/SEQ_IBRA_soilclay_cropped_focal_masked.tif', overwrite = T)
 
 
 slope <- mask(slope, canal, inverse = T)
@@ -888,7 +927,9 @@ slope <- mask(slope, pond, inverse = T)
 slope <- mask(slope, reservoir, inverse = T)
 slope <- mask(slope, watercourse, inverse = T)
 slope <- mask(slope, coast)
-
+plot(slope)
+names(slope) <- "Slope"
+writeRaster(slope, './00_Data/Environmental_data/Outputs/DEM/SEQ_IBRA_slope_cropped_focal_masked.tif', overwrite = T)
 
 aspect <- mask(aspect, canal, inverse = T)
 aspect <- mask(aspect, lake, inverse = T)
@@ -896,6 +937,9 @@ aspect <- mask(aspect, pond, inverse = T)
 aspect <- mask(aspect, reservoir, inverse = T)
 aspect <- mask(aspect, watercourse, inverse = T)
 aspect <- mask(aspect, coast)
+plot(aspect)
+names(aspect) <- "Aspect"
+writeRaster(aspect, './00_Data/Environmental_data/Outputs/DEM/SEQ_IBRA_aspect_cropped_focal_masked.tif', overwrite = T)
 
 
 topo_position <- mask(topo_position, canal, inverse = T)
@@ -904,6 +948,9 @@ topo_position <- mask(topo_position, pond, inverse = T)
 topo_position <- mask(topo_position, reservoir, inverse = T)
 topo_position <- mask(topo_position, watercourse, inverse = T)
 topo_position <- mask(topo_position, coast)
+plot(topo_position)
+names(topo_position) <- "Topo_position_index"
+writeRaster(topo_position, './00_Data/Environmental_data/Outputs/DEM/SEQ_IBRA_TPI_cropped_focal_masked.tif', overwrite = T)
 
 
 elev <- mask(elev, canal, inverse = T)
@@ -912,51 +959,43 @@ elev <- mask(elev, pond, inverse = T)
 elev <- mask(elev, reservoir, inverse = T)
 elev <- mask(elev, watercourse, inverse = T)
 elev <- mask(elev, coast)
+elev <- resample(elev, template, method = 'bilinear') %>% 
+  print()
+plot(elev)
+names(elev) <- "Elevation"
+writeRaster(elev, './00_Data/Environmental_data/Outputs/DEM/SEQ_IBRA_DEM_cropped_focal_masked.tif', overwrite = T)
+
+
+BVG <- mask(BVG, canal, inverse = T)
+BVG <- mask(BVG, lake, inverse = T)
+BVG <- mask(BVG, pond, inverse = T)
+BVG <- mask(BVG, reservoir, inverse = T)
+BVG <- mask(BVG, watercourse, inverse = T)
+BVG <- mask(BVG, coast)
+BVG <- resample(BVG, template, method = 'bilinear') %>% 
+  print()
+plot(BVG)
+writeRaster(BVG, './00_Data/Environmental_data/Outputs/BVG/BVG_cropped_masked.tif', overwrite = T)
+
+
 
 
 # 5. Combine the data into a single raster for later use ----
-# Make sure all the names are meaningful
-
-
-names(TWI) <- "Topo_wetness_index"
-
-names(tempseason) <- "Temp_seasonality"
-
-names(precipseason) <- "Precip_seasonality"
-
-names(diurnal_temp) <- "Diurnal_temp_seasonality"
-
-names(FPC) <- "Average_foliage_proj_cover"
-
-names(soil_clay) <- 'Percent_clay'
-
-names(slope) <- "Slope"
-
-names(aspect) <- "Aspect"
-
-names(topo_position) <- "Topo_position_index"
-
-names(elev) <- "Elevation"
-
-
-# Combine the data and save the output
-# Need to make sure QPWS fire data has the same extent as this other data
-library(gdalUtilities)
-gdalwarp('./00_Data/Fire_data/Outputs/SEQ/QPWS_SEQ_IBRA_freq_hydrographical_mask_cropped.tif',
-         './00_Data/Fire_data/Outputs/SEQ/QPWS_SEQ_IBRA_freq_hydrographical_mask_cropped_reproj.tif',
-         te = c(1881028, -3247627, 2121562, -2660998))
-
-QPWS_SEQ_ff <- rast('./00_Data/Fire_data/Outputs/SEQ/QPWS_SEQ_IBRA_freq_hydrographical_mask_cropped_reproj.tif')
+QPWS_SEQ_ff <- rast('./00_Data/Fire_data/Outputs/SEQ/QPWS_SEQ_IBRA_freq_hydrographical_mask_cropped.tif') %>% 
+  resample(template, method = 'bilinear')
 names(QPWS_SEQ_ff) <- "QPWS_firefreq"
 
+QPWS_SEQ_ff[is.na(QPWS_SEQ_ff)] <- 0 # GAMs and GLMs will not produce predictions for areas where any layer has NA values so we need to reaplce NA values in the QPWS data with 0s despite the fact that these may not be true absences.
+range(unique(QPWS_SEQ_ff))
+plot(QPWS_SEQ_ff)
 
-# GAMs and GLMs will not produce predictions for areas where any layer has NA values. We need to replace NA values in the QPWS dataset to be 0s despite the fact that these may not be true absences. We will be replacing these NA values with zeros when we extract values from each spatial layer to create the dataset for feeding into our modelling algorithms.
+QPWS_SEQ_ff <- mask(QPWS_SEQ_ff, coast)
+plot(QPWS_SEQ_ff)
+writeRaster(QPWS_SEQ_ff, './00_Data/Fire_data/Outputs/SEQ/QPWS_SEQ_IBRA_freq_hydrographical_mask_cropped.tif', overwrite = T)
 
-QPWS_SEQ_ff[is.na(QPWS_SEQ_ff)] <- 0
-unique(QPWS_SEQ_ff)
-
-predictors <- c(QPWS_SEQ_ff, TWI, tempseason, precipseason, diurnal_temp, FPC, soil_clay, slope, aspect, topo_position, elev)
-writeRaster(predictors, './00_Data/SDM_data/predictors.tif', overwrite = T)
+predictors <- c(QPWS_SEQ_ff, TWI, tempseason, precipseason, FPC, soil_clay, slope, aspect, topo_position, elev, NDVI, BVG)
+predictors
+writeRaster(predictors, './00_Data/SDM_data/predictors_SEQ_IBRA.tif', overwrite = T)
 
 
 

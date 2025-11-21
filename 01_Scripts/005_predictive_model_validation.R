@@ -1,5 +1,6 @@
 # Written by Felicity Charles
 # Date: 06/10/2024
+# Updated: 12/11/2025
 
 ##### Fire frequency analysis ----
 # This script validates model predictions, checking correlations between the original dataset and predicted values 
@@ -8,188 +9,141 @@
 
 # 1. Load required packages ----
 
-library(terra) # terra_1.7-78
-library(tidyterra) # tidyterra_0.6.1
-library(ggspatial) # ggspatial_1.1.9
+library(terra) # terra_1.7-78 updated to 1.8-70
+library(tidyterra) # tidyterra_0.6.1 updated to 0.7.2
+library(ggspatial) # ggspatial_1.1.9 updated to 1.1.10
 library(dplyr) # dplyr_1.1.4
-library(sf) # sf_1.0-14 
-library(ggplot2) # ggplot2_3.5.1
-library(cowplot) # cowplot_1.1.1
-library(ggforce) # ggforce_0.4.2 
+library(sf) # sf_1.0-14 updated to 1.0-21
+library(ggplot2) # ggplot2_3.5.1 updated to 4.0.0
+library(cowplot) # cowplot_1.1.1 updated to 1.2.0
+library(ggforce) # ggforce_0.4.2 updated to 0.5.0
 
 # 2. Load original data, predictive model data, and environmental data
-unweighted_pred <- rast('./04_Results/Prediction_rasters/Unweighted_pred.tif')
-down_wt_pred <- rast('./04_Results/Prediction_rasters/Downweighted_pred.tif')
-IWLR_pred <- rast('./04_Results/Prediction_rasters/IWLR_pred.tif')
-gam_pred <- rast('./04_Results/Prediction_rasters/GAM_pred.tif')
-glm_pred <- rast('./04_Results/Prediction_rasters/GLM_pred.tif')
-Sentinel_ff <- rast('./00_Data/Fire_data/Outputs/Sentinel/Sentinel_ff_hydrographical_mask_SEQ_focal_cropped.tif')
+unweighted_pred_fpc <- rast('./04_Results/Prediction_rasters/SEQ_IBRA_Unweighted_pred_FPC.tif')
+down_wt_pred_fpc <- rast('./04_Results/Prediction_rasters/SEQ_IBRA_Downweighted_FPC_pred.tif')
+IWLR_pred_fpc <- rast('./04_Results/Prediction_rasters/SEQ_IBRA_IWLR_FPC_pred.tif')
+gam_pred_fpc <- rast('./04_Results/Prediction_rasters/SEQ_IBRA_GAM_FPC_pred.tif')
+glm_pred_fpc <- rast('./04_Results/Prediction_rasters/SEQ_IBRA_GLM_FPC_pred.tif')
 
+unweighted_pred_ndvi <- rast('./04_Results/Prediction_rasters/SEQ_IBRA_Unweighted_pred_NDVI.tif')
+down_wt_pred_ndvi <- rast('./04_Results/Prediction_rasters/SEQ_IBRA_Downweighted_NDVI_pred.tif')
+IWLR_pred_ndvi <- rast('./04_Results/Prediction_rasters/SEQ_IBRA_IWLR_NDVI_pred.tif')
+gam_pred_ndvi <- rast('./04_Results/Prediction_rasters/SEQ_IBRA_GAM_NDVI_pred.tif')
+glm_pred_ndvi <- rast('./04_Results/Prediction_rasters/SEQ_IBRA_GLM_NDVI_pred.tif')
 
-QPWS_rand <- vect('./00_Data/Fire_data/Outputs/QPWS_random.gpkg')
-QPWS_ff <- rast('./00_Data/Fire_data/Outputs/SEQ/QPWS_SEQ_freq_hydrographical_mask_cropped_reproj.tif')
-SEQ <- vect('./00_Data/Australia_shapefile/STE11aAust.shp') %>% 
+Sentinel_ff <- rast('./00_Data/Fire_data/Outputs/Sentinel/Sentinel_ff_hydrographical_mask_SEQ_IBRA_focal_cropped.tif')
+QPWS_rand <- vect('./00_Data/Fire_data/Outputs/QPWS_random_SEQ_IBRA.gpkg')
+QPWS_ff <- rast('./00_Data/Fire_data/Outputs/SEQ/QPWS_SEQ_IBRA_freq_hydrographical_mask_cropped.tif')
+SEQ_land <- vect('./00_Data/SEQ_bound/SEQ_IBRA.gpkg')
+protected_land <- vect('./00_Data/Protected_areas/Protected_areas.shp') %>% 
   project('EPSG:3577') %>% 
-  crop(gam_pred)
-SEQ_land <- vect('./00_Data/SEQ_bound/SEQ_land.gpkg')
+  crop(SEQ_land)
+plot(protected_land)
 
-Sentinel_ff_m <- mask(Sentinel_ff, QPWS_ff, inverse = T)
+Sentinel_ff_m <- mask(Sentinel_ff, protected_land, inverse = T) %>% 
+  mask(SEQ_land)
 plet(Sentinel_ff_m)
+QPWS <- ifel(QPWS_ff == 0, NA, QPWS_ff) # Extract the cells where QPWS_ff is not zero
+SEQ_ff <- merge(QPWS, Sentinel_ff_m)
+plot(SEQ_ff)
 
 
-# Join polygons for estates with the same name
-# This was done in ArcGIS by using the aggregate polygons function with an aggregation distance of 150m and aggregate field of NAMEABBREV.
-protected_land <- vect('./00_Data/Protected_areas/Protected_areas_dissolved.shp') %>% 
-  project('EPSG:3577') %>% 
-  crop(SEQ)
+Sentinel_ff <- mask(Sentinel_ff, SEQ_land)
+plet(Sentinel_ff)
 
-plet(protected_land)
-
-
-# 3. Validate model predictions ----
+# 3. Sentinel_ff# 3. Validate model predictions ----
 # We know when we look at the each raster the min and max value are incorrect as this is not what gets plotted on a map.
 
-range(Sentinel_ff$focal_mean) # Maximum is 26
-range(QPWS_ff$QPWS_SEQ_freq_raster) # Maximum is 12
-gam_pred # Maximum is 18
-down_wt_pred # Maximum is 50 so some overestimation
-plot(down_wt_pred)
-unweighted_pred # Maximum is 38, overestimating
-range(unweighted_pred$lyr1)
-IWLR_pred # Maximum is 9, underestimating
-glm_pred # Maximum is 14, underestimating
+range(Sentinel_ff$Sentinel_fire_freq) # Maximum is 29
+range(QPWS_ff$QPWS_firefreq) # Maximum is 12
 
-# So just looking at the maximum values, most model underpredict fire frequency. The GLM, GAM and down weighted BRT overpredict QPWS fire frequency but only the down-weighted BRT overpredicts Sentinel fire frequency as well. SO let's take a look at the distribution of the predictions to really see what is going on as overprediction may be limited to a few locations and relatively few fire frequencies.
+# FPC models
+gam_pred_fpc # Maximum is 40
+down_wt_pred_fpc; range(down_wt_pred_fpc); plot(down_wt_pred_fpc) # Maximum is 71 probably just some outliers as the majority is ~30 fires, so very limited overestimation if any
+unweighted_pred_fpc; plot(unweighted_pred_fpc) # Maximum is 115, again outliers are present as plot shows ~55 fires, so also overestimating
+IWLR_pred_fpc; plot(IWLR_pred_fpc) # Maximum is 9, underestimating
+glm_pred_fpc # Maximum is 29
+
+# NDVI models
+gam_pred_ndvi; plot(gam_pred_ndvi) # Maximum is 18
+down_wt_pred_ndvi; range(down_wt_pred_ndvi); plot(down_wt_pred_ndvi) # Maximum is 75 so some outliers as the majority is ~40 fires, so some overestimation
+unweighted_pred_ndvi; plot(unweighted_pred_ndvi) # Maximum is 135, again outliers are present as plot shows ~55 fires, so also overestimating
+IWLR_pred_ndvi; plot(IWLR_pred_ndvi) # Maximum is 9, underestimating
+glm_pred_ndvi # Maximum is 22
+
+
+# So just looking at the maximum values, most model result in under predictions of fire frequency. The FPC GLM has the best prediction, matching Sentinel, the FPC GAM is not bad but may be overestimating. The NDVI GAM and GLM are ok, some underestimation. SO let's take a look at the distribution of the predictions to really see what is going on as overprediction may be limited to a few locations and relatively few fire frequencies.
 
 # 3.1 Check correlation of predictive outputs with QPWS data -----
 QPWS_ff_rand <- extract(QPWS_ff, QPWS_rand)
 
 # Original Sentinel data
 Sentinel_rand <- extract(Sentinel_ff, QPWS_rand)
-sent_cor <- cor.test(QPWS_ff_rand$QPWS_SEQ_freq_raster, Sentinel_rand$focal_mean) # Correlation = 0.2517431  
+sent_cor <- cor.test(QPWS_ff_rand$QPWS_firefreq, Sentinel_rand$Sentinel_fire_freq) # Correlation = 0.3309308 
 
-
+# 3.1.1 FPC models ----
 # Unweighted model
-unweighted_rand <- extract(unweighted_pred, QPWS_rand)
-unwt_cor <- cor.test(QPWS_ff_rand$QPWS_SEQ_freq_raster, unweighted_rand$lyr1) # Correlation = 0.3379137  
+unweighted_rand_fpc <- extract(unweighted_pred_fpc, QPWS_rand)
+unwt_cor_fpc <- cor.test(QPWS_ff_rand$QPWS_firefreq, unweighted_rand_fpc$lyr1) # Correlation = 0.3767418
 # Slight improvement of correlation between from Sentinel data
 
 
 # Downweighted model
-down_rand <- extract(down_wt_pred, QPWS_rand)
-down_cor <- cor.test(QPWS_ff_rand$QPWS_SEQ_freq_raster, down_rand$lyr1) # Correlation = 0.336561   
+down_rand_fpc <- extract(down_wt_pred_fpc, QPWS_rand)
+down_cor_fpc <- cor.test(QPWS_ff_rand$QPWS_firefreq, down_rand_fpc$lyr1) # Correlation = 0.4104306
 
 
 # IWLR weighted model
-IWLR_rand <- extract(IWLR_pred, QPWS_rand)
-IWLR_cor <- cor.test(QPWS_ff_rand$QPWS_SEQ_freq_raster, IWLR_rand$lyr1) # Correlation = 0.03820975 
+IWLR_rand_fpc <- extract(IWLR_pred_fpc, QPWS_rand)
+IWLR_cor_fpc <- cor.test(QPWS_ff_rand$QPWS_firefreq, IWLR_rand_fpc$lyr1) # Correlation = 0.03987862
 
 
 # GAM 
-gam_rand <- extract(gam_pred, QPWS_rand)
-gam_cor <- cor.test(QPWS_ff_rand$QPWS_SEQ_freq_raster, gam_rand$lyr1) # correlation = 0.4726568     
+gam_rand_fpc <- extract(gam_pred_fpc, QPWS_rand)
+gam_cor_fpc <- cor.test(QPWS_ff_rand$QPWS_firefreq, gam_rand_fpc$lyr1) # correlation = 0.5260704
 
 # GLM
-glm_rand <- extract(glm_pred, QPWS_rand)
-glm_cor <- cor.test(QPWS_ff_rand$QPWS_SEQ_freq_raster, glm_rand$lyr1) # correlation = 0.7445872   
+glm_rand_fpc <- extract(glm_pred_fpc, QPWS_rand)
+glm_cor_fpc <- cor.test(QPWS_ff_rand$QPWS_firefreq, glm_rand_fpc$lyr1) # correlation = 0.5763089
 
 
-# The GLM has the highest correlation with QPWS fire frequency data, followed by the GAM 
+# The GLM has the highest correlation with QPWS fire frequency data, followed by the GAM for the models with FPC
+
+
+# 3.1.2 NDVI models ----
+# Unweighted model
+unweighted_rand_ndvi <- extract(unweighted_pred_ndvi, QPWS_rand)
+unwt_cor_ndvi <- cor.test(QPWS_ff_rand$QPWS_firefreq, unweighted_rand_ndvi$lyr1) # Correlation = 0.3799667
+# Slight improvement of correlation between from Sentinel data
+
+
+# Downweighted model
+down_rand_ndvi <- extract(down_wt_pred_ndvi, QPWS_rand)
+down_cor_ndvi <- cor.test(QPWS_ff_rand$QPWS_firefreq, down_rand_ndvi$lyr1) # Correlation = 0.4174479
+
+
+# IWLR weighted model
+IWLR_rand_ndvi <- extract(IWLR_pred_ndvi, QPWS_rand)
+IWLR_cor_ndvi <- cor.test(QPWS_ff_rand$QPWS_firefreq, IWLR_rand_ndvi$lyr1) # Correlation = -0.009195731 
+
+
+# GAM 
+gam_rand_ndvi <- extract(gam_pred_ndvi, QPWS_rand)
+gam_cor_ndvi <- cor.test(QPWS_ff_rand$QPWS_firefreq, gam_rand_ndvi$lyr1) # correlation = 0.58607289
+
+# GLM
+glm_rand_ndvi <- extract(glm_pred_ndvi, QPWS_rand)
+glm_cor_ndvi <- cor.test(QPWS_ff_rand$QPWS_firefreq, glm_rand_ndvi$lyr1) # correlation = 0.7394897 
+
+# The GLM has the highest correlation with QPWS fire frequency data for the NDVI models. All NDVI models, excluding the IWLR BRT have better correlations with QPWS data than the FPC models.
 
 
 # 4. Create maps to use with these histograms ----
- 
-unweighted_pred <- mask(unweighted_pred, SEQ_land)
-unweighted <- ggplot() + 
-  geom_spatvector(data = SEQ, fill = 'transparent', col = 'black')+
-  geom_spatraster(data = unweighted_pred) +
-  theme_cowplot(font_size = 17)+
-  scale_fill_viridis_c(na.value = 'transparent', limits = c(0.51,18), breaks = seq(1,19,1), direction = 1) +
-  labs(fill = 'Fire frequency') +
-  annotation_scale(location = "bl", style = 'ticks', pad_y = unit(0.5, 'cm'), pad_x = unit(15, 'cm'), text_cex = 2)+
-  annotation_north_arrow(location = "bl", which_north = T, height = unit(2, "cm"), width = unit(1.75, "cm"), pad_y = unit(0.1, "cm"), pad_x = unit(25, 'cm'), style = north_arrow_fancy_orienteering) +
-  theme(legend.key.height = unit(2.5, 'cm'),
-        legend.key.width = unit(1.75, 'cm'),
-        legend.title = element_text(face = 'bold', size = 25),
-        legend.text = element_text(size = 20))
-
-
-down_wt_pred <- mask(down_wt_pred, SEQ_land)
-downweighted <- ggplot() + 
-  geom_spatvector(data = SEQ, fill = 'transparent', col = 'black')+
-  geom_spatraster(data = down_wt_pred) +
-  theme_cowplot(font_size = 17)+  
-  scale_fill_viridis_c(na.value = 'transparent', limits = c(0.51,18), breaks = seq(1,19,1), direction = 1) +
-  labs(fill = 'Fire frequency') +
-  annotation_scale(location = "bl", style = 'ticks', pad_y = unit(0.5, 'cm'), pad_x = unit(15, 'cm'), text_cex = 2)+
-  annotation_north_arrow(location = "bl", which_north = T, height = unit(2, "cm"), width = unit(1.75, "cm"), pad_y = unit(0.1, "cm"), pad_x = unit(25, 'cm'), style = north_arrow_fancy_orienteering) +
-  theme(legend.key.height = unit(2.5, 'cm'),
-        legend.key.width = unit(1.75, 'cm'),
-        legend.title = element_text(face = 'bold', size = 25),
-        legend.text = element_text(size = 20))
-
-
-
-# Needs to be masked prior to plotting
-IWLR_pred <- mask(IWLR_pred, SEQ_land)
-IWLR <- ggplot() + 
-  geom_spatvector(data = SEQ, fill = 'transparent', col = 'black')+
-  geom_spatraster(data = IWLR_pred) +
-  theme_cowplot(font_size = 17)+  
-  scale_fill_viridis_c(na.value = 'transparent', limits = c(0.51,18), breaks = seq(1,19,1), direction = 1) +
-  labs(fill = 'Fire frequency') + 
-  annotation_scale(location = "bl", style = 'ticks', pad_y = unit(0.5, 'cm'), pad_x = unit(15, 'cm'), text_cex = 2)+
-  annotation_north_arrow(location = "bl", which_north = T, height = unit(2, "cm"), width = unit(1.75, "cm"), pad_y = unit(0.1, "cm"), pad_x = unit(25, 'cm'), style = north_arrow_fancy_orienteering) +
-  theme(legend.key.height = unit(2.5, 'cm'),
-        legend.key.width = unit(1.75, 'cm'),
-        legend.title = element_text(face = 'bold', size = 25),
-        legend.text = element_text(size = 20))
-
-
-
-
-
-GAM_m <- ggplot() +
-  geom_spatvector(data = SEQ, fill = 'transparent', col = 'black')+
-  geom_spatraster(data = gam_pred) +
-  theme_cowplot(font_size = 17)+  
-  scale_fill_viridis_c(na.value = 'transparent', limits = c(0.51,18), breaks = seq(1,19,1), direction = 1) +
-  labs(fill = 'Fire frequency')+
-  #annotation_north_arrow(location = "br", which_north = T, height = unit(2, "cm"), width = unit(1.75, "cm"), pad_y = unit(0.1, "cm"), pad_x = unit(-0.3, 'cm'), style = north_arrow_fancy_orienteering) +
-  theme(legend.key.height = unit(2.5, 'cm'),
-        legend.key.width = unit(1, 'cm'),
-        legend.title = element_text(face = 'bold', size = 25),
-        legend.text = element_text(size = 20),
-        legend.position = "none")
-
-
-#525 x 600
-
-
-
-GLM_m <- ggplot() +
-  geom_spatvector(data = SEQ, fill = 'transparent', col = 'black')+
-  geom_spatraster(data = glm_pred) +
-  theme_cowplot(font_size = 17)+  
-  scale_fill_viridis_c(na.value = 'transparent', limits = c(0.51,18), breaks = seq(1,19,1), direction = 1) +
-  labs(fill = 'Fire frequency')+
-  annotation_scale(location = "bl", style = 'ticks', pad_y = unit(0.5, 'cm'), pad_x = unit(15, 'cm'), text_cex = 2)+
-  annotation_north_arrow(location = "bl", which_north = T, height = unit(2, "cm"), width = unit(1.75, "cm"), pad_y = unit(0.1, "cm"), pad_x = unit(25, 'cm'), style = north_arrow_fancy_orienteering) +
-  theme(legend.key.height = unit(2.5, 'cm'),
-        legend.key.width = unit(1.75, 'cm'),
-        legend.title = element_text(face = 'bold', size = 25),
-        legend.text = element_text(size = 20),
-        legend.position = "none")
-
-
-
-
-
 Sent <- ggplot() +
   geom_spatraster(data = Sentinel_ff) +
   theme_cowplot(font_size = 17)+  
-  scale_fill_viridis_c(na.value = 'transparent', limits = c(1,18), breaks = seq(1,19,1), direction = 1) +
-  geom_spatvector(data = SEQ, fill = 'transparent', col = 'black')+
+  scale_fill_viridis_c(na.value = 'transparent', limits = c(1,30), breaks = c(1, 5, 10, 15, 20, 25, 30), direction = 1) +
+  geom_spatvector(data = SEQ_land, fill = 'transparent', col = 'black')+
   labs(fill = 'Fire frequency')+
   annotation_scale(location = "bl", style = 'ticks', pad_y = unit(0.5, 'cm'), pad_x = unit(15, 'cm'), text_cex = 2)+
   annotation_north_arrow(location = "bl", which_north = T, height = unit(2, "cm"), width = unit(1.75, "cm"), pad_y = unit(0.1, "cm"), pad_x = unit(25, 'cm'), style = north_arrow_fancy_orienteering) +
@@ -203,25 +157,223 @@ Sent <- ggplot() +
 QPWS <- ggplot()+
   geom_spatraster(data = QPWS_ff) +
   theme_cowplot(font_size = 20)+  
-  scale_fill_viridis_c(na.value = 'transparent', limits = c(1,18), breaks = seq(1,19,1), direction = 1) +
-  geom_spatvector(data = SEQ, fill = 'transparent', col = 'black')+
+  scale_fill_viridis_c(na.value = 'transparent', limits = c(1,30), breaks = c(1, 5, 10, 15, 20, 25, 30), direction = 1) +
+  geom_spatvector(data = SEQ_land, fill = 'transparent', col = 'black')+
   labs(fill = 'Fire frequency')+
   annotation_north_arrow(location = "br", which_north = T, height = unit(2, "cm"), width = unit(1.75, "cm"), pad_y = unit(0.1, "cm"), pad_x = unit(-0.3, 'cm'), style = north_arrow_fancy_orienteering) +
   theme(legend.key.height = unit(2.5, 'cm'),
         legend.key.width = unit(1, 'cm'),
         legend.title = element_text(face = 'bold', size = 25),
         legend.text = element_text(size = 20))
-# 800 x 800
+#1837 x 1200
+
+
+Observed <- ggplot()+
+  geom_spatraster(data = SEQ_ff) +
+  theme_cowplot(font_size = 20)+  
+  scale_fill_viridis_c(na.value = 'transparent', limits = c(1,30), breaks = c(1, 5, 10, 15, 20, 25, 30), direction = 1) +
+  geom_spatvector(data = SEQ_land, fill = 'transparent', col = 'black')+
+  labs(fill = 'Fire frequency')+
+  annotation_north_arrow(location = "br", which_north = T, height = unit(2, "cm"), width = unit(1.75, "cm"), pad_y = unit(0.1, "cm"), pad_x = unit(-0.3, 'cm'), style = north_arrow_fancy_orienteering) +
+  theme(legend.key.height = unit(2.5, 'cm'),
+        legend.key.width = unit(1, 'cm'),
+        legend.title = element_text(face = 'bold', size = 25),
+        legend.text = element_text(size = 20))
+
+# 4.1 FPC maps ---- 
+unweighted_pred_fpc <- mask(unweighted_pred_fpc, SEQ_land) %>% 
+  round()
+unweighted_pred_fpc <- ifel(unweighted_pred_fpc$lyr1 >30, 30, unweighted_pred_fpc$lyr1)
+unweighted_pred_fpc <- ifel(unweighted_pred_fpc$lyr1 == 0, NA, unweighted_pred_fpc$lyr1)
+unweighted_pred_fpc
+unweighted_fpc <- ggplot() + 
+  geom_spatvector(data = SEQ_land, fill = 'transparent', col = 'black')+
+  geom_spatraster(data = unweighted_pred_fpc) +
+  theme_cowplot(font_size = 17)+
+  scale_fill_viridis_c(na.value = 'transparent', limits = c(1,30), breaks = c(1, 5, 10, 15, 20, 25, 30), direction = 1) +
+  labs(fill = 'Fire frequency') +
+  annotation_scale(location = "bl", style = 'ticks', pad_y = unit(0.5, 'cm'), pad_x = unit(15, 'cm'), text_cex = 2)+
+  annotation_north_arrow(location = "bl", which_north = T, height = unit(2, "cm"), width = unit(1.75, "cm"), pad_y = unit(0.1, "cm"), pad_x = unit(25, 'cm'), style = north_arrow_fancy_orienteering) +
+  theme(legend.key.height = unit(2.5, 'cm'),
+        legend.key.width = unit(1.75, 'cm'),
+        legend.title = element_text(face = 'bold', size = 25),
+        legend.text = element_text(size = 20))
+
+
+down_wt_pred_fpc <- mask(down_wt_pred_fpc, SEQ_land) %>% 
+  round()
+down_wt_pred_fpc <- ifel(down_wt_pred_fpc$lyr1 >30, 30, down_wt_pred_fpc$lyr1)
+down_wt_pred_fpc <- ifel(down_wt_pred_fpc$lyr1 == 0, NA, down_wt_pred_fpc$lyr1)
+downweighted_fpc <- ggplot() + 
+  geom_spatvector(data = SEQ_land, fill = 'transparent', col = 'black')+
+  geom_spatraster(data = down_wt_pred_fpc) +
+  theme_cowplot(font_size = 17)+  
+  scale_fill_viridis_c(na.value = 'transparent', limits = c(1,30), breaks = c(1, 5, 10, 15, 20, 25, 30), direction = 1) +
+  labs(fill = 'Fire frequency') +
+  annotation_scale(location = "bl", style = 'ticks', pad_y = unit(0.5, 'cm'), pad_x = unit(15, 'cm'), text_cex = 2)+
+  annotation_north_arrow(location = "bl", which_north = T, height = unit(2, "cm"), width = unit(1.75, "cm"), pad_y = unit(0.1, "cm"), pad_x = unit(25, 'cm'), style = north_arrow_fancy_orienteering) +
+  theme(legend.key.height = unit(2.5, 'cm'),
+        legend.key.width = unit(1.75, 'cm'),
+        legend.title = element_text(face = 'bold', size = 25),
+        legend.text = element_text(size = 20))
+
+
+IWLR_pred_fpc <- mask(IWLR_pred_fpc, SEQ_land) %>% 
+  round()
+IWLR_pred_fpc <- ifel(IWLR_pred_fpc$lyr1 >30, 30, IWLR_pred_fpc$lyr1)
+IWLR_pred_fpc <- ifel(IWLR_pred_fpc$lyr1 == 0, NA, IWLR_pred_fpc$lyr1)
+IWLR_fpc <- ggplot() + 
+  geom_spatvector(data = SEQ_land, fill = 'transparent', col = 'black')+
+  geom_spatraster(data = IWLR_pred_fpc) +
+  theme_cowplot(font_size = 17)+  
+  scale_fill_viridis_c(na.value = 'transparent', limits = c(0.91,30), breaks = c(1, 5, 10, 15, 20, 25, 30), direction = 1) +
+  labs(fill = 'Fire frequency') + 
+  annotation_scale(location = "bl", style = 'ticks', pad_y = unit(0.5, 'cm'), pad_x = unit(15, 'cm'), text_cex = 2)+
+  annotation_north_arrow(location = "bl", which_north = T, height = unit(2, "cm"), width = unit(1.75, "cm"), pad_y = unit(0.1, "cm"), pad_x = unit(25, 'cm'), style = north_arrow_fancy_orienteering) +
+  theme(legend.key.height = unit(2.5, 'cm'),
+        legend.key.width = unit(1.75, 'cm'),
+        legend.title = element_text(face = 'bold', size = 25),
+        legend.text = element_text(size = 20))
+
+gam_pred_fpc <- round(gam_pred_fpc)
+gam_pred_fpc <- ifel(gam_pred_fpc$lyr1 >30, 30, gam_pred_fpc$lyr1)
+gam_pred_fpc <- ifel(gam_pred_fpc$lyr1 == 0, NA, gam_pred_fpc$lyr1)
+GAM_fpc <- ggplot() +
+  geom_spatvector(data = SEQ_land, fill = 'transparent', col = 'black')+
+  geom_spatraster(data = gam_pred_fpc) +
+  theme_cowplot(font_size = 17)+  
+  scale_fill_viridis_c(na.value = 'transparent', limits = c(1,30), breaks = c(1, 5, 10, 15, 20, 25, 30), direction = 1) +
+  labs(fill = 'Fire frequency')+
+  #annotation_north_arrow(location = "br", which_north = T, height = unit(2, "cm"), width = unit(1.75, "cm"), pad_y = unit(0.1, "cm"), pad_x = unit(-0.3, 'cm'), style = north_arrow_fancy_orienteering) +
+  theme(legend.key.height = unit(2.5, 'cm'),
+        legend.key.width = unit(1, 'cm'),
+        legend.title = element_text(face = 'bold', size = 25),
+        legend.text = element_text(size = 20),
+        legend.position = "none")
+#1680 x 1100
+
+glm_pred_fpc <- round(glm_pred_fpc)
+glm_pred_fpc <- ifel(glm_pred_fpc$lyr1 >30, 30, glm_pred_fpc$lyr1)
+glm_pred_fpc <- ifel(glm_pred_fpc$lyr1 == 0, NA, glm_pred_fpc$lyr1)
+GLM_fpc <- ggplot() +
+  geom_spatvector(data = SEQ_land, fill = 'transparent', col = 'black')+
+  geom_spatraster(data = glm_pred_fpc) +
+  theme_cowplot(font_size = 17)+  
+  scale_fill_viridis_c(na.value = 'transparent', limits = c(1,30), breaks = c(1, 5, 10, 15, 20, 25, 30), direction = 1) +
+  labs(fill = 'Fire frequency')+
+  annotation_scale(location = "bl", style = 'ticks', pad_y = unit(0.5, 'cm'), pad_x = unit(15, 'cm'), text_cex = 2)+
+  annotation_north_arrow(location = "bl", which_north = T, height = unit(2, "cm"), width = unit(1.75, "cm"), pad_y = unit(0.1, "cm"), pad_x = unit(25, 'cm'), style = north_arrow_fancy_orienteering) +
+  theme(legend.key.height = unit(2.5, 'cm'),
+        legend.key.width = unit(1.75, 'cm'),
+        legend.title = element_text(face = 'bold', size = 25),
+        legend.text = element_text(size = 20),
+        legend.position = "none")
+
 
 # Produce plot with all maps
-
-r_map_p <- plot_grid(downweighted + theme(legend.position = "none"), unweighted+ theme(legend.position = "none"), IWLR+ theme(legend.position = "none"), nrow = 1, rel_widths = c(0.2,0.2,0.2))
-
-# 1550 x 600
+r_map_p <- plot_grid(downweighted_fpc + theme(legend.position = "none"), unweighted_fpc + theme(legend.position = "none"), IWLR_fpc + theme(legend.position = "none"), nrow = 1, rel_widths = c(0.2,0.2,0.2))
+# 1650 x 1075
 
 
-# 4.1 Prepare data for histogram plots ----
 
+# 4.1 NDVI maps ---- 
+unweighted_pred_ndvi <- mask(unweighted_pred_ndvi, SEQ_land) %>% 
+  round()
+unweighted_pred_ndvi <- ifel(unweighted_pred_ndvi$lyr1 >30, 30, unweighted_pred_ndvi$lyr1)
+unweighted_pred_ndvi <- ifel(unweighted_pred_ndvi$lyr1 == 0, NA, unweighted_pred_ndvi$lyr1)
+unweighted_ndvi <- ggplot() + 
+  geom_spatvector(data = SEQ_land, fill = 'transparent', col = 'black')+
+  geom_spatraster(data = unweighted_pred_ndvi) +
+  theme_cowplot(font_size = 17)+
+  scale_fill_viridis_c(na.value = 'transparent', limits = c(1,30), breaks = c(1, 5, 10, 15, 20, 25, 30), direction = 1) +
+  labs(fill = 'Fire frequency') +
+  annotation_scale(location = "bl", style = 'ticks', pad_y = unit(0.5, 'cm'), pad_x = unit(15, 'cm'), text_cex = 2)+
+  annotation_north_arrow(location = "bl", which_north = T, height = unit(2, "cm"), width = unit(1.75, "cm"), pad_y = unit(0.1, "cm"), pad_x = unit(25, 'cm'), style = north_arrow_fancy_orienteering) +
+  theme(legend.key.height = unit(2.5, 'cm'),
+        legend.key.width = unit(1.75, 'cm'),
+        legend.title = element_text(face = 'bold', size = 25),
+        legend.text = element_text(size = 20))
+
+
+down_wt_pred_ndvi <- mask(down_wt_pred_ndvi, SEQ_land) %>% 
+  round()
+down_wt_pred_ndvi <- ifel(down_wt_pred_ndvi$lyr1 >30, 30, down_wt_pred_ndvi$lyr1)
+down_wt_pred_ndvi <- ifel(down_wt_pred_ndvi$lyr1 == 0, NA, down_wt_pred_ndvi$lyr1)
+downweighted_ndvi <- ggplot() + 
+  geom_spatvector(data = SEQ_land, fill = 'transparent', col = 'black')+
+  geom_spatraster(data = down_wt_pred_ndvi) +
+  theme_cowplot(font_size = 17)+  
+  scale_fill_viridis_c(na.value = 'transparent', limits = c(1,30), breaks = c(1, 5, 10, 15, 20, 25, 30), direction = 1) +
+  labs(fill = 'Fire frequency') +
+  annotation_scale(location = "bl", style = 'ticks', pad_y = unit(0.5, 'cm'), pad_x = unit(15, 'cm'), text_cex = 2)+
+  annotation_north_arrow(location = "bl", which_north = T, height = unit(2, "cm"), width = unit(1.75, "cm"), pad_y = unit(0.1, "cm"), pad_x = unit(25, 'cm'), style = north_arrow_fancy_orienteering) +
+  theme(legend.key.height = unit(2.5, 'cm'),
+        legend.key.width = unit(1.75, 'cm'),
+        legend.title = element_text(face = 'bold', size = 25),
+        legend.text = element_text(size = 20))
+
+
+IWLR_pred_ndvi <- mask(IWLR_pred_ndvi, SEQ_land) %>% 
+  round()
+IWLR_pred_ndvi <- ifel(IWLR_pred_ndvi$lyr1 >30, 30, IWLR_pred_ndvi$lyr1)
+IWLR_pred_ndvi <- ifel(IWLR_pred_ndvi$lyr1 == 0, NA, IWLR_pred_ndvi$lyr1)
+IWLR_ndvi <- ggplot() + 
+  geom_spatvector(data = SEQ_land, fill = 'transparent', col = 'black')+
+  geom_spatraster(data = IWLR_pred_ndvi) +
+  theme_cowplot(font_size = 17)+  
+  scale_fill_viridis_c(na.value = 'transparent', limits = c(1,30), breaks = c(1, 5, 10, 15, 20, 25, 30), direction = 1) +
+  labs(fill = 'Fire frequency') + 
+  annotation_scale(location = "bl", style = 'ticks', pad_y = unit(0.5, 'cm'), pad_x = unit(15, 'cm'), text_cex = 2)+
+  annotation_north_arrow(location = "bl", which_north = T, height = unit(2, "cm"), width = unit(1.75, "cm"), pad_y = unit(0.1, "cm"), pad_x = unit(25, 'cm'), style = north_arrow_fancy_orienteering) +
+  theme(legend.key.height = unit(2.5, 'cm'),
+        legend.key.width = unit(1.75, 'cm'),
+        legend.title = element_text(face = 'bold', size = 25),
+        legend.text = element_text(size = 20))
+
+
+gam_pred_ndvi <- round(gam_pred_ndvi)
+gam_pred_ndvi <- ifel(gam_pred_ndvi$lyr1 >30, 30, gam_pred_ndvi$lyr1)
+gam_pred_ndvi <- ifel(gam_pred_ndvi$lyr1 == 0, NA, gam_pred_ndvi$lyr1)
+GAM_ndvi <- ggplot() +
+  geom_spatvector(data = SEQ_land, fill = 'transparent', col = 'black')+
+  geom_spatraster(data = gam_pred_ndvi) +
+  theme_cowplot(font_size = 17)+  
+  scale_fill_viridis_c(na.value = 'transparent', limits = c(1,30), breaks = c(1, 5, 10, 15, 20, 25, 30), direction = 1) +
+  labs(fill = 'Fire frequency')+
+  #annotation_north_arrow(location = "br", which_north = T, height = unit(2, "cm"), width = unit(1.75, "cm"), pad_y = unit(0.1, "cm"), pad_x = unit(-0.3, 'cm'), style = north_arrow_fancy_orienteering) +
+  theme(legend.key.height = unit(2.5, 'cm'),
+        legend.key.width = unit(1, 'cm'),
+        legend.title = element_text(face = 'bold', size = 25),
+        legend.text = element_text(size = 20),
+        legend.position = "none")
+#1686 x 1100
+
+
+glm_pred_ndvi <- round(glm_pred_ndvi)
+glm_pred_ndvi <- ifel(glm_pred_ndvi$lyr1 >30, 30, glm_pred_ndvi$lyr1)
+glm_pred_ndvi <- ifel(glm_pred_ndvi$lyr1 == 0, NA, glm_pred_ndvi$lyr1)
+GLM_ndvi <- ggplot() +
+  geom_spatvector(data = SEQ_land, fill = 'transparent', col = 'black')+
+  geom_spatraster(data = glm_pred_ndvi) +
+  theme_cowplot(font_size = 17)+  
+  scale_fill_viridis_c(na.value = 'transparent', limits = c(1,30), breaks = c(1, 5, 10, 15, 20, 25, 30), direction = 1) +
+  labs(fill = 'Fire frequency')+
+  annotation_scale(location = "bl", style = 'ticks', pad_y = unit(0.5, 'cm'), pad_x = unit(15, 'cm'), text_cex = 2)+
+  annotation_north_arrow(location = "bl", which_north = T, height = unit(2, "cm"), width = unit(1.75, "cm"), pad_y = unit(0.1, "cm"), pad_x = unit(25, 'cm'), style = north_arrow_fancy_orienteering) +
+  theme(legend.key.height = unit(2.5, 'cm'),
+        legend.key.width = unit(1.75, 'cm'),
+        legend.title = element_text(face = 'bold', size = 25),
+        legend.text = element_text(size = 20),
+        legend.position = "none")
+
+
+# Produce plot with all maps
+r_map_p_ndvi <- plot_grid(downweighted_ndvi + theme(legend.position = "none"), unweighted_ndvi + theme(legend.position = "none"), IWLR_ndvi + theme(legend.position = "none"), nrow = 1, rel_widths = c(0.2,0.2,0.2))
+# 1650 x 1075
+
+
+
+# 4.2 Prepare data for histogram plots ----
 QPWS_pres <- extract(QPWS_ff, QPWS_rand)
 QPWS_pres[is.na(QPWS_pres)] <- 0
 summary(QPWS_pres)
@@ -233,41 +385,75 @@ colnames(Sent_pres) <- c('ID', 'lyr1')
 Sent_pres$Dataset <- 'Sentinel'
 head(Sent_pres)
 
+# 4.2.1 FPC data ----
+uwt_fpc_pres <- extract(unweighted_pred_fpc, QPWS_rand)
+uwt_fpc_pres <- as.data.frame(uwt_fpc_pres)
+uwt_fpc_pres$ID <- 1:10000
+colnames(uwt_fpc_pres) <- c('ID', 'lyr1')
+head(uwt_fpc_pres)
 
-uwt_pres <- extract(unweighted_pred, QPWS_rand)
-uwt_pres <- as.data.frame(uwt_pres)
-uwt_pres$ID <- 1:10000
-colnames(uwt_pres) <- c('ID', 'lyr1')
+dwt_fpc_pres <- extract(down_wt_pred_fpc, QPWS_rand)
+dwt_fpc_pres <- as.data.frame(dwt_fpc_pres)
+dwt_fpc_pres$ID <- 1:10000
+colnames(dwt_fpc_pres) <- c('ID', 'lyr1')
+head(dwt_fpc_pres)
 
-dwt_pres <- extract(down_wt_pred, QPWS_rand)
-dwt_pres <- as.data.frame(dwt_pres)
-dwt_pres$ID <- 1:10000
-colnames(dwt_pres) <- c('ID', 'lyr1')
-head(dwt_pres)
+IWLR_fpc_pres <- extract(IWLR_pred_fpc, QPWS_rand)
+IWLR_fpc_pres <- as.data.frame(IWLR_fpc_pres)
+IWLR_fpc_pres$ID <- 1:10000
+colnames(IWLR_fpc_pres) <- c('ID', 'lyr1')
+head(IWLR_fpc_pres)
 
-IWLR_pres <- extract(IWLR_pred, QPWS_rand)
-IWLR_pres <- as.data.frame(IWLR_pres)
-IWLR_pres$ID <- 1:10000
-colnames(IWLR_pres) <- c('ID', 'lyr1')
-head(IWLR_pres)
-
-gam_pres <- extract(gam_pred, QPWS_rand)
-gam_pres <- as.data.frame(gam_pres)
-gam_pres$ID <- 1:10000
-colnames(gam_pres) <- c('ID', 'lyr1')
-head(gam_pres)
-gam_pres[is.na(gam_pres)] <- 0
-
-
-glm_pres <- extract(glm_pred, QPWS_rand)
-glm_pres <- as.data.frame(glm_pres)
-glm_pres$ID <- 1:10000
-colnames(glm_pres) <- c('ID', 'lyr1')
-head(glm_pres)
-glm_pres[is.na(glm_pres)] <- 0
+gam_fpc_pres <- extract(gam_pred_fpc, QPWS_rand)
+gam_fpc_pres <- as.data.frame(gam_fpc_pres)
+gam_fpc_pres$ID <- 1:10000
+colnames(gam_fpc_pres) <- c('ID', 'lyr1')
+head(gam_fpc_pres)
+gam_fpc_pres[is.na(gam_fpc_pres)] <- 0
 
 
+glm_fpc_pres <- extract(glm_pred_fpc, QPWS_rand)
+glm_fpc_pres <- as.data.frame(glm_fpc_pres)
+glm_fpc_pres$ID <- 1:10000
+colnames(glm_fpc_pres) <- c('ID', 'lyr1')
+head(glm_fpc_pres)
+glm_fpc_pres[is.na(glm_fpc_pres)] <- 0
 
+
+
+# 4.2.2 NDVI data ----
+uwt_ndvi_pres <- extract(unweighted_pred_ndvi, QPWS_rand)
+uwt_ndvi_pres <- as.data.frame(uwt_ndvi_pres)
+uwt_ndvi_pres$ID <- 1:10000
+colnames(uwt_ndvi_pres) <- c('ID', 'lyr1')
+head(uwt_ndvi_pres)
+
+dwt_ndvi_pres <- extract(down_wt_pred_ndvi, QPWS_rand)
+dwt_ndvi_pres <- as.data.frame(dwt_ndvi_pres)
+dwt_ndvi_pres$ID <- 1:10000
+colnames(dwt_ndvi_pres) <- c('ID', 'lyr1')
+head(dwt_ndvi_pres)
+
+IWLR_ndvi_pres <- extract(IWLR_pred_ndvi, QPWS_rand)
+IWLR_ndvi_pres <- as.data.frame(IWLR_ndvi_pres)
+IWLR_ndvi_pres$ID <- 1:10000
+colnames(IWLR_ndvi_pres) <- c('ID', 'lyr1')
+head(IWLR_ndvi_pres)
+
+gam_ndvi_pres <- extract(gam_pred_ndvi, QPWS_rand)
+gam_ndvi_pres <- as.data.frame(gam_ndvi_pres)
+gam_ndvi_pres$ID <- 1:10000
+colnames(gam_ndvi_pres) <- c('ID', 'lyr1')
+head(gam_ndvi_pres)
+gam_ndvi_pres[is.na(gam_ndvi_pres)] <- 0
+
+
+glm_ndvi_pres <- extract(glm_pred_ndvi, QPWS_rand)
+glm_ndvi_pres <- as.data.frame(glm_ndvi_pres)
+glm_ndvi_pres$ID <- 1:10000
+colnames(glm_ndvi_pres) <- c('ID', 'lyr1')
+head(glm_ndvi_pres)
+glm_ndvi_pres[is.na(glm_ndvi_pres)] <- 0
 
 
 # 4.3 Produce histograms ----
@@ -296,42 +482,64 @@ col2rgb(iwlr_c, alpha = F)
 
 
 # 4.3.2 Produce histogram for each plot separately
-# Main plots 
 gb_p <- hist(round(QPWS_pres$lyr1), breaks = seq(-1,16,1))
-gl_p <- hist(round(glm_pres$lyr1), breaks = seq(-1,16,1))
 s_p <- hist(round(Sent_pres$lyr1), breaks = seq(-1,16,1))
-ga_p <- hist(round(gam_pres$lyr1),  breaks = seq(-1,16,1))
 
-
+# 4.3.2.1 FPC models
+# Main plots 
+gl_p_fpc <- hist(round(glm_fpc_pres$lyr1), breaks = seq(-1,16,1))
+ga_p_fpc <- hist(round(gam_fpc_pres$lyr1),  breaks = seq(-1,16,1))
 
 # Subplots
-dwt_p <- hist(round(dwt_pres$lyr1),  breaks = seq(-1,16,1))
-uwt_p <- hist(round(uwt_pres$lyr1),  breaks = seq(-1,16,1))
-iwlr_p <- hist(round(IWLR_pres$lyr1),  breaks = seq(-1,16,1))
+dwt_p_fpc <- hist(round(dwt_fpc_pres$lyr1[dwt_fpc_pres$lyr1 >=0 & dwt_fpc_pres$lyr1 <17]),  breaks = seq(-1,16,1))
+uwt_p_fpc <- hist(round(uwt_fpc_pres$lyr1[uwt_fpc_pres$lyr1 >=0 & uwt_fpc_pres$lyr1 < 17]),  breaks = seq(-1,16,1))
+iwlr_p_fpc <- hist(round(IWLR_fpc_pres$lyr1),  breaks = seq(-1,16,1))
+
+# 4.3.2.1 NDVI models
+# Main plots 
+gl_p_ndvi <- hist(round(glm_ndvi_pres$lyr1), breaks = seq(-1,16,1))
+ga_p_ndvi <- hist(round(gam_ndvi_pres$lyr1),  breaks = seq(-1,16,1))
+
+# Subplots
+dwt_p_ndvi <- hist(round(dwt_ndvi_pres$lyr1[dwt_ndvi_pres$lyr1 >=0 & dwt_ndvi_pres$lyr1 <17]),  breaks = seq(-1,16,1))
+uwt_p_ndvi <- hist(round(uwt_ndvi_pres$lyr1[uwt_ndvi_pres$lyr1 >=0 & uwt_ndvi_pres$lyr1 < 17]),  breaks = seq(-1,16,1))
+iwlr_p_ndvi <- hist(round(IWLR_ndvi_pres$lyr1),  breaks = seq(-1,16,1))
 
 
 
 
-
-# 4.3.3 Create the subplots with the recuded y axis
-# Main plots
+# 4.3.3 Create the subplots with the reduced y axis
 gb_ps <- hist(round(QPWS_pres$lyr1), ylim = c(0,100), breaks = seq(-1,16,1))
-gl_ps <- hist(round(glm_pres$lyr1), ylim = c(0,100), breaks = seq(-1,16,1))
 s_ps <- hist(round(Sent_pres$lyr1), ylim = c(0,100), breaks = seq(-1,16,1))
-ga_ps <- hist(round(gam_pres$lyr1), ylim = c(0,100), breaks = seq(-1,16,1))
+
+# 4.3.3.1 FPC models 
+# Main plots
+gl_ps_fpc <- hist(round(glm_fpc_pres$lyr1), ylim = c(0,100), breaks = seq(-1,16,1))
+ga_ps_fpc <- hist(round(gam_fpc_pres$lyr1), ylim = c(0,100), breaks = seq(-1,16,1))
 
 # Subplots
-dwt_ps <- hist(round(dwt_pres$lyr1), ylim = c(0,100), breaks = seq(-1,16,1))
-uwt_ps <- hist(round(uwt_pres$lyr1), ylim = c(0,100), breaks = seq(-1,16,1))
-iwlr_ps <- hist(round(IWLR_pres$lyr1), ylim = c(0,100), breaks = seq(-1,16,1))
+dwt_ps_fpc <- hist(round(dwt_fpc_pres$lyr1[dwt_fpc_pres$lyr1 >=0 & dwt_fpc_pres$lyr1 <17]), ylim = c(0,100), breaks = seq(-1,16,1))
+uwt_ps_fpc <- hist(round(uwt_fpc_pres$lyr1[uwt_fpc_pres$lyr1 >=0 & uwt_fpc_pres$lyr1 < 17]), ylim = c(0,100), breaks = seq(-1,16,1))
+iwlr_ps_fpc <- hist(round(IWLR_fpc_pres$lyr1), ylim = c(0,100), breaks = seq(-1,16,1))
 
 
 
+# 4.3.3.1 NDVI models 
+# Main plots
+gl_ps_ndvi <- hist(round(glm_ndvi_pres$lyr1), ylim = c(0,100), breaks = seq(-1,16,1))
+ga_ps_ndvi <- hist(round(gam_ndvi_pres$lyr1), ylim = c(0,100), breaks = seq(-1,16,1))
+
+# Subplots
+dwt_ps_ndvi <- hist(round(dwt_ndvi_pres$lyr1[dwt_ndvi_pres$lyr1 >=0 & dwt_ndvi_pres$lyr1 <17]), ylim = c(0,100), breaks = seq(-1,16,1))
+uwt_ps_ndvi <- hist(round(uwt_ndvi_pres$lyr1[uwt_ndvi_pres$lyr1 >=0 & uwt_ndvi_pres$lyr1 < 17]), ylim = c(0,100), breaks = seq(-1,16,1))
+iwlr_ps_ndvi <- hist(round(IWLR_ndvi_pres$lyr1), ylim = c(0,100), breaks = seq(-1,16,1))
 
 
-# 4.3.4 Combine histograms for each fire data grouping
-dev.new(width = 60, height = 40, res = 300, dpi = 80, noRStudioGD = T)
-par(mfrow = c(3, 2), mar = c(4,7,4,2), oma = c(1,3,1,16), mgp = c(1, 1.5, 0)) # Check if this helps with the axis labels compared to the tick marks, may need to fiddle with the line for labels further as well
+
+# 4.3.4 Combine histograms for each fire data grouping ----
+# 4.3.4.1 FPC models
+dev.new(width = 15, height = 10, res = 300, dpi = 80, noRStudioGD = T)
+par(mfrow = c(3, 2), mar = c(4,7,4,2), oma = c(1,3,1,22), mgp = c(1, 1.5, 0)) # Check if this helps with the axis labels compared to the tick marks, may need to fiddle with the line for labels further as well
 # Observed data
 plot(gb_p, col = rgb(204/255, 204/255,204/255, 1), 
      ylab = "",  las = 1, ylim = c(0,7000), yaxt = "n",
@@ -345,10 +553,10 @@ plot(s_p, col = rgb(70/255, 130/255, 180/255, 0.4),  ylim = c(0,7000),
 axis(side = 1, at = seq(-1,16,1), cex.axis = 2.1, line = -0.4)
 axis(side = 1, at = c(10,12,14,16), cex.axis = 2.1, line = -0.4)
 axis(side = 2, at = seq(0, 7000, 1000), cex.axis = 2.1, line = 0.3, las = 1)
-mtext(expression(bold("Count of cells")), side = 2, cex = 2, line = 6.5)
-mtext(expression(bold("Fire frequency")), side = 1, line = 4, cex = 2)
-mtext(expression(bold("(a) Observed")), side = 3, line = 0.7, at = 16, cex = 3.4)
-mtext(expression(paste("Pearson's ", italic("r"), " = 0.252")), line = -2, at = 12, cex = 2)
+mtext(expression(bold("Count of cells")), side = 2, cex = 1.7, line = 6.5)
+mtext(expression(bold("Fire frequency")), side = 1, line = 4, cex = 1.7)
+mtext(expression(bold("(a) Observed")), side = 3, line = 0.7, at = 19, cex = 2.5)
+mtext(expression(paste("Pearson's ", italic("r"), " = 0.331")), line = -2.5, at = 11, cex = 2)
 
 
 plot(gb_ps, col = rgb(204/255, 204/255, 204/255, 1), 
@@ -364,22 +572,16 @@ axis(side = 1, at = seq(-1,16,1), cex.axis = 2.1, line = -0.3)
 axis(side = 1, at = c(10,12,14,16), cex.axis = 2.1, line = -0.3)
 axis(side = 2, at = seq(0, 100, 20), cex.axis = 2.1, line = 0.4, las = 1 )
 axis(side = 2, at = seq(0, 100, 10), labels = F, line = 0.4)
-mtext(expression(bold("Fire frequency")), side = 1, line = 4, cex = 2)
+mtext(expression(bold("Fire frequency")), side = 1, line = 4, cex = 1.7)
 
 #mtext(expression(bold("Density")), side = 2, cex = 2.2, line = 3)
-
-par(xpd = NA)
-legend('topright', inset = c(-0.35, -0.25), fill = c('gray80', 'steelblue', "#492050", '#AAA970', '#2A6D7A','#579C97','#8FCCB4'), legend = c("Public land", "Satellite", "GLM", "GAM", "Down-weigthed BRT", "Unweighted BRT", "Infinite BRT"), cex = 2.5, bty = 'n', border = 'transparent')
-par(xpd = F)
-
-
 
 # GLM data
 plot(gb_p, col = rgb(204/255, 204/255, 204/255, 1), 
      ylab = "",  las = 1, ylim = c(0,7000), yaxt = "n",
      xlab = "", xlim = c(0,16),  xaxt = "n",
      border = 'white',bty= 'l', main = "", cex.axis = 2.4, cex.lab = 2.8)
-plot(gl_p, col = rgb(73/255, 32/255, 80/255, 0.5),
+plot(gl_p_fpc, col = rgb(73/255, 32/255, 80/255, 0.5),
      ylab = "",  las = 1, ylim = c(0,7000), yaxt = "n",
      xlab = "", xlim = c(0,16),  xaxt = "n",
      border = 'white', main = "", cex.axis = 2.4, cex.lab = 2.8,
@@ -387,16 +589,16 @@ plot(gl_p, col = rgb(73/255, 32/255, 80/255, 0.5),
 axis(side = 1, at = seq(-1,16,1), cex.axis = 2.1, line = -0.4)
 axis(side = 1, at = c(10,12,14,16), cex.axis = 2.1, line = -0.4)
 axis(side = 2, at = seq(0, 7000, 1000), cex.axis = 2.1, line = 0.3, las = 1)
-mtext(expression(bold("Count of cells")), side = 2, cex = 2, line = 6.5)
-mtext(expression(bold("Fire frequency")), side = 1, line = 4, cex = 2)
-mtext(expression(bold("(b) GLM")), side = 3, line = 0.1, at = 16, cex = 3.4)
-mtext(expression(paste("Pearson's ", italic("r"), " = 0.638")), line = -2.5, at = 12, cex = 2)
+mtext(expression(bold("Count of cells")), side = 2, cex = 1.7, line = 6.5)
+mtext(expression(bold("Fire frequency")), side = 1, line = 4, cex = 1.7)
+mtext(expression(bold("(b) GLM")), side = 3, line = 0.1, at = 19, cex = 2.5)
+mtext(expression(paste("Pearson's ", italic("r"), " = 0.577")), line = -2.5, at = 11, cex = 2)
 
 plot(gb_ps, col = rgb(204/255, 204/255, 204/255, 1),
      ylab = "", las = 1,  ylim = c(0,100), yaxt = "n",
      xlab = "", xlim = c(0,16), xaxt = "n",
      border = 'white', main = "", cex.axis = 2.4, cex.lab = 2.8)
-plot(gl_ps, col = rgb(73/255, 32/255, 80/255, 0.5),
+plot(gl_ps_fpc, col = rgb(73/255, 32/255, 80/255, 0.5),
      ylab = "", las = 1,  ylim = c(0,100), yaxt = "n",
      xlab = "", xlim = c(0,16), xaxt = "n",
      border = 'white', main = "", cex.lab = 2.8, 
@@ -405,7 +607,7 @@ axis(side = 1, at = seq(-1,16,1), cex.axis = 2.1, line = -0.3)
 axis(side = 1, at = c(10,12,14,16), cex.axis = 2.1, line = -0.3)
 axis(side = 2, at = seq(0, 100, 20), cex.axis = 2.1, line = 0.4, las = 1)
 axis(side = 2, at = seq(0, 100, 10), labels = F, line = 0.4)
-mtext(expression(bold("Fire frequency")), side = 1, line = 4, cex = 2)
+mtext(expression(bold("Fire frequency")), side = 1, line = 4, cex = 1.7)
 
 
 # GAM
@@ -413,7 +615,7 @@ plot(gb_p, col = rgb(204/255, 204/255, 204/255, 1),
      ylab = "",  las = 1, ylim = c(0,7000), yaxt = "n",
      xlab = "", xlim = c(0,16),  xaxt = "n",
      border = 'white',bty= 'l', main = "", cex.axis = 2.4, cex.lab = 2.8)
-plot(ga_p, col = rgb(170/255, 179/255, 112/255, 0.5),
+plot(ga_p_fpc, col = rgb(170/255, 179/255, 112/255, 0.5),
      ylab = "",  las = 1, ylim = c(0,7000), yaxt = "n",
      xlab = "", xlim = c(0,16),  xaxt = "n",
      border = 'white', main = "", cex.axis = 2.4, cex.lab = 2.8,
@@ -421,16 +623,16 @@ plot(ga_p, col = rgb(170/255, 179/255, 112/255, 0.5),
 axis(side = 1, at = seq(-1,16,1), cex.axis = 2.1, line = -0.4)
 axis(side = 1, at = c(10,12,14,16), cex.axis = 2.1, line = -0.4)
 axis(side = 2, at = seq(0, 7000, 1000), cex.axis = 2.1, line = 0.3, las = 1)
-mtext(expression(bold("Count of cells")), side = 2, cex = 2, line = 6.5)
-mtext(expression(bold("Fire frequency")), side = 1, line = 4, cex = 2)
-mtext(expression(bold("(c) GAM")), side = 3, line = 0.1, at = 16, cex = 3.4)
-mtext(expression(paste("Pearson's ", italic("r"), " = 0.503")), line = -2.5, at = 12, cex = 2)
+mtext(expression(bold("Count of cells")), side = 2, cex = 1.7, line = 6.5)
+mtext(expression(bold("Fire frequency")), side = 1, line = 4, cex = 1.7)
+mtext(expression(bold("(c) GAM")), side = 3, line = 0.1, at = 19, cex = 2.5)
+mtext(expression(paste("Pearson's ", italic("r"), " = 0.526")), line = -2.5, at = 11, cex = 2)
 
 plot(gb_ps, col = rgb(204/255, 204/255, 204/255, 1),
      ylab = "", las = 1,  ylim = c(0,100), yaxt = "n",
      xlab = "", xlim = c(0,16), xaxt = "n",
      border = 'white', main = "", cex.axis = 2.4, cex.lab = 2.8)
-plot(ga_ps, col = rgb(170/255, 179/255, 112/255, 0.5),
+plot(ga_ps_fpc, col = rgb(170/255, 179/255, 112/255, 0.5),
      ylab = "", las = 1,  ylim = c(0,100), yaxt = "n",
      xlab = "", xlim = c(0,16), xaxt = "n",
      border = 'white', main = "", cex.lab = 2.8, 
@@ -439,7 +641,21 @@ axis(side = 1, at = seq(-1,16,1), cex.axis = 2.1, line = -0.3)
 axis(side = 1, at = c(10,12,14,16), cex.axis = 2.1, line = -0.3)
 axis(side = 2, at = seq(0, 100, 20), cex.axis = 2.1, line = 0.4, las = 1)
 axis(side = 2, at = seq(0, 100, 10), labels = F, line = 0.4)
-mtext(expression(bold("Fire frequency")), side = 1, line = 4, cex = 2)
+mtext(expression(bold("Fire frequency")), side = 1, line = 4, cex = 1.7)
+
+par(xpd = NA)  # Allow drawing outside the plot region
+legend(x = 15.3, y = 455, 
+       legend = c("Public land", "Satellite", "GLM", "GAM", "Down-weighted BRT", "Unweighted BRT", "Infinite BRT"),
+       fill = c(rgb(204/255, 204/255, 204/255, 1),
+                rgb(70/255, 130/255, 180/255, 0.5),
+                rgb(73/255, 32/255, 80/255, 0.5),
+                rgb(170/255, 179/255, 112/255, 0.5),
+                rgb(42/255, 109/255, 122/255, 0.5),
+                rgb(87/255, 156/255, 151/255, 0.5),
+                rgb(143/255, 204/255, 180/255, 0.5)),
+       border = "white",
+       bty = "n",
+       cex = 2.5)
 
 
 
@@ -447,7 +663,7 @@ mtext(expression(bold("Fire frequency")), side = 1, line = 4, cex = 2)
 
 ### Subplots
 dev.new(width = 20, height = 8, res = 300, dpi = 80, noRStudioGD = T)
-par(mfrow = c(2, 4), mar = c(6,4,4,2), oma = c(1,3,0,0), mgp = c(1,1.5,0))
+par(mfrow = c(2, 4), mar = c(6,4,4,2), oma = c(1,3,1,0), mgp = c(1,1.5,0))
 
 
 # DWT
@@ -455,25 +671,25 @@ plot(gb_p, col = rgb(204/255, 204/255, 204/255, 1),
      ylab = "",  las = 1, ylim = c(0,7000), yaxt = "n",
      xlab = "", xlim = c(-1,16),  xaxt = "n",
      border = 'white',bty= 'l', main = "", cex.axis = 2.4, cex.lab = 2.8)
-plot(dwt_p, col = rgb(42/255, 109/255, 122/255, 0.5), 
+plot(dwt_p_fpc, col = rgb(42/255, 109/255, 122/255, 0.5), 
      ylab = "",  las = 1, ylim = c(0,7000), yaxt = "n",
      xlab = "", xlim = c(-1,16),  xaxt = "n",
      border = 'white', main = "", cex.axis = 2.4, cex.lab = 2.8,
      add = T)
-axis(side = 1, at = c(0,5,10, 16), cex.axis = 2.1, line = -0.4, tick = F)
+axis(side = 1, at = c(0,5,10,16), cex.axis = 2.1, line = -0.4, tick = F)
 axis(side = 1, at = seq(0,16, 1), labels = F, line = -0.4)
 axis(side = 2, at = seq(0, 7000, 1000), cex.axis = 2.1, line = -0.8, las = 1)
 axis(side = 1, at = c(-1, 16), labels = F, line = -0.4, lwd.ticks = 0)
-mtext(expression(bold("Count of cells")), side = 2, cex = 2, line = 5)
-mtext(expression(bold("Fire frequency")), side = 1, line = 3.5, cex = 2)
-mtext(expression(bold("(d) Down-weighted BRT")), side = 3, line = 1, at = 16, cex = 2.4)
-mtext(expression(paste("Pearson's ", italic("r"), " = 0.329")), line = -2, at = 9, cex = 2)
+mtext(expression(bold("Count of cells")), side = 2, cex = 1.7, line = 5)
+mtext(expression(bold("Fire frequency")), side = 1, line = 3.5, cex = 1.7)
+mtext(expression(bold("(d) Down-weighted BRT")), side = 3, line = 1, at = 19, cex = 2.5)
+mtext(expression(paste("Pearson's ", italic("r"), " = 0.373")), line = -2.5, at = 9, cex = 2)
 
 plot(gb_ps, col = rgb(204/255, 204/255, 204/255, 1),
      ylab = "", las = 1,  ylim = c(0,100), yaxt = "n",
      xlab = "", xlim = c(-1,16), xaxt = "n",
      border = 'white', main = "", cex.axis = 2.4, cex.lab = 2.8)
-plot(dwt_ps, col = rgb(42/255, 109/255, 122/255, 0.5),
+plot(dwt_ps_fpc, col = rgb(42/255, 109/255, 122/255, 0.5),
      ylab = "", las = 1,  ylim = c(0,100), yaxt = "n",
      xlab = "", xlim = c(-1,16), xaxt = "n",
      border = 'white', main = "", cex.lab = 2.8, 
@@ -482,7 +698,7 @@ axis(side = 1, at = c(0,5,10,16), cex.axis = 2.1, line = -0.4, tick = F)
 axis(side = 1, at = seq(0,16, 1), labels = F, line = -0.4)
 axis(side = 1, at = c(-1, 16), labels = F, line = -0.4, lwd.ticks = 0)
 axis(side = 2, at = seq(0, 100, 20), cex.axis = 2.1, line = -0.8, las = 1)
-mtext(expression(bold("Fire frequency")), side = 1, line = 3.5, cex = 2)
+mtext(expression(bold("Fire frequency")), side = 1, line = 3.5, cex = 1.7)
 
 
 
@@ -491,7 +707,7 @@ plot(gb_p, col = rgb(204/255, 204/255, 204/255, 1),
      ylab = "",  las = 1, ylim = c(0,7000), yaxt = "n",
      xlab = "", xlim = c(-1,16),  xaxt = "n",
      border = 'white',bty= 'l', main = "", cex.axis = 2.4, cex.lab = 2.8)
-plot(uwt_p, col = rgb(87/255, 156/255, 151/255, 0.5),
+plot(uwt_p_fpc, col = rgb(87/255, 156/255, 151/255, 0.5),
      ylab = "",  las = 1, ylim = c(0,7000), yaxt = "n",
      xlab = "", xlim = c(-1,16),  xaxt = "n",
      border = 'white', main = "", cex.axis = 2.4, cex.lab = 2.8,
@@ -500,16 +716,16 @@ axis(side = 1, at = c(0,5,10,16), cex.axis = 2.1, line = -0.4, tick = F)
 axis(side = 1, at = seq(0,16, 1), labels = F, line = -0.4)
 axis(side = 2, at = seq(0, 7000, 1000), cex.axis = 2.1, line = -0.8, las = 1)
 axis(side = 1, at = c(-1, 16), labels = F, line = -0.4, lwd.ticks = 0)
-mtext(expression(bold("Count of cells")), side = 2, cex = 2, line = 5)
-mtext(expression(bold("Fire frequency")), side = 1, line = 3.5, cex = 2)
-mtext(expression(bold("(e) Unweighted BRT")), side = 3, line = 1, at = 16, cex = 2.4)
-mtext(expression(paste("Pearson's ", italic("r"), " = 0.332")), line = -2, at = 9, cex = 2)
+mtext(expression(bold("Count of cells")), side = 2, cex = 1.7, line = 5)
+mtext(expression(bold("Fire frequency")), side = 1, line = 3.5, cex = 1.7)
+mtext(expression(bold("(e) Unweighted BRT")), side = 3, line = 1, at = 19, cex = 2.4)
+mtext(expression(paste("Pearson's ", italic("r"), " = 0.377")), line = -2.5, at = 9, cex = 2)
 
 plot(gb_ps, col = rgb(204/255, 204/255, 204/255, 1),
      ylab = "", las = 1,  ylim = c(0,100), yaxt = "n",
      xlab = "", xlim = c(-1,16), xaxt = "n",
      border = 'white', main = "", cex.axis = 2.4, cex.lab = 2.8)
-plot(uwt_ps, col = rgb(87/255, 156/255, 151/255, 0.5),
+plot(uwt_ps_fpc, col = rgb(87/255, 156/255, 151/255, 0.5),
      ylab = "", las = 1,  ylim = c(0,100), yaxt = "n",
      xlab = "", xlim = c(-1,16), xaxt = "n",
      border = 'white', main = "", cex.lab = 2.8, 
@@ -518,7 +734,7 @@ axis(side = 1, at = c(0,5,10,16), cex.axis = 2.1, line = -0.4, tick = F)
 axis(side = 1, at = seq(0,16, 1), labels = F, line = -0.4)
 axis(side = 1, at = c(-1, 16), labels = F, line = -0.4, lwd.ticks = 0)
 axis(side = 2, at = seq(0, 100, 20), cex.axis = 2.1, line = -0.8, las = 1)
-mtext(expression(bold("Fire frequency")), side = 1, line = 3.5, cex = 2)
+mtext(expression(bold("Fire frequency")), side = 1, line = 3.5, cex = 1.7)
 
 
 
@@ -528,25 +744,25 @@ plot(gb_p, col = rgb(204/255, 204/255, 204/255, 1),
      ylab = "",  las = 1, ylim = c(0,7000), yaxt = "n",
      xlab = "", xlim = c(-1,16),  xaxt = "n",
      border = 'white',bty= 'l', main = "", cex.axis = 2.4, cex.lab = 2.8)
-plot(iwlr_p, col = rgb(143/255, 204/255, 180/255, 0.5),
+plot(iwlr_p_fpc, col = rgb(143/255, 204/255, 180/255, 0.5),
      ylab = "",  las = 1, ylim = c(0,7000), yaxt = "n",
      xlab = "", xlim = c(-1,16),  xaxt = "n",
      border = 'white', main = "", cex.axis = 2.4, cex.lab = 2.8,
      add = T)
-axis(side = 1, at = c(0,5,10,16), cex.axis = 2.1, line = -0.4, tick = F)
+axis(side = 1, at = c(0,5,16), cex.axis = 2.1, line = -0.4, tick = F)
 axis(side = 1, at = seq(0,16, 1), labels = F, line = -0.4)
 axis(side = 2, at = seq(0, 7000, 1000), cex.axis = 2.1, line = -0.8, las = 1)
 axis(side = 1, at = c(-1, 16), labels = F, line = -0.4, lwd.ticks = 0)
-mtext(expression(bold("Count of cells")), side = 2, cex = 2, line = 5)
-mtext(expression(bold("Fire frequency")), side = 1, line = 3.5, cex = 2)
-mtext(expression(bold("(f) Infinite BRT")), side = 3, line = 1, at = 17, cex = 2.4)
-mtext(expression(paste("Pearson's ", italic("r"), " = 0.004")), line = -2, at = 9, cex = 2)
+mtext(expression(bold("Count of cells")), side = 2, cex = 1.7, line = 5)
+mtext(expression(bold("Fire frequency")), side = 1, line = 3.5, cex = 1.7)
+mtext(expression(bold("(f) Infinite BRT")), side = 3, line = 1, at = 19, cex = 2.5)
+mtext(expression(paste("Pearson's ", italic("r"), " = 0.040")), line = -2.5, at = 9, cex = 2)
 
 plot(gb_ps, col = rgb(204/255, 204/255, 204/255, 1),
      ylab = "", las = 1,  ylim = c(0,100), yaxt = "n",
      xlab = "", xlim = c(-1,16), xaxt = "n",
      border = 'white', main = "", cex.axis = 2.4, cex.lab = 2.8)
-plot(iwlr_ps, col = rgb(143/255, 204/255, 180/255, 0.5),
+plot(iwlr_ps_fpc, col = rgb(143/255, 204/255, 180/255, 0.5),
      ylab = "", las = 1,  ylim = c(0,100), yaxt = "n",
      xlab = "", xlim = c(-1,16), xaxt = "n",
      border = 'white', main = "", cex.lab = 2.8, 
@@ -555,11 +771,15 @@ axis(side = 1, at = c(0,5,10,16), cex.axis = 2.1, line = -0.4, tick = F)
 axis(side = 1, at = seq(0,16, 1), labels = F, line = -0.4)
 axis(side = 1, at = c(-1, 16), labels = F, line = -0.4, lwd.ticks = 0)
 axis(side = 2, at = seq(0, 100, 20), cex.axis = 2.1, line = -0.8, las = 1)
-mtext(expression(bold("Fire frequency")), side = 1, line = 3.5, cex = 2)
+mtext(expression(bold("Fire frequency")), side = 1, line = 3.5, cex = 1.7)
 
 save.image('./02_Workspaces/005_predictive_model_validations.RData')
 #load('./02_Workspaces/005_predictive_model_validations.RData')
 
+
+
+
+# NOW NDVI models
 
 
 ## Lets also look for 18
