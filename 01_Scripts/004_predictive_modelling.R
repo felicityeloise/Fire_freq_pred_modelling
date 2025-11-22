@@ -1003,14 +1003,15 @@ par(mfrow = c(3,4)); plot(fpc_gam)
 plot.gam(fpc_gam, residuals = T)
 summary(fpc_gam)
 
-# FAILING TO GET REL INF FOR GAM
-fpc_gam_inf <- gam.hp(fpc_gam)
+fpc_gam_inf <- gam.hp(fpc_gam, type = 'dev') # Returns an NaN result so will have to calculate contributions and deviance by hand
+unique_contribs_fpc <- fpc_gam_inf$hierarchical.partitioning[, "Unique"] # Extract the unique contributions of each variable
+relative_importance_fpc <- (unique_contribs_fpc / sum(unique_contribs_fpc)) * 100 # Calculate relative importance from unique contributions
+fpc_gam_rel_inf <- data.frame(Variable = names(unique_contribs_fpc),
+                              I.perc = relative_importance_fpc)
+fpc_gam_rel_inf <- fpc_gam_rel_inf[order(-fpc_gam_rel_inf$I.perc),] # Reorder table
+print(fpc_gam_rel_inf)
 
-fpc_gam_rel_inf<- as.data.frame(fpc_gam_inf[,4])
-colnames(fpc_gam_rel_inf) <-  "I.perc"
-fpc_gam_rel_inf$Variable <- as.factor(rownames(fpc_gam_inf))
-fpc_gam_rel_inf
-str(fpc_gam_rel_inf)
+
 
 
 
@@ -1045,13 +1046,13 @@ par(mfrow = c(3,4)); plot.gam(ndvi_gam, residuals = T)
 summary(ndvi_gam)
 
 
-ndvi_gam_inf <- gam.hp(ndvi_gam)[[2]]
-ndvi_gam_rel_inf <- as.data.frame(ndvi_gam_inf[,4])
-colnames(ndvi_gam_rel_inf) <-  "I.perc"
-ndvi_gam_rel_inf$Variable <- as.factor(rownames(ndvi_gam_inf))
-ndvi_gam_rel_inf
-str(ndvi_gam_rel_inf)
-
+ndvi_gam_inf <- gam.hp(ndvi_gam, type = 'dev') # Returns an NaN result so will have to calculate contributions and deviance by hand
+unique_contribs_ndvi <- ndvi_gam_inf$hierarchical.partitioning[, "Unique"] # Extract the unique contributions of each variable
+relative_importance_ndvi <- (unique_contribs_ndvi / sum(unique_contribs_ndvi)) * 100 # Calculate relative importance from unique contributions
+ndvi_gam_rel_inf <- data.frame(Variable = names(unique_contribs_ndvi),
+                               I.perc = relative_importance_ndvi)
+ndvi_gam_rel_inf <- ndvi_gam_rel_inf[order(-ndvi_gam_rel_inf$I.perc),] # Reorder table
+print(ndvi_gam_rel_inf)
 
 
 # 10.2 GLM models
