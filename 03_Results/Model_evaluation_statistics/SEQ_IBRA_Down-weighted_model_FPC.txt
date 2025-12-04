@@ -1,0 +1,38 @@
+Down-weighted model for predicting fire frequency in South east Queensland using a Boosted regression tree. The following information provides details on model parameters and evaluation metrics.
+Predictors = QPWS_ff
+Predictors = TWI
+Predictors = Tempseason
+Predictors = Precipseason
+Predictors = FPC
+Predictors = Soil_clay
+Predictors = Slope
+Predictors = Aspect
+Predictors = TPI
+Predictors = Elevation
+Predictors = BVG
+Response = Sentinel_ff
+Family = poisson
+Tree complexity = 8
+Learning rate = 0.1
+CV folds = 10
+Best number of trees = 3950
+Time taken =  minutes
+Mean total deviance = 2.46
+Mean residual deviance = 0.787
+Estimated cv deviance = 1.148 and standard error = 0.008
+training data correlation = 0.881
+CV correlation = 0.748 and standard error = 0.002
+The following model evaluation measures were calculated using precrec::evalmod(), by including mode = 'basic' this returns further measures beyond AUC ROC and precision-recall curves.
+Area Under the Reciever Operating Characteristic Curve (AUC ROC)  =  0.776
+Precision-Recall curve (PRC) =  0.788
+Basic performance evaluation measures averages
+Classification error rate = 0.363
+Accuracy =  0.637
+Precision =  0.743
+Specificity (TNR) =  0.651
+Sensitivity (TPR) =  0.625
+F-score, a balanced measure of model performance based on precision and recall =  0.608
+Matthews correlation coefficient =  0.323
+Mean squared error = 3.492
+R-squared = -1.052
+Deviance of observed and predicted values = 1.746

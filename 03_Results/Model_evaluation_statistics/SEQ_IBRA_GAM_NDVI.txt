@@ -1,0 +1,19 @@
+Generalised additve model for predicting fire frequency in South east Queensland. The following information provides details on model parameters and evluation metrics.
+Model = bam
+Model = Sentinel_ff ~ te(QPWS_ff, bs = "tp", k = 8) + te(TWI, k = 4, bs = "tp") + te(Tempseason, bs = "cc", k = 6) + te(Precipseason, bs = "cc", k = 6) + te(NDVI) + te(Soil_clay, bs = "tp") + te(Slope, bs = "tp", k = 8) + te(Aspect, bs = "tp", k = 8) + te(TPI, bs = "tp") + te(Elevation, bs = "tp", k = 8) + te(BVG, bs = "re")
+Model = poisson
+Model = Pres_back[trainSet, ]
+Model = ifelse(Pres_back[trainSet, 14] == 1, 1, prNum/bgNum)
+The following model evaluation measures were calculated using precrec::evalmod(), by including mode = 'basic' this returns further measures beyond AUC ROC and precision-recall curves.
+Area Under the Reciever Operating Characteristic Curve (AUC ROC)  =  0.698
+Precision-Recall curve (PRC) =  0.711
+Classification error rate =  0.402
+Accuracy =  0.598
+Precision =  0.688
+Specificity (TNR) =  0.609
+Sensitivity (TPR) =  0.59
+F-score, a balanced measure of model performance based on precision and recall =  0.569
+Matthews correlation coefficient =  0.228
+Mean squared error = 2.618
+R-squared = -0.683
+Deviance of observed and predicted values = 2.16
