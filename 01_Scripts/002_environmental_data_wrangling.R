@@ -533,7 +533,6 @@ writeRaster(TPI, "./00_Data/Environmental_data/Outputs/DEM/TPI_SEQ_IBRA.tif")
 # Go to https://portal.tern.org.au/ and sign-in then generate API key by clicking on your Profile > TERN ACCOUNT > Create API key on side menu > API key name = 'Soils_access' > Request API Key
 # Also, have to use the httr package to read the file. 
 
-# API KEY RUk1SGQ5Q2tWYno2NXR4bC49fn1LfFpXcV9BR0orDSFxS0EtY3hxXFcsQFhvSDpLO21GQTFHfTFTbnBAMTpTRFMrSHhAKitYR1p1VHJ7PHJA
 
 my_api_key <- "paste API key here"
 get_slga_clay <- function(depth_code, aoi, api_key) {

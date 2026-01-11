@@ -789,7 +789,7 @@ Y2017 <- rast("/vsicurl/https://data.tern.org.au//rs/public/data/sentinel2/fire_
   ), ncol = 2, byrow = T)) %>% 
   subst(NA,0)
 
-Y2018 <- rast("./vsicurl/https://data.tern.org.au//rs/public/data/sentinel2/fire_scars/annual_fire_scars/cvmsre_qld_2018_afma2.tif") %>% 
+Y2018 <- rast("/vsicurl/https://data.tern.org.au//rs/public/data/sentinel2/fire_scars/annual_fire_scars/cvmsre_qld_2018_afma2.tif") %>% 
   crop(SEQ) %>% 
   classify(matrix(c(
     0,0,
