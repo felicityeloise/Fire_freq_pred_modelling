@@ -551,7 +551,7 @@ get_slga_clay <- function(depth_code, aoi, api_key) {
   # Load, crop, and save
   r <- rast(temp_file)
   r[r < -100] <- NA # NA values stored as -9999
-  project('EPSG:3577') %>% 
+  project(r, 'EPSG:3577') %>% 
     crop(aoi)
   assign(paste0("soil_clay_", depth_code), r, envir = .GlobalEnv)
 }
