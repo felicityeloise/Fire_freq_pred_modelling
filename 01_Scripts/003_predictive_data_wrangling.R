@@ -325,7 +325,7 @@ bg_rand2$ID <- 1:nrow(bg_rand2)
 bg_rand2$x <- crds(bg_rand2)[,1]
 bg_rand2$y <- crds(bg_rand2)[,2]
 head(bg_rand2)
-bg_rand2 <- bg_rand2[, 38:40]
+bg_rand2 <- bg_rand2[, 3:4]
 head(bg_rand2)
 bg_rand2
 
