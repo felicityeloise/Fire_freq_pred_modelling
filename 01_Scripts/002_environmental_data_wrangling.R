@@ -169,8 +169,8 @@ rm(list = setdiff(ls(), c("SEQ", "template", 'years'))); gc()
 years <- 1987:2023
 for (i in years ){
   
-  tmin_file <- get(paste0('min_temp_', i)) # Get the raster for minimum temperature raster for year i 
-  tmax_file <- get(paste0('min_temp_', i)) # Get the raster for maximum temperature raster for year i
+  tmin_file <- file.path(paste0('./00_Data/Environmental_data/SILO_Min_temp/',i,".min_temp.nc")) # Get the raster file for minimum temperature raster for year i 
+  tmax_file <- file.path(paste0('./00_Data/Environmental_data/SILO_Max_temp/',i,".max_temp.nc")) # Get the raster file for maximum temperature raster for year i
   
   # Load rasters
   tmin <- rast(tmin_file)
