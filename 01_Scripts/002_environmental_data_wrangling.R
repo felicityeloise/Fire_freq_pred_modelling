@@ -1,6 +1,6 @@
 # Written by Felicity Charles
 # Date:1/08/2023
-# Update: 30/07/2025
+# Update: 25/05/2026
 
 ##### Fire frequency analysis ----
 # This script gathers together environmental data needed for predicting  fire frequency
@@ -170,7 +170,7 @@ years <- 1987:2023
 for (i in years ){
   
   tmin_file <- file.path(paste0('./00_Data/Environmental_data/SILO_Min_temp/',i,".min_temp.nc")) # Get the raster file for minimum temperature raster for year i 
-  tmax_file <- file.path(paste0('./00_Data/Environmental_data/SILO_Max_temp/',i,".max_temp.nc")) # Get the raster file for maximum temperature raster for year i
+  tmax_file <- file.path(paste0('./00_Data/Environmental_data/SILO_Max_temp/',i,".max_temp.nc")) # Get the raster file for maximum temperature raster for year i file
   
   # Load rasters
   tmin <- rast(tmin_file)
@@ -400,7 +400,7 @@ writeRaster(FPC12seq, './00_Data/Environmental_data/Outputs/FPC/FPC12_SEQ_IBRA_r
 writeRaster(FPC13seq, './00_Data/Environmental_data/Outputs/FPC/FPC13_SEQ_IBRA_resampled.tif')
 writeRaster(FPC14seq, './00_Data/Environmental_data/Outputs/FPC/FPC14_SEQ_IBRA_resampled.tif')
 
-# To conduct a sensitivity analysis, lets create few different FPC datasets. Rather than averaging to get a psuedo-long-term average, lets just create raster stacks. For now as we will compare FPC and NDVI, we will just use the long-term average
+# To conduct a sensitivity analysis, lets create few different FPC datasets. Rather than averaging to get a psuedo-long-term average, lets just create raster stacks. 
 FPC_all <- c(FPC12seq, FPC13seq, FPC14seq, FPC18, FPC19, FPC20, FPC21, FPC22, FPC23)
 FPC_all; plot(FPC_all)
 writeRaster(FPC_all, './00_Data/Environmental_data/Outputs/FPC/FPC_ALL_SEQ_IBRA.tif')
@@ -408,74 +408,6 @@ writeRaster(FPC_all, './00_Data/Environmental_data/Outputs/FPC/FPC_ALL_SEQ_IBRA.
 FPC <- mean(FPC_all, na.rm = T)
 writeRaster(FPC, './00_Data/Environmental_data/Outputs/FPC/Average_FPC_SEQ_IBRA.tif')
 
-
-
-# We will test using NDVI data instead of FPC to see which is better. NDVI data is at a much coarser scale, 5km than the intial scale of FPC data which may disadvantage this data but NDVI has a better temporal scale relative to the fire data than FPC.
-# Download BOM NDVI data for May 1992 to December 2018 from https://www.bom.gov.au/jsp/awap/ndvi/index.jsp?colour=colour&map=ndviave&year=2018&month=8&period=month&area=nat
-
-aoi <- SEQ
-years <- 1992:2018
-months <- c("January", "February", "March", "April", "May", "June", 
-            "July", "August", "September", "October", "November", "December")
-
-
-terraOptions(memfrac = 0.8, progress = 2)
-for (year in years) {
-  monthly_rasters <- list()
-  
-  for (month in months) {
-    # Skip months before May 1992
-    if (year == 1992 & month %in% c("January", "February", "March", "April")) next 
-    
-    # Create file path
-    file_path <- file.path("./00_Data/Environmental_data/BOM_NDVI", paste0(year, "_", month))
-    
-    # Check if file exists and process
-    if (file.exists(file_path)) {
-      # Load raster from first extracted file and crop
-      r <- rast(file_path)
-      r[r < -100] <- NA # NA values coded as -999 or -9999
-      monthly_rasters[[month]] <- crop(project(r, template, method = 'bilinear'), aoi)
-    } 
-  }
-  # Calculate yearly average from monthly rasters and save to disk
-  if (length(monthly_rasters) > 0) {
-    yearly_mean <- mean(rast(monthly_rasters), na.rm = TRUE)
-    writeRaster(yearly_mean, paste0("./00_Data/Environmental_data/Outputs/BOM_NDVI/NDVI_", year, "_average.tif"), overwrite = TRUE)
-  }
-  
-  tmpFiles(remove = TRUE)
-  gc()
-}
-
-# Create a raster stack of yearly average NDVI rasters
-years <- 1992:2018
-annual_rasters <- rast(paste0("./00_Data/Environmental_data/Outputs/BOM_NDVI/NDVI_", years, "_average.tif"))
-names(annual_rasters) <- paste0("NDVI_", years)
-annual_rasters
-
-# Calcualte long-term average
-NDVI <- mean(annual_rasters, na.rm = T)
-plot(NDVI)
-NDVI
-writeRaster(NDVI, './00_Data/Environmental_data/Outputs/BOM_NDVI/Average_NDVI.tif', overwrite = T)
-
-# The rsi package could be used to access satellite imagery for 2019 onwards, however the below was tested for a singular month and did not finish running in ~24 hours.
-# For 2019 to 2023 data, use the rsi package
-#SEQ_sf <- st_as_sf(SEQ) # Convert our area of interest to a sf object
-
-
-#sent19 <- get_stac_data(
-#aoi = SEQ_sf,
-#start_date = "2019-01-01",
-#end_date = "2019-01-31", 
-#pixel_x_size = 30,
-#pixel_y_size = 30,
-#stac_source = "https://planetarycomputer.microsoft.com/api/stac/v1",
-#collection = "sentinel-2-l2a",
-#bands = c("B04", "B08"),
-#cloud_mask = FALSE,
-#composite_function = "median")  # Combine scenes into one image with median removing outliers/clouds
 
 
 
@@ -533,6 +465,7 @@ writeRaster(TPI, "./00_Data/Environmental_data/Outputs/DEM/TPI_SEQ_IBRA.tif")
 # Go to https://portal.tern.org.au/ and sign-in then generate API key by clicking on your Profile > TERN ACCOUNT > Create API key on side menu > API key name = 'Soils_access' > Request API Key
 # Also, have to use the httr package to read the file. 
 
+# API KEY RUk1SGQ5Q2tWYno2NXR4bC49fn1LfFpXcV9BR0orDSFxS0EtY3hxXFcsQFhvSDpLO21GQTFHfTFTbnBAMTpTRFMrSHhAKitYR1p1VHJ7PHJA
 
 my_api_key <- "paste API key here"
 get_slga_clay <- function(depth_code, aoi, api_key) {
@@ -551,7 +484,7 @@ get_slga_clay <- function(depth_code, aoi, api_key) {
   # Load, crop, and save
   r <- rast(temp_file)
   r[r < -100] <- NA # NA values stored as -9999
-  r <- project(r, 'EPSG:3577') %>% 
+  project('EPSG:3577') %>% 
     crop(aoi)
   assign(paste0("soil_clay_", depth_code), r, envir = .GlobalEnv)
 }
@@ -643,9 +576,6 @@ precip_season <- rast('./00_Data/Environmental_data/Outputs/SILO_Rainfall/Averag
 FPC <- rast('./00_Data/Environmental_data/Outputs/FPC/Average_FPC_SEQ_IBRA.tif') %>% 
   print()
 
-NDVI <- rast('./00_Data/Environmental_data/Outputs/BOM_NDVI/Average_NDVI.tif') %>% 
-  print()
-
 elevation <- rast('./00_Data/Environmental_data/Outputs/DEM/SEQ_IBRA_DEM_reproj.tif') %>% 
   print()
 
@@ -705,10 +635,6 @@ gdalwarp(srcfile = './00_Data/Environmental_data/Outputs/Soil_clay/SEQ_IBRA_soil
          te = c(1881028, -3247627, 2121562, -2660998))
 
 
-gdalwarp(srcfile = './00_Data/Environmental_data/Outputs/BOM_NDVI/Average_NDVI.tif',
-         './00_Data/Environmental_data/Outputs/BOM_NDVI/Average_NDVI_reproj_cropped.tif',
-         te = c(1881028, -3247627, 2121562, -2660998))
-
 
 gdalwarp(srcfile = './00_Data/Environmental_data/Outputs/DEM/SEQ_IBRA_DEM_reproj.tif',
          './00_Data/Environmental_data/Outputs/DEM/SEQ_IBRA_DEM_reproj_cropped.tif',
@@ -757,8 +683,6 @@ names(precipseason) <- "Avg_Precipitation_seasonality"
 FPC <- rast('./00_Data/Environmental_data/Outputs/FPC/Average_FPC_SEQ_IBRA_cropped.tif')
 names(FPC) <- "Avg_FPC"
 
-NDVI <- rast('./00_Data/Environmental_data/Outputs/BOM_NDVI/Average_NDVI_reproj_cropped.tif')
-names(NDVI) <- "Avg_NDVI"
 
 soil_clay <- rast('./00_Data/Environmental_data/Outputs/Soil_clay/SEQ_IBRA_soilclay_cropped.tif')
 names(soil_clay) <- "percent_clay"
@@ -816,8 +740,6 @@ precip_foc <- focal(precipseason, fun = "mean", na.policy = "only", na.rm = T)
 writeRaster(precip_foc, './00_Data/Environmental_data/Outputs/SILO_Rainfall/Average_precipseason_SEQ_IBRA_reproj_cropped_focal.tif')
 
 
-NDVI_foc <- focal(NDVI, fun = "mean", na.policy = "only", na.rm = T)
-writeRaster(NDVI_foc, './00_Data/Environmental_data/Outputs/BOM_NDVI/Average_NDVI_SEQ_IBRA_cropped_focal.tif', overwrite = T)
 
 # While FPC does appear to have large areas of no data, using focal is not replacing all these areas but just expanding to fill in some of these regions with data. White patches could be related to water bodies or some other land cover 
 FPC_foc <- focal(FPC, fun = 'mean', na.policy = 'only', na.rm = T)
@@ -843,7 +765,6 @@ TWI <- rast('./00_Data/Environmental_data/Outputs/TWI/SEQ_IBRA_TWI_cropped_focal
 tempseason <- rast('./00_Data/Environmental_data/Outputs/SILO_Temperature/Average_tempseason_SEQ_IBRA_reproj_cropped_focal.tif')
 precipseason <- rast('./00_Data/Environmental_data/Outputs/SILO_Rainfall/Average_precipseason_SEQ_IBRA_reproj_cropped_focal.tif')
 FPC <- rast('./00_Data/Environmental_data/Outputs/FPC/FPC_ALL_IBRA_cropped_focal.tif')  
-NDVI <- rast('./00_Data/Environmental_data/Outputs/BOM_NDVI/Average_NDVI_SEQ_IBRA_cropped_focal.tif')
 soil_clay <- rast('./00_Data/Environmental_data/Outputs/Soil_clay/SEQ_IBRA_soilclay_cropped_focal.tif')  
 slope <- rast('./00_Data/Environmental_data/Outputs/DEM/SEQ_IBRA_slope_cropped_focal.tif')  
 aspect <- rast('./00_Data/Environmental_data/Outputs/DEM/SEQ_IBRA_aspect_cropped_focal.tif')  
@@ -898,15 +819,6 @@ names(FPC) <- "Avg_FPC"
 writeRaster(FPC, './00_Data/Environmental_data/Outputs/FPC/Average_FPC_SEQ_IBRA_cropped_focal_masked.tif', overwrite = T)
 
 
-NDVI <-  mask(NDVI, canal, inverse = T)
-NDVI <- mask(NDVI, lake, inverse = T)
-NDVI <- mask(NDVI, pond, inverse = T)
-NDVI <- mask(NDVI, reservoir, inverse = T)
-NDVI <- mask(NDVI, watercourse, inverse = T)
-NDVI <- mask(NDVI, coast)
-plot(NDVI)
-names(NDVI) <- "Avg_NDVI"
-writeRaster(NDVI, './00_Data/Environmental_data/Outputs/BOM_NDVI/Average_NDVI_cropped_focal_masked.tif', overwrite = T)
 
 
 soil_clay <- mask(soil_clay, canal, inverse = T)
@@ -992,7 +904,7 @@ QPWS_SEQ_ff <- mask(QPWS_SEQ_ff, coast)
 plot(QPWS_SEQ_ff)
 writeRaster(QPWS_SEQ_ff, './00_Data/Fire_data/Outputs/SEQ/QPWS_SEQ_IBRA_freq_hydrographical_mask_cropped.tif', overwrite = T)
 
-predictors <- c(QPWS_SEQ_ff, TWI, tempseason, precipseason, FPC, soil_clay, slope, aspect, topo_position, elev, NDVI, BVG)
+predictors <- c(QPWS_SEQ_ff, TWI, tempseason, precipseason, FPC, soil_clay, slope, aspect, topo_position, elev, BVG)
 predictors
 writeRaster(predictors, './00_Data/SDM_data/predictors_SEQ_IBRA.tif', overwrite = T)
 

@@ -1,6 +1,6 @@
 # Written by Felicity Charles
 # Date:1/08/2023
-# Updated: 9/10/2025
+# Updated: 25/05/2026
 
 ##### Fire frequency analysis ----
 # This script begins to produce the data needed for producing the predictive model for fire frequency
@@ -47,7 +47,6 @@ TWI <- rast('./00_Data/Environmental_data/Outputs/TWI/SEQ_IBRA_TWI_cropped_focal
 tempseason <- rast('./00_Data/Environmental_data/Outputs/SILO_Temperature/Average_Temp_seasonality_SEQ_IBRA_reproj_cropped_focal_masked.tif')
 precipseason <- rast('./00_Data/Environmental_data/Outputs/SILO_Rainfall/Average_precipseason_SEQ_IBRA_reproj_cropped_focal_masked.tif')
 FPC <- rast('./00_Data/Environmental_data/Outputs/FPC/Average_FPC_SEQ_IBRA_cropped_focal_masked.tif')
-NDVI <- rast('./00_Data/Environmental_data/Outputs/BOM_NDVI/Average_NDVI_cropped_focal_masked.tif')
 soil_clay <- rast('./00_Data/Environmental_data/Outputs/Soil_clay/SEQ_IBRA_soilclay_cropped_focal_masked.tif')
 slope <- rast('./00_Data/Environmental_data/Outputs/DEM/SEQ_IBRA_slope_cropped_focal_masked.tif')
 aspect <- rast('./00_Data/Environmental_data/Outputs/DEM/SEQ_IBRA_aspect_cropped_focal_masked.tif')
@@ -70,8 +69,6 @@ precipseason_rand <- terra::extract(precipseason, QPWS_rand)# Getting some NA va
 
 
 FPC_rand <- terra::extract(FPC, QPWS_rand) 
-
-NDVI_rand <- terra::extract(NDVI, QPWS_rand)
 
 soil_clay_rand <- terra::extract(soil_clay, QPWS_rand)
 colnames(soil_clay_rand) <- c("ID", "soil_clay")
@@ -100,7 +97,6 @@ Rand_fire$TWI <- TWI_rand$TWI
 Rand_fire$temp_season <- tempseason_rand$Avg_Temperature_seasonality
 Rand_fire$precip_season <- precipseason_rand$Avg_Precipitation_seasonality
 Rand_fire$FPC <- FPC_rand$Avg_FPC
-Rand_fire$NDVI <- NDVI_rand$Avg_NDVI
 Rand_fire$soil_clay <- soil_clay_rand$soil_clay
 Rand_fire$slope <- slope_rand$slope
 Rand_fire$aspect <- aspect_rand$aspect
@@ -165,7 +161,6 @@ twi <- raster('./00_Data/Environmental_data/Outputs/TWI/SEQ_IBRA_TWI_cropped_foc
 temp <- raster('./00_Data/Environmental_data/Outputs/SILO_Temperature/Average_Temp_seasonality_SEQ_IBRA_reproj_cropped_focal_masked.tif')
 precip <- raster('./00_Data/Environmental_data/Outputs/SILO_Rainfall/Average_precipseason_SEQ_IBRA_reproj_cropped_focal_masked.tif')
 fpc <- raster('./00_Data/Environmental_data/Outputs/FPC/Average_FPC_SEQ_IBRA_cropped_focal_masked.tif')
-ndvi <- raster('./00_Data/Environmental_data/Outputs/BOM_NDVI/Average_NDVI_cropped_focal_masked.tif')
 soil <- raster('./00_Data/Environmental_data/Outputs/Soil_clay/SEQ_IBRA_soilclay_cropped_focal_masked.tif')
 slp <- raster('./00_Data/Environmental_data/Outputs/DEM/SEQ_IBRA_slope_cropped_focal_masked.tif')
 asp <- raster('./00_Data/Environmental_data/Outputs/DEM/SEQ_IBRA_aspect_cropped_focal_masked.tif')
@@ -191,8 +186,6 @@ pt_bvg <- Rand_fire[is.na(Rand_fire$BVG), c(3:4)]
 colnames(pt_bvg) <- c('x', 'y')
 pt_fpc <- Rand_fire[is.na(Rand_fire$FPC), c(3:4)]
 colnames(pt_fpc) <- c('x', 'y')
-pt_ndvi <- Rand_fire[is.na(Rand_fire$NDVI), c(3:4)]
-colnames(pt_ndvi) <- c('x', 'y')
 pt_temp <- Rand_fire[is.na(Rand_fire$temp_season), c(3:4)]
 colnames(pt_temp) <- c('x', 'y')
 pt_precip <- Rand_fire[is.na(Rand_fire$precip_season), c(3:4)]
@@ -212,7 +205,6 @@ nearest.topo <- nearestLand(pt_topo, topo, 558)
 nearest.elev <- nearestLand(pt_elev, eleva, 558)
 nearest.bvg <- nearestLand(pt_bvg, bvg, 200)
 nearest.fpc <- nearestLand(pt_fpc, fpc, 200)
-nearest.ndvi <- nearestLand(pt_ndvi, ndvi, 5000)
 nearest.temp <- nearestLand(pt_temp, temp, 7000)
 nearest.precip <- nearestLand(pt_precip, precip, 7000)
 
@@ -237,8 +229,6 @@ bvg_na <- as.data.frame(bvg.na)
 colnames(bvg_na) <- c('BVG', 'x', 'y')
 fpc.na <- terra::extract(FPC, nearest.fpc) %>% 
   cbind(nearest.fpc)
-ndvi.na <- terra::extract(NDVI, nearest.ndvi) %>% 
-  cbind(nearest.ndvi)
 temp.na <- terra::extract(tempseason, nearest.temp) %>% 
   cbind(nearest.temp)
 precip.na <- terra::extract(precipseason, nearest.precip) %>% 
@@ -254,7 +244,6 @@ Rand_fire$topo_position <- ifelse(is.na(Rand_fire$topo_position), tpi.na$Topo_po
 Rand_fire$elevation <- ifelse(is.na(Rand_fire$elevation), elev.na$Elevation, Rand_fire$elevation)
 Rand_fire$BVG <- ifelse(is.na(Rand_fire$BVG), bvg_na$BVG, Rand_fire$BVG)
 Rand_fire$FPC <- ifelse(is.na(Rand_fire$FPC), fpc.na$Avg_FPC, Rand_fire$FPC)
-Rand_fire$NDVI <- ifelse(is.na(Rand_fire$NDVI), ndvi.na$Avg_NDVI, Rand_fire$NDVI)
 Rand_fire$temp_season <- ifelse(is.na(Rand_fire$temp_season), temp.na$Avg_Temperature_seasonality, Rand_fire$temp_season)
 Rand_fire$precip_season <- ifelse(is.na(Rand_fire$precip_season), precip.na$Avg_Precipitation_seasonality, Rand_fire$precip_season)
 unique(is.na(Rand_fire))
@@ -309,7 +298,7 @@ plet(bg_ext)
 bg_ext
 
 
-rm(list = setdiff(ls(), c("SEQ", "SEQ2", 'protected_land', "aspect", "elev", "TWI", "tempseason", "precipseason", "FPC", "soil_clay", "slope", "topo_position", "QPWS_SEQ_ff", "QPWS_rand", "Sentinel_ff", "Rand_fire", "nearestLand", "BVG", "NDVI", "bg_ext", 'twi', 'asp', 'bvg', 'eleva', 'fpc', 'ndvi', 'precip', 'slp', 'soil', 'temp', 'topo', 'twi'))); gc()
+rm(list = setdiff(ls(), c("SEQ", "SEQ2", 'protected_land', "aspect", "elev", "TWI", "tempseason", "precipseason", "FPC", "soil_clay", "slope", "topo_position", "QPWS_SEQ_ff", "QPWS_rand", "Sentinel_ff", "Rand_fire", "nearestLand", "BVG", "bg_ext", 'twi', 'asp', 'bvg', 'eleva', 'fpc', 'precip', 'slp', 'soil', 'temp', 'topo', 'twi'))); gc()
 
 
 # Create the background points in protected areas of SEQ
@@ -325,7 +314,7 @@ bg_rand2$ID <- 1:nrow(bg_rand2)
 bg_rand2$x <- crds(bg_rand2)[,1]
 bg_rand2$y <- crds(bg_rand2)[,2]
 head(bg_rand2)
-bg_rand2 <- bg_rand2[, 3:4]
+bg_rand2 <- bg_rand2[, 38:40]
 head(bg_rand2)
 bg_rand2
 
@@ -383,7 +372,6 @@ precipseason_ran <- terra::extract(precipseason, bg_rand)
 
 FPC_ran <- terra::extract(FPC, bg_rand) 
 
-NDVI_ran <- terra::extract(NDVI, bg_rand)
 
 soil_ran <- terra::extract(soil_clay, bg_rand)
 
@@ -416,7 +404,6 @@ Background_data$TWI <- TWI_ran$TWI
 Background_data$temp_season <- tempseason_ran$Avg_Temperature_seasonality
 Background_data$precip_season <- precipseason_ran$Avg_Precipitation_seasonality
 Background_data$FPC <- FPC_ran$Avg_FPC
-Background_data$NDVI <- NDVI_ran$Avg_NDVI
 Background_data$soil_clay <- soil_ran$Percent_clay
 Background_data$slope <- sloperan$slope
 Background_data$aspect <- aspectran$aspect
@@ -469,8 +456,6 @@ colnames(pt_precip_season) <- c('x', 'y')
 pt_fpc <- Background_data[is.na(Background_data$FPC), c(3,4)]
 colnames(pt_fpc) <- c('x', 'y')
 
-pt_ndvi <- Background_data[is.na(Background_data$NDVI), c(3,4)]
-colnames(pt_ndvi) <- c('x', 'y')
 
 
 
@@ -495,8 +480,6 @@ nearest.temp <- nearestLand(pt_temp, temp, 7000)
 unique(is.na(nearest.temp))
 nearest.precip <- nearestLand(pt_precip, precip, 7000)
 unique(is.na(nearest.precip))
-nearest.ndvi <- nearestLand(pt_ndvi, ndvi, 5000)
-unique(is.na(nearest.ndvi))
 nearest.fpc <- nearestLand(pt_fpc, fpc, 200)
 unique(is.na(nearest.fpc))
 
@@ -532,7 +515,6 @@ Background_data$BVG <- ifelse(is.na(Background_data$BVG), bvg_na$BVG, Background
 Background_data$temp_season <- ifelse(is.na(Background_data$temp_season), temp.na$Avg_Temperature_seasonality, Background_data$temp_season)
 Background_data$precip_season <- ifelse(is.na(Background_data$precip_season), precip.na$Avg_Precipitation_seasonality, Background_data$precip_season)
 Background_data$FPC <- ifelse(is.na(Background_data$FPC), fpc.na$Avg_FPC, Background_data$FPC)
-Background_data$NDVI <- ifelse(is.na(Background_data$NDVI), ndvi.na$Avg_NDVI, Background_data$NDVI)
 
 unique(is.na(Background_data)) # Make sure all NA values have been replaced.
 head(Background_data)
