@@ -1,5 +1,5 @@
 # Fire frequency predictive modelling - Integrating public land and satellite imagery improves fire freequency estimates across the landscape.
-Use of a species distribution modelling workflow to model the relationship between environmental co-variaiont and satellite derived fire history estimates to improve accuracy landscape scale fire frequency estimates. In this modelling, we integrated fire history data from more accurate, manually verified public land fire mapping (predictor variable) to better understand the interaction between environmental co-variation (predictor variable) and satellite-derived fire frequency estimates (response variable). .
+Use of a species distribution modelling workflow to model the relationship between environmental co-variaiont and satellite derived fire history estimates to improve accuracy landscape scale fire frequency estimates. In this modelling, we integrated fire history data from more accurate, manually verified public land fire mapping (predictor variable) to better understand the interaction between environmental co-variation (predictor variable) and satellite-derived fire frequency estimates (response variable).
 
 Based on work at https://github.com/felicityeloise/Fire_freq_pred_modelling.
 
