@@ -19,4 +19,4 @@ Felicity Charles (unless otherwise stated within the script)
 Charles F.E., Reside A.E., Moss P.T., Smith A.L. (2025). Improving landscape fire frequency estimates by integrating public land fire data and satellite imagery. Submitted 03/04/2025.
 
 # License
-The Fire_freq_pred_modelling project by Felicity Charles and Annabel Smith is licensed under a Create Commons Attribution-NonCommercial 4.0 Internation License.
+The Fire_freq_pred_modelling project by Felicity Charles and Annabel Smith is licensed under a Create Commons Attribution-NonCommercial 4.0 International License.
