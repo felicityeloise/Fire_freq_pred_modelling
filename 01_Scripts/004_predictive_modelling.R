@@ -609,7 +609,7 @@ write(paste("Matthews correlation coefficient = ", round(attr(sm3_fpc_eval_basic
 # Compare performances
 sm1_fpc_eval # Performs best of unweighted
 
-sm2_fpc_eval # Performs similarly to model with NDVI and FPC
+sm2_fpc_eval # Performs similarly
 
 sm3_fpc_eval # Performs best of IWLR
 
