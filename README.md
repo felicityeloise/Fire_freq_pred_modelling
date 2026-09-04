@@ -17,9 +17,9 @@ Use of a species distribution modelling workflow to model the relationship betwe
 Felicity Charles (unless otherwise stated within the script)
 
 # Manuscript
-Charles F.E., Reside A.E., Moss P.T., Smith A.L. (2025). Improving landscape fire frequency estimates by integrating public land fire data and satellite imagery. International Journal of Wildland Fire. https://doi.org/10.1071/WF25076
+Charles F.E., Reside A.E., Moss P.T., Smith A.L. (2025). Improving landscape fire frequency estimates by integrating public land fire data and satellite imagery. _International Journal of Wildland Fire_, 35 (9): WF25076. https://doi.org/10.1071/WF25076
 
 # License
-The Fire_freq_pred_modelling project by Felicity Charles and Annabel Smith is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.
+The Fire_freq_pred_modelling project by Felicity Charles and Annabel Smith is licensed under a CC BY-NC Creative Commons Attribution-NonCommercial 4.0 International License.
 
 Based on work at https://github.com/felicityeloise/Fire_freq_pred_modelling.
